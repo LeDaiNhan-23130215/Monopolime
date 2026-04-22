@@ -9,13 +9,13 @@
 Tài liệu này mô tả chi tiết các yêu cầu nghiệp vụ cho hệ thống Game Monopoly chạy offline (không cần internet), tập trung vào logic gameplay, luật chơi và tương tác người dùng.
 
 ### 1.2 Phạm vi
-Hệ thống là game Monopoly chạy cục bộ trên một thiết bị. Người chơi có thể chơi cùng nhau (hot-seat) hoặc với AI.
+Hệ thống là game Monopoly chạy cục bộ trên một thiết bị. Người chơi có thể chơi cùng nhau (hot-seat).
 
 ---
 
 ## 2. Mục tiêu nghiệp vụ
 - Tái hiện đầy đủ luật Monopoly truyền thống
-- Hỗ trợ 2–6 người chơi trên cùng thiết bị
+- Hỗ trợ 2–4 người chơi trên cùng thiết bị
 - Đảm bảo công bằng và tự động hóa luật
 
 ---
@@ -69,12 +69,6 @@ Cách ra tù:
   - Di chuyển
   - Vào tù
 
-### 3.8 Giao dịch (Trading)
-- Người chơi có thể:
-  - Trao đổi đất
-  - Trao đổi tiền
-- Giao dịch phải được cả 2 bên chấp nhận
-
 ### 3.9 Thế chấp (Mortgage)
 - Người chơi có thể thế chấp tài sản để nhận tiền
 - Không thu rent khi đang thế chấp
@@ -96,8 +90,7 @@ Cách ra tù:
 
 ### FR-01: Tạo game offline
 - Chọn số người chơi
-- Chọn AI hoặc người thật
-
+- 
 ### FR-02: Gameplay
 - Tung xúc xắc
 - Di chuyển
@@ -106,33 +99,16 @@ Cách ra tù:
 ### FR-03: Quản lý tài sản
 - Mua / bán / xây dựng
 
-### FR-04: AI
-- AI tự động quyết định:
-  - Mua đất
-  - Trả tiền
-  - Xây nhà
-
-### FR-05: Lưu game
-- Lưu trạng thái local
-
----
-
 ## 5. Yêu cầu phi chức năng
 
 ### 5.1 Hiệu năng
-- Thời gian phản hồi < 1 giây
+- Thời gian phản hồi ít nhất 5 giây
 
 ### 5.2 Khả dụng
 - UI đơn giản, dễ hiểu
 
 ### 5.3 Độ tin cậy
 - Không crash trong suốt phiên chơi
-
----
-
-## 6. Ràng buộc
-- Không sử dụng internet
-- Chạy trên 1 thiết bị duy nhất
 
 ---
 
@@ -143,7 +119,6 @@ Cách ra tù:
 ---
 
 ## 8. Rủi ro
-- AI quá yếu hoặc quá mạnh
 - Game kéo dài quá lâu
 
 ---
@@ -153,6 +128,7 @@ Cách ra tù:
 ### A. Mở rộng tương lai
 - Multiplayer online
 - Đồng bộ cloud
+- Đa dạng lỗi chơi, mở rộng gameplay
 
 ---
 
