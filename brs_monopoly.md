@@ -69,18 +69,18 @@ Cách ra tù:
   - Di chuyển
   - Vào tù
 
-### 3.9 Thế chấp (Mortgage)
+### 3.8 Thế chấp (Mortgage)
 - Người chơi có thể thế chấp tài sản để nhận tiền
 - Không thu rent khi đang thế chấp
 - Trả thêm lãi để chuộc lại
 
-### 3.10 Phá sản (Bankruptcy)
+### 3.9 Phá sản (Bankruptcy)
 - Khi không đủ tiền trả:
   - Bán tài sản hoặc thế chấp
 - Nếu vẫn không đủ:
   - Bị loại khỏi game
 
-### 3.11 Kết thúc game
+### 3.10 Kết thúc game
 - Game kết thúc khi:
   - Chỉ còn 1 người chơi
 
