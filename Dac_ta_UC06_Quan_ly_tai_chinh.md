@@ -3,6 +3,7 @@
 ## 1. Thông tin chung (General Information)
 
 | Thuộc tính | Nội dung chi tiết |
+| :--- | :--- | :--- |
 | **Use Case ID** | UC-06 |
 | **Tên Use Case** | Quản lý tài chính |
 | **Actor** | Người chơi, Hệ thống |
@@ -16,6 +17,7 @@
 *Thanh toán tiền thuê đất/tiền phạt khi người chơi di chuyển vào ô yêu cầu chi trả.*
 
 | Bước | Actor | Mô tả hành động |
+| :--- | :--- | :--- |
 | 6.1.1 | Người chơi | Kết thúc việc đổ xúc xắc và di chuyển đến một ô yêu cầu thanh toán (VD: đất của người chơi khác, ô đóng thuế). |
 | 6.1.2 | Hệ thống | Nhận diện loại giao dịch và đối tượng thụ hưởng (Ngân hàng hoặc người chơi khác). |
 | 6.1.3 | Hệ thống | Tính toán tổng số tiền người chơi cần phải thanh toán. |
@@ -32,6 +34,7 @@
 
 ### Luồng thay thế 1 (6.2): Nhận tiền thưởng
 | Bước | Actor | Mô tả hành động |
+| :--- | :--- | :--- |
 | 6.2.1 | Người chơi | Di chuyển ngang qua/dừng lại ở ô Bắt Đầu (GO) hoặc rút được Thẻ Cơ Hội có thưởng tiền. |
 | 6.2.2 | Hệ thống | Xác định khoản tiền thưởng mà người chơi được nhận. |
 | 6.2.3 | Hệ thống | Hiển thị thông báo chúc mừng kèm số tiền nhận được. |
@@ -66,6 +69,7 @@
 ## 5. Quy tắc nghiệp vụ (Business Rules)
 
 | Mã Rule | Ràng buộc nghiệp vụ |
+| :--- | :--- | :--- |
 | **BR_6.1.3** | Số tiền thanh toán ở Bước 3 (Luồng 1) phải được tính tự động dựa trên mức giá thuê đã quy định (cộng dồn hệ số nếu có nhà/khách sạn) hoặc đúng số % yêu cầu nếu là ô Đóng Thuế. |
 | **BR_6.1.6** | Lệnh thanh toán (Bước 6, Luồng 1) chỉ được chuyển sang Bước 7 khi số dư tiền mặt $\ge$ Số tiền cần thanh toán. Nếu không, bắt buộc rẽ nhánh sang Luồng thay thế 2 hoặc Luồng ngoại lệ 4. |
 | **BR_6.2.2** | Số tiền nhận được khi đi qua ô GO là một hằng số cố định theo cấu hình ván đấu (Ví dụ: mặc định là $200). |
