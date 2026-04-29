@@ -3,7 +3,7 @@
 ## 1. Thông tin chung (General Information)
 
 | Thuộc tính | Nội dung chi tiết |
-| :--- | :--- | :--- |
+| :--- | :--- |
 | **Use Case ID** | UC-06 |
 | **Tên Use Case** | Quản lý tài chính |
 | **Actor** | Người chơi, Hệ thống |
@@ -69,7 +69,7 @@
 ## 5. Quy tắc nghiệp vụ (Business Rules)
 
 | Mã Rule | Ràng buộc nghiệp vụ |
-| :--- | :--- | :--- |
+| :--- | :--- |
 | **BR_6.1.3** | Số tiền thanh toán ở Bước 3 (Luồng 1) phải được tính tự động dựa trên mức giá thuê đã quy định (cộng dồn hệ số nếu có nhà/khách sạn) hoặc đúng số % yêu cầu nếu là ô Đóng Thuế. |
 | **BR_6.1.6** | Lệnh thanh toán (Bước 6, Luồng 1) chỉ được chuyển sang Bước 7 khi số dư tiền mặt $\ge$ Số tiền cần thanh toán. Nếu không, bắt buộc rẽ nhánh sang Luồng thay thế 2 hoặc Luồng ngoại lệ 4. |
 | **BR_6.2.2** | Số tiền nhận được khi đi qua ô GO là một hằng số cố định theo cấu hình ván đấu (Ví dụ: mặc định là $200). |
