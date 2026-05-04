@@ -3,8 +3,8 @@ extends Node
 class_name Dice
 
 func roll():
-	var d1 = randi_range(1, 6)
-	var d2 = randi_range(1, 6)
+	var d1 = (randi() % 6) + 1
+	var d2 = (randi() % 6) + 1
 	
 	return {
 		"dice1": d1,

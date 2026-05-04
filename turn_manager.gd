@@ -1,80 +1,62 @@
 extends Node
+class_name TurnManager
 
-var dice = Dice.new()
+@onready var game_state: GameState = get_node("../GameState")
+@onready var dice: Dice = get_node("../Dice")
 
-var players = ["A", "B"]
-var positions = [0, 0]
+@onready var view: GameView = get_node("../GameView")
 
-var current_player = 0
-var board_size = 20
-
-@onready var label = get_node("../UI/Result")
-@onready var timer = get_node("../UI/DiceTimer")
-
-@onready var dice1_sprite = get_node("../UI/Dice1")
-@onready var dice2_sprite = get_node("../UI/Dice2")
-
-var rolling = false
-var roll_time = 0
 var final_result = null
 
-func _ready():
-	randomize()
-
 func start_turn():
-	var result = dice.roll()
+	print("===== TURN =====")
+	print("Player:", game_state.players[game_state.current_player])
+	
+	view.show_turn(game_state.current_player)
 
-	print("Player:", players[current_player])
-	print("Dice:", result.total)
-	
-	update_ui(result)
-	
-	move_player(result.total)
-	end_turn()
-	
-func move_player(steps):
-	positions[current_player] += steps
-	positions[current_player] %= board_size
-
-	print("New position:", positions[current_player])
-	
-func end_turn():
-	current_player = (current_player + 1) % players.size()
-
-func _on_roll_dice_pressed() -> void:
-	if rolling:
-		return
-	
-	rolling = true
-	roll_time = 0
-	
+func roll_dice():
+	print("ROLL DICE CALLED")
 	final_result = dice.roll()
-	timer.start()
-	
-func update_ui(result):
-	label.text = "Dice: %d + %d = %d" % [result.dice1, result.dice2, result.total]
+	print("RESULT =", final_result)
+	view.start_dice_animation(final_result)
 
-
-func _on_dice_timer_timeout() -> void:
-	if not rolling:
-		return
+func resolve_roll():
+	var d1 = final_result.dice1
+	var d2 = final_result.dice2
 	
-	roll_time += 0.1
+	view.show_result(final_result)
 	
-	var fake1 = randi_range(1, 6)
-	var fake2 = randi_range(1, 6)
-	dice1_sprite.texture = load("res://resource/dices/dice%d.jpg" % fake1)
-	dice2_sprite.texture = load("res://resources/dices/dice%d.jpg" % fake2)
-	if roll_time == 0.7:
-		timer.stop()
-		rolling = false
+	if d1 == d2:
+		game_state.double_count += 1
+		view.show_double()
 		
-		label.text = "Dice: %d + %d = %d" % [
-			final_result.dice1,
-			final_result.dice2,
-			final_result.total
-		]
-		
+		if game_state.double_count < 3:
+			move_player(final_result.total)
+			return
+		else:
+			go_to_jail()
+			end_turn()
+			return
+	else:
 		move_player(final_result.total)
+		game_state.double_count = 0
 		end_turn()
-		
+
+func move_player(steps):
+	var i = game_state.current_player
+	
+	game_state.positions[i] += steps
+	game_state.positions[i] %= game_state.board_size
+	
+	print("New position:", game_state.positions[i])
+	view.update_position(i, game_state.positions[i])
+
+func end_turn():
+	game_state.current_player = (game_state.current_player + 1) % game_state.players.size()
+	game_state.double_count = 0
+	
+	start_turn()
+
+func go_to_jail():
+	print("GO TO JAIL!")
+	view.show_jail()
