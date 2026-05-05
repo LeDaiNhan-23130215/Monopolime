@@ -7,8 +7,11 @@
 [ext_resource type="AudioStream" uid="uid://bghhjbsv270nm" path="res://resources/audio/rollAudio/Dice_roll_sound.mp3" id="5_8j4tt"]
 [ext_resource type="Script" uid="uid://dhpcoe4d7fmxk" path="res://GameState.gd" id="5_r4gxj"]
 [ext_resource type="Script" uid="uid://bodlhlq5ibv53" path="res://Dice.gd" id="6_6x5qw"]
+[ext_resource type="Texture2D" uid="uid://c20o0e1wt0f8v" path="res://resources/button_icon/RollButtonIcon.png" id="6_s088g"]
+[ext_resource type="Script" uid="uid://c76svja4gt2bo" path="res://scripts/Board.gd" id="9_idd0f"]
+[ext_resource type="PackedScene" uid="uid://da543anbagjij" path="res://Cell.tscn" id="10_fg3u4"]
 
-[node name="Monopolime" type="Node2D" unique_id=1488605029]
+[node name="Main" type="Node2D" unique_id=1488605029]
 script = ExtResource("1_wplms")
 
 [node name="GameController" type="Node" parent="." unique_id=1140172223]
@@ -19,38 +22,31 @@ script = ExtResource("4_x4cqj")
 
 [node name="UI" type="CanvasLayer" parent="GameUI" unique_id=466798480]
 
-[node name="Roll Dice" type="Button" parent="GameUI/UI" unique_id=241324278]
-offset_left = 5.0
-offset_top = 6.0
-offset_right = 112.0
-offset_bottom = 95.0
-text = "ROLL"
-
 [node name="Result" type="Label" parent="GameUI/UI" unique_id=1922949563]
-offset_left = 115.0
-offset_top = 99.0
-offset_right = 219.0
-offset_bottom = 192.0
+offset_left = 499.0
+offset_top = 530.0
+offset_right = 603.0
+offset_bottom = 623.0
 
 [node name="DiceTimer" type="Timer" parent="GameUI/UI" unique_id=628580055]
 wait_time = 0.1
 
 [node name="Dice1" type="Sprite2D" parent="GameUI/UI" unique_id=846093997]
-position = Vector2(166.00003, 52.000004)
+position = Vector2(266, 578.99994)
 scale = Vector2(0.30730897, 0.30730897)
 texture = ExtResource("2_hb5le")
 
 [node name="Dice2" type="Sprite2D" parent="GameUI/UI" unique_id=1133871768]
-position = Vector2(268, 52.999992)
+position = Vector2(399, 579.99994)
 scale = Vector2(0.307, 0.307)
 texture = ExtResource("2_hb5le")
 
 [node name="IsDoubleLabel" type="Label" parent="GameUI/UI" unique_id=2130198818]
 visible = false
-offset_left = 336.0
-offset_top = 22.0
-offset_right = 479.0
-offset_bottom = 80.0
+offset_left = 47.0
+offset_top = 42.0
+offset_right = 190.0
+offset_bottom = 100.0
 text = "DOUBLE!"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -60,11 +56,28 @@ stream = ExtResource("5_8j4tt")
 
 [node name="AudioDouble" type="AudioStreamPlayer2D" parent="GameUI/UI" unique_id=1237884048]
 
+[node name="Roll Dice" type="TextureButton" parent="GameUI/UI" unique_id=312387695]
+clip_contents = true
+offset_left = 20.0
+offset_top = 486.0
+offset_right = 189.0
+offset_bottom = 649.0
+texture_normal = ExtResource("6_s088g")
+ignore_texture_size = true
+stretch_mode = 4
+
 [node name="GameState" type="Node" parent="." unique_id=510804286]
 script = ExtResource("5_r4gxj")
 
 [node name="Dice" type="Node" parent="." unique_id=1274710252]
 script = ExtResource("6_6x5qw")
 
-[connection signal="pressed" from="GameUI/UI/Roll Dice" to="GameUI" method="_on_roll_button_pressed"]
+[node name="Board" type="Node2D" parent="." unique_id=940783717]
+script = ExtResource("9_idd0f")
+cell_positions = Array[Vector2]([Vector2(100, 100), Vector2(200, 100), Vector2(300, 100), Vector2(400, 100), Vector2(400, 200), Vector2(300, 200), Vector2(200, 200), Vector2(100, 200)])
+cell_scene = ExtResource("10_fg3u4")
+
+[node name="Tokens" type="Node2D" parent="." unique_id=812273034]
+
 [connection signal="timeout" from="GameUI/UI/DiceTimer" to="GameUI" method="_on_dice_timer_timeout"]
+[connection signal="pressed" from="GameUI/UI/Roll Dice" to="GameUI" method="_on_roll_dice_pressed"]

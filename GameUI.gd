@@ -107,8 +107,6 @@ func bounce(sprite):
 	tween.tween_property(sprite, "scale", base_scale * 1.2, 0.1)
 	tween.tween_property(sprite, "scale", base_scale, 0.1)
 	
-func _on_roll_button_pressed():
-	game_controller.roll_dice()
 	
 func shake():
 	var cam = get_viewport().get_camera_2d()
@@ -118,3 +116,7 @@ func shake():
 	cam.offset = Vector2(randf_range(-5,5), randf_range(-5,5))
 	await get_tree().create_timer(0.05).timeout
 	cam.offset = Vector2.ZERO
+
+
+func _on_roll_dice_pressed() -> void:
+	game_controller.roll_dice()

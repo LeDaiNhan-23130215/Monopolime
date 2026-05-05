@@ -8,6 +8,8 @@ var state: PlayerState
 var properties: Array = []
 var special_card: Array = []
 
+var token: PlayerToken
+
 func _init(id := 0, player_name := "Player"):
 	player_id = id
 	name = player_name
