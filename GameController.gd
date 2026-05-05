@@ -1,6 +1,8 @@
 extends Node
 class_name GameController
 
+var board: Board
+
 var game_state: GameState
 var dice: Dice
 var ui: GameUI
@@ -32,24 +34,36 @@ func resolve_roll():
 		ui.show_double()
 
 		if game_state.double_count < 3:
-			move_player(player, final_result.total())
+			await move_player(player, final_result.total())
 			return
 		else:
 			go_to_jail(player)
 			end_turn()
 			return
 	else:
-		move_player(player, final_result.total())
+		await move_player(player, final_result.total())
 		game_state.double_count = 0
 		end_turn()
 
-func move_player(player: Player, steps: int):
-	var new_pos = player.state.position + steps
-	new_pos %= game_state.board_size
+func move_player(player: Player, steps: int) -> void:
+	await move_player_step_by_step(player, steps)
+	
 
-	player.state.update_position(new_pos)
+func move_player_step_by_step(player: Player, steps: int) -> void:
+	for i in range(steps):
+		var next_pos = player.state.position + 1
+		next_pos %= game_state.board_size
+		
+		player.state.update_position(next_pos)
 
-	ui.update_position(player.player_id, new_pos)
+		var world_pos = board.get_cell_position(next_pos)
+
+		# offset tránh chồng
+		var offset = Vector2(player.player_id * 10, 0)
+		player.token.move_to(world_pos + offset)
+
+		# chờ animation chạy xong
+		await get_tree().create_timer(0.25).timeout
 
 func go_to_jail(player: Player):
 	print("GO TO JAIL!")

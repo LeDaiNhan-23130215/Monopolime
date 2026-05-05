@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://fny8natpl7kl"]
+
+[ext_resource type="Script" uid="uid://fs6tji5a2tlg" path="res://PlayerToken.gd" id="1_tnvn1"]
+[ext_resource type="Texture2D" uid="uid://bg34673m7r5ag" path="res://resources/PlayerToken/PlayerToken_Dog.png" id="2_u1bi4"]
+
+[node name="PlayerToken" type="Node2D" unique_id=1970298349]
+script = ExtResource("1_tnvn1")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1536674717]
+position = Vector2(29.5, 26.5)
+scale = Vector2(0.45833334, 0.45833334)
+texture = ExtResource("2_u1bi4")
+
+[node name="Node2D" type="Node2D" parent="." unique_id=619730790]
