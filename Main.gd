@@ -2,14 +2,14 @@ extends Node
 
 @onready var game_state = $GameState
 @onready var dice = $Dice
-@onready var turn_manager = $TurnManager
-@onready var view = $GameView
+@onready var game_controller = $GameController
+@onready var ui = $GameUI
 
 func _ready():
-	turn_manager.game_state = game_state
-	turn_manager.dice = dice
-	turn_manager.view = view
+	game_controller.game_state = game_state
+	game_controller.dice = dice
+	game_controller.ui = ui
 	
-	view.turn_manager = turn_manager
+	ui.game_controller = game_controller
 	
-	turn_manager.start_turn()
+	game_controller.start_turn()

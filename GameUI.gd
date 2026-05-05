@@ -1,5 +1,5 @@
 extends Node
-class_name GameView
+class_name GameUI
 
 @onready var label = get_node("UI/Result")
 @onready var timer = get_node("UI/DiceTimer")
@@ -23,7 +23,7 @@ var rolling = false
 var roll_time = 0
 var base_scale = Vector2.ONE
 
-var turn_manager: TurnManager
+var game_controller: GameController
 
 func _ready():
 	var target_size = 64.0
@@ -40,18 +40,19 @@ func _ready():
 func show_turn(player_index):
 	label.text = "Player %d's turn" % player_index
 
-func start_dice_animation(result):
+func start_dice_animation():
 	rolling = true
 	roll_time = 0
 	timer.start()
 	
 	audio_roll.play()
+	shake()
 
 func show_result(result):
 	label.text = "Dice: %d + %d = %d" % [
 		result.dice1,
 		result.dice2,
-		result.total
+		result.total()
 	]
 	audio_roll.stop()
 
@@ -82,6 +83,9 @@ func _on_dice_timer_timeout():
 	dice1_sprite.texture = dice_textures[fake1 - 1]
 	dice2_sprite.texture = dice_textures[fake2 - 1]
 	
+	dice1_sprite.rotation += randf_range(-0.3, 0.3)
+	dice2_sprite.rotation += randf_range(-0.3, 0.3)
+	
 	bounce(dice1_sprite)
 	bounce(dice2_sprite)
 	
@@ -89,12 +93,12 @@ func _on_dice_timer_timeout():
 		timer.stop()
 		rolling = false
 		
-		var result = turn_manager.final_result
+		var result = game_controller.final_result
 		
 		dice1_sprite.texture = dice_textures[result.dice1 - 1]
 		dice2_sprite.texture = dice_textures[result.dice2 - 1]
 		
-		turn_manager.resolve_roll()
+		game_controller.resolve_roll()
 
 func bounce(sprite):
 	sprite.scale = base_scale
@@ -104,4 +108,13 @@ func bounce(sprite):
 	tween.tween_property(sprite, "scale", base_scale, 0.1)
 	
 func _on_roll_button_pressed():
-	turn_manager.roll_dice()
+	game_controller.roll_dice()
+	
+func shake():
+	var cam = get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	
+	cam.offset = Vector2(randf_range(-5,5), randf_range(-5,5))
+	await get_tree().create_timer(0.05).timeout
+	cam.offset = Vector2.ZERO
