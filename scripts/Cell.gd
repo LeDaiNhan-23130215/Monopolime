@@ -1,5 +1,5 @@
 extends Node2D
-class_name Cell
+class_name Cella
 
 @export var index: int
 

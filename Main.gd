@@ -17,10 +17,9 @@ func _ready():
 	for player in game_state.players:
 		var token = token_scene.instantiate()
 		token.player_id = player.player_id
-	
 		token_layer.add_child(token)
 		player.token = token
-	
+		token.get_random_token_texture()
 		token.position = board.get_cell_position(0)
 
 	
