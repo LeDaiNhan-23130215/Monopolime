@@ -35,7 +35,6 @@ func _ready():
 	dice1_sprite.scale = base_scale
 	dice2_sprite.scale = base_scale
 
-# ===== UI API =====
 
 func show_turn(player_index):
 	label.text = "Player %d's turn" % player_index
@@ -68,8 +67,6 @@ func update_position(player, pos):
 
 func show_jail():
 	label.text = "GO TO JAIL!"
-
-# ===== Animation =====
 
 func _on_dice_timer_timeout():
 	if not rolling:
