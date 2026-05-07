@@ -14,8 +14,7 @@ func add_balance(amount: int):
 
 func deduct_balance(amount: int):
 	balance -= amount
-	if balance < 0:
-		bankrupt = true
+	
 
 func set_in_jail(flag: bool):
 	in_jail = flag
