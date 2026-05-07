@@ -9,6 +9,8 @@ class_name GameUI
 @onready var dice2_sprite = get_node("UI/Dice2")
 
 @onready var audio_roll = get_node("UI/AudioRoll")
+@onready var roll_button = get_node("UI/Roll Dice")
+@onready var save_load_menu = get_node("SaveLoadMenu")
 
 var dice_textures = [
 	preload("res://resources/dices/dice1.jpg"),
@@ -24,6 +26,7 @@ var roll_time = 0
 var base_scale = Vector2.ONE
 
 var game_controller: GameController
+var paused_for_menu := false
 
 func _ready():
 	var target_size = 64.0
@@ -34,6 +37,36 @@ func _ready():
 	
 	dice1_sprite.scale = base_scale
 	dice2_sprite.scale = base_scale
+
+	save_load_menu.menu_closed.connect(_on_save_load_menu_closed)
+	save_load_menu.save_slot_requested.connect(_on_save_slot_requested)
+	save_load_menu.load_slot_requested.connect(_on_load_slot_requested)
+
+
+func _unhandled_input(event: InputEvent):
+	if event.is_action_pressed("ui_cancel") and not save_load_menu.visible:
+		_open_save_load_menu()
+		get_viewport().set_input_as_handled()
+
+
+func _open_save_load_menu():
+	save_load_menu.open_menu()
+	_set_roll_button_enabled(false)
+	if not get_tree().paused:
+		get_tree().paused = true
+		paused_for_menu = true
+
+
+func _on_save_load_menu_closed():
+	_set_roll_button_enabled(true)
+	if paused_for_menu:
+		get_tree().paused = false
+		paused_for_menu = false
+
+
+func _set_roll_button_enabled(enabled: bool):
+	if roll_button:
+		roll_button.disabled = not enabled
 
 
 func show_turn(player_index):
@@ -117,7 +150,18 @@ func shake():
 
 
 func _on_roll_dice_pressed() -> void:
+	if save_load_menu.visible:
+		return
 	game_controller.roll_dice()
+
+
+func _on_save_slot_requested(slot_id: int):
+	game_controller.save_game(slot_id)
+	save_load_menu.refresh_slots()
+
+
+func _on_load_slot_requested(slot_id: int):
+	game_controller.load_game(slot_id)
 
 
 # Hiển thị thông báo (Đi qua GO, thưởng, phạt...)

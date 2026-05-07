@@ -105,6 +105,26 @@ func end_turn():
 func get_current_player() -> Player:
 	return game_state.players[game_state.current_player]
 
+
+func save_game(save_id: int) -> void:
+	if StorageService.save_file(save_id):
+		if ui.has_method("show_message"):
+			ui.show_message("Saved Slot %02d" % [save_id])
+	else:
+		if ui.has_method("show_message"):
+			ui.show_message("Save failed at Slot %02d" % [save_id])
+
+
+func load_game(save_id: int) -> void:
+	var slot: SaveSlot = StorageService.load_file(save_id)
+	if slot.is_empty():
+		if ui.has_method("show_message"):
+			ui.show_message("Slot %02d is empty" % [save_id])
+		return
+
+	if ui.has_method("show_message"):
+		ui.show_message("Loaded Slot %02d (%s)" % [save_id, slot.date_save])
+
 # --- HÀM XỬ LÝ TÀI CHÍNH ---
 
 func handle_landed_cell(player: Player, cell_index: int):
