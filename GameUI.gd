@@ -95,6 +95,7 @@ func _on_dice_timer_timeout():
 		dice1_sprite.texture = dice_textures[result.dice1 - 1]
 		dice2_sprite.texture = dice_textures[result.dice2 - 1]
 		
+		# Gọi controller xử lý logic tài chính và di chuyển
 		game_controller.resolve_roll()
 
 func bounce(sprite):
@@ -117,3 +118,34 @@ func shake():
 
 func _on_roll_dice_pressed() -> void:
 	game_controller.roll_dice()
+
+
+# Hiển thị thông báo (Đi qua GO, thưởng, phạt...)
+func show_message(text: String):
+	label.text = text
+	print("[UI Message]: ", text)
+
+# Yêu cầu thế chấp khi không đủ tiền
+func request_mortgage(player: Player, amount_needed: int):
+	show_message(player.name + " thiếu $" + str(amount_needed) + "! Cần thế chấp.")
+	
+	# === LOGIC GIẢ LẬP ĐỂ TEST GAME KHÔNG BỊ KẸT MÀN HÌNH ===
+	auto_mortgage_for_test(player, amount_needed)
+
+func auto_mortgage_for_test(player: Player, amount_needed: int):
+	print("--- [Auto Test] Đang tự động bán đất để trả nợ cho ", player.name, " ---")
+	
+	var target_balance = player.balance + amount_needed
+	
+	for cell in player.properties:
+		if not cell.is_mortgaged and player.balance < target_balance:
+			var amount = cell.mortgage_property()
+			print("> Tự động thế chấp: ", cell.cell_name, " lấy $", amount)
+			
+	# Chờ 1.5 giây để bạn kịp nhìn console
+	await get_tree().create_timer(1.5).timeout 
+	
+	# Quan trọng: Kích hoạt lại lượt đi cho GameController
+	print("Đã xoay đủ tiền, tiếp tục game!")
+	
+	game_controller.emit_signal("turn_action_completed")
