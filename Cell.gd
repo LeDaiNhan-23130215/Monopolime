@@ -11,7 +11,6 @@ var is_mortgaged: bool = false       # Trạng thái thế chấp
 var cell_owner: Player = null        # Đổi từ 'owner' thành 'cell_owner' để tránh trùng lặp
 
 func _ready():
-	z_index = 0
 	queue_redraw()
 
 # Số tiền thế chấp bằng chính xác 50% giá trị gốc

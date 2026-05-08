@@ -4,7 +4,7 @@ class_name GameState
 var players = []
 
 var current_player = 0
-var board_size = 20
+var board_size = 8
 
 var double_count = 0
 
