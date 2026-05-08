@@ -11,6 +11,8 @@ var ui: GameUI
 
 var final_result: DiceResult = null
 
+var is_rolling := false
+
 func start_turn():
 	print("\n===== TURN =====")
 	var player = get_current_player()
@@ -26,6 +28,13 @@ func start_turn():
 		print(player.name + " đang ở tù! Cần đổ ra Double để thoát.")
 
 func roll_dice():
+	print("ROLL DICE CALLED")
+	if is_rolling:
+		return  
+		
+	is_rolling = true
+	ui.set_roll_enabled(false)
+	
 	final_result = dice.roll()
 	ui.start_dice_animation()
 
@@ -51,27 +60,57 @@ func resolve_roll():
 		ui.show_double()
 		if game_state.double_count < 3:
 			await move_player(player, final_result.total())
+			is_rolling = false
+			ui.set_roll_enabled(true)
+			start_turn()
 			await handle_landed_cell(player, player.state.position)
 			start_turn() # Được đi tiếp
 			return
 		else:
 			go_to_jail(player)
+			is_rolling = false
+			ui.set_roll_enabled(true)
 			end_turn()
 			return
 	else:
+		await move_player(player, final_result.total())
+		process_current_cell(player) 
 		game_state.double_count = 0
 		await move_player(player, final_result.total())
 		await handle_landed_cell(player, player.state.position)
 		end_turn()
+		is_rolling = false
+		ui.set_roll_enabled(true)
 
 func move_player(player: Player, steps: int) -> void:
+	await move_player_step_by_step(player, steps)
+	
+func move_player_step_by_step(player: Player, steps: int) -> void:
 	for i in range(steps):
 		var next_pos = player.state.position + 1
 		if next_pos >= game_state.board_size:
 			process_reward(player)
 		next_pos %= game_state.board_size
 		
+		# update logic
 		player.state.update_position(next_pos)
+
+		# lấy vị trí world
+		var world_pos = board.get_cell_position(next_pos)
+
+		# offset tránh chồng
+		var offset = get_offset(player.player_id)
+
+		# move token
+		await player.token.move_to(world_pos + offset)
+
+		# delay nhỏ giữa bước (optional nếu move_to đã await)
+		await get_tree().create_timer(0.1).timeout
+
+func go_to_jail(player: Player):
+	print("GO TO JAIL!")
+	player.state.set_in_jail(true)
+	await move_player_to_position(player, board.get_jail_index())
 		var world_pos = board.get_cell_position(next_pos)
 		var offset = Vector2(player.player_id * 10, 0)
 		
@@ -104,6 +143,27 @@ func end_turn():
 
 func get_current_player() -> Player:
 	return game_state.players[game_state.current_player]
+	
+func get_offset(player_id: int) -> Vector2:
+	var offsets = [
+		Vector2(-10, -10),
+		Vector2(10, -10),
+		Vector2(-10, 10),
+		Vector2(10, 10)
+	]
+	return offsets[player_id % offsets.size()]
+	
+func move_player_to_position(player: Player, pos: int) -> void:
+	player.state.update_position(pos)
+	
+	var world_pos = board.get_cell_position(pos)
+	var offset = get_offset(player.player_id)
+	
+	await player.token.move_to(world_pos + offset)
+	
+func process_current_cell(player: Player):
+	var cell = board.get_cell_position(player.state.position)
+	print("Player landed on:", cell)
 
 # --- HÀM XỬ LÝ TÀI CHÍNH ---
 
