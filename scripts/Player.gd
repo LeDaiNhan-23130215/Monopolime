@@ -19,7 +19,6 @@ func add_property(property):
 	properties.append(property)
 
 func add_special_card(special_card):
-	special_card.append(special_card)
-
+	pass
 func get_random_token():
 	token.token_texture = token.get_random_token_texture()
