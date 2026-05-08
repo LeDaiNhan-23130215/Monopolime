@@ -1,8 +1,10 @@
 extends Node
 class_name GameController
 
-var board: Board
+# Tín hiệu dùng để "đóng băng" lượt đi
+signal turn_action_completed
 
+var board: Board
 var game_state: GameState
 var dice: Dice
 var ui: GameUI
@@ -12,11 +14,18 @@ var final_result: DiceResult = null
 var is_rolling := false
 
 func start_turn():
-	print("===== TURN =====")
+	print("\n===== TURN =====")
 	var player = get_current_player()
+	
+	if player.is_bankrupt():
+		end_turn()
+		return
+		
 	print("Player:", player.name)
-
 	ui.show_turn(player.player_id)
+	
+	if player.state.in_jail:
+		print(player.name + " đang ở tù! Cần đổ ra Double để thoát.")
 
 func roll_dice():
 	print("ROLL DICE CALLED")
@@ -27,19 +36,28 @@ func roll_dice():
 	ui.set_roll_enabled(false)
 	
 	final_result = dice.roll()
-	print("RESULT =", final_result.total())
-
 	ui.start_dice_animation()
 
 func resolve_roll():
 	var player = get_current_player()
-
 	ui.show_result(final_result)
 
+	# --- XỬ LÝ KHI Ở TÙ ---
+	if player.state.in_jail:
+		if final_result.is_double:
+			print(player.name + " đổ ra Double! Thoát tù.")
+			player.state.set_in_jail(false)
+			await move_player(player, final_result.total())
+			await handle_landed_cell(player, player.state.position)
+		else:
+			print(player.name + " không ra Double.")
+		end_turn()
+		return
+
+	# --- XỬ LÝ LƯỢT BÌNH THƯỜNG ---
 	if final_result.is_double:
 		game_state.double_count += 1
 		ui.show_double()
-
 		if game_state.double_count < 3:
 			await move_player(player, final_result.total())
 			is_rolling = false
@@ -56,6 +74,8 @@ func resolve_roll():
 		await move_player(player, final_result.total())
 		process_current_cell(player) 
 		game_state.double_count = 0
+		await move_player(player, final_result.total())
+		await handle_landed_cell(player, player.state.position)
 		end_turn()
 		is_rolling = false
 		ui.set_roll_enabled(true)
@@ -66,6 +86,8 @@ func move_player(player: Player, steps: int) -> void:
 func move_player_step_by_step(player: Player, steps: int) -> void:
 	for i in range(steps):
 		var next_pos = player.state.position + 1
+		if next_pos >= game_state.board_size:
+			process_reward(player)
 		next_pos %= game_state.board_size
 		
 		# update logic
@@ -90,10 +112,20 @@ func go_to_jail(player: Player):
 	ui.show_jail()
 
 func end_turn():
-	game_state.current_player = (game_state.current_player + 1) % game_state.players.size()
-	game_state.double_count = 0
+	# Tìm người chơi tiếp theo chưa phá sản
+	var next_player_found = false
+	var safety_counter = 0 
+	while not next_player_found and safety_counter < game_state.players.size():
+		game_state.current_player = (game_state.current_player + 1) % game_state.players.size()
+	
+		if not get_current_player().is_bankrupt():
+			next_player_found = true
+		safety_counter += 1
 
-	start_turn()
+	if next_player_found:
+		start_turn()
+	else:
+		print("GAME OVER!")
 
 func get_current_player() -> Player:
 	return game_state.players[game_state.current_player]
