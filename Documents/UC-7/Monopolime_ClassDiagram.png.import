@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d3i4dr2ikxe7t"
-path="res://.godot/imported/UC7_Sequence.png-b1644415ebae890e87e13fefbfc0c3cf.ctex"
+uid="uid://d2p1jhgiyan43"
+path="res://.godot/imported/Monopolime_ClassDiagram.png-88ed4d0b5f7e2c3df0bdb7549ec0a5ad.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Documents/UC-7/UC7_Sequence.png"
-dest_files=["res://.godot/imported/UC7_Sequence.png-b1644415ebae890e87e13fefbfc0c3cf.ctex"]
+source_file="res://Documents/UC-7/Monopolime_ClassDiagram.png"
+dest_files=["res://.godot/imported/Monopolime_ClassDiagram.png-88ed4d0b5f7e2c3df0bdb7549ec0a5ad.ctex"]
 
 [params]
 
