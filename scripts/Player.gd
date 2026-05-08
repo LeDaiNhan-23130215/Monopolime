@@ -18,6 +18,8 @@ func _init(id := 0, player_name := "Player"):
 func add_property(property):
 	properties.append(property)
 
+func add_special_card(special_card):
+	pass
 func add_special_card(card):
 	special_card.append(card)
 
