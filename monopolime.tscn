@@ -76,7 +76,6 @@ script = ExtResource("6_6x5qw")
 position = Vector2(257, 19.5)
 script = ExtResource("9_idd0f")
 cell_scene = ExtResource("10_fg3u4")
-auto_center_in_editor = null
 
 [node name="Cells" type="Node2D" parent="Board" unique_id=521322491]
 
