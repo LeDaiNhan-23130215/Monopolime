@@ -10,6 +10,8 @@ class_name GameUI
 
 @onready var audio_roll = get_node("UI/AudioRoll")
 
+@onready var roll_button = get_node("UI/Roll Dice")
+
 var dice_textures = [
 	preload("res://resources/dices/dice1.jpg"),
 	preload("res://resources/dices/dice2.jpg"),
@@ -117,3 +119,6 @@ func shake():
 
 func _on_roll_dice_pressed() -> void:
 	game_controller.roll_dice()
+
+func set_roll_enabled(enabled: bool):
+	roll_button.disabled = not enabled
