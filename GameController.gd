@@ -107,7 +107,17 @@ func get_current_player() -> Player:
 
 
 func save_game(save_id: int) -> void:
-	if StorageService.save_file(save_id):
+	var storage_status = StorageService.check_storage_availability()
+	if not storage_status.get("ok", false):
+		if ui.has_method("show_message"):
+			ui.show_message("Insufficient Storage")
+		return
+
+	var game_data = {
+		"players_state": _collect_players_state()
+	}
+
+	if StorageService.save_file(save_id, game_data):
 		if ui.has_method("show_message"):
 			ui.show_message("Saved Slot %02d" % [save_id])
 	else:
@@ -122,8 +132,84 @@ func load_game(save_id: int) -> void:
 			ui.show_message("Slot %02d is empty" % [save_id])
 		return
 
+	var loaded_data = StorageService.load_game_data(save_id)
+	if loaded_data.is_empty() or not loaded_data.has("players_state"):
+		if ui.has_method("show_message"):
+			ui.show_message("Corrupted Data")
+		return
+
+	var players_state_data = loaded_data.get("players_state", [])
+	if typeof(players_state_data) != TYPE_ARRAY:
+		if ui.has_method("show_message"):
+			ui.show_message("Corrupted Data")
+		return
+
+	if not _apply_players_state(players_state_data):
+		if ui.has_method("show_message"):
+			ui.show_message("Corrupted Data")
+		return
+
+	_refresh_player_tokens_from_state()
+
 	if ui.has_method("show_message"):
 		ui.show_message("Loaded Slot %02d (%s)" % [save_id, slot.date_save])
+
+
+func auto_save_game() -> void:
+	var storage_status = StorageService.check_storage_availability()
+	if not storage_status.get("ok", false):
+		return
+
+	var game_data = {
+		"players_state": _collect_players_state()
+	}
+
+	if StorageService.save_auto(game_data) and ui.has_method("show_message"):
+		ui.show_message("Auto-save complete")
+
+
+func _collect_players_state() -> Array:
+	var players_state_data: Array = []
+	for player in game_state.players:
+		players_state_data.append({
+			"player_id": player.player_id,
+			"position": player.state.position,
+			"balance": player.state.balance,
+			"in_jail": player.state.in_jail,
+			"bankrupt": player.state.bankrupt
+		})
+	return players_state_data
+
+
+func _apply_players_state(players_state_data: Array) -> bool:
+	var by_id := {}
+	for entry in players_state_data:
+		if typeof(entry) != TYPE_DICTIONARY:
+			return false
+		if not entry.has("player_id"):
+			return false
+		by_id[int(entry.get("player_id", -1))] = entry
+
+	for player in game_state.players:
+		if not by_id.has(player.player_id):
+			continue
+
+		var state_data = by_id[player.player_id]
+		player.state.position = int(state_data.get("position", player.state.position))
+		player.state.balance = int(state_data.get("balance", player.state.balance))
+		player.state.in_jail = bool(state_data.get("in_jail", player.state.in_jail))
+		player.state.bankrupt = bool(state_data.get("bankrupt", player.state.bankrupt))
+
+	return true
+
+
+func _refresh_player_tokens_from_state() -> void:
+	for player in game_state.players:
+		if not player.token:
+			continue
+		var world_pos = board.get_cell_position(player.state.position)
+		var offset = Vector2(player.player_id * 10, 0)
+		player.token.position = world_pos + offset
 
 # --- HÀM XỬ LÝ TÀI CHÍNH ---
 
