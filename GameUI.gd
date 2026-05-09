@@ -1,4 +1,4 @@
-﻿extends Node
+extends Node
 class_name GameUI
 
 signal setup_finished
@@ -728,7 +728,7 @@ func _update_players_list_ui():
 		hb.add_child(lbl)
 		
 		var rm_btn = Button.new()
-		rm_btn.text = "X""
+		rm_btn.text = "X"
 		rm_btn.add_theme_color_override("font_color", Color.RED)
 		var capture_idx = i
 		rm_btn.pressed.connect(self._remove_player.bind(i))
