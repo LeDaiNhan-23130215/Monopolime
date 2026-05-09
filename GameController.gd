@@ -11,6 +11,14 @@ var ui: GameUI
 var final_result: DiceResult = null
 var is_rolling := false
 
+var event_handler: EventHandler = null
+
+func get_event_handler() -> EventHandler:
+	if event_handler == null:
+		event_handler = EventHandler.new(self)
+		add_child(event_handler)
+	return event_handler
+
 
 func start_turn():
 	print("\n===== TURN =====")
@@ -220,6 +228,11 @@ func handle_landed_cell(player: Player, cell_index: int):
 	var cell = board.get_cell(cell_index)
 
 	if not cell:
+		return
+
+	# Xử lý nếu là ô sự kiện
+	if get_event_handler().handle_event(player, cell):
+		await get_event_handler().event_finished
 		return
 
 	# Ô đất trống

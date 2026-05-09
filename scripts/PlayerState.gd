@@ -5,6 +5,7 @@ var position: int = 0
 var balance: int = 1500
 var in_jail: bool = false
 var bankrupt: bool = false
+var special_cards: int = 0
 
 func update_position(new_position: int):
 	position = new_position
