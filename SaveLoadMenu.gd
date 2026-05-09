@@ -6,7 +6,7 @@ signal load_slot_requested(slot_id: int)
 signal menu_closed
 
 const AUTO_SLOT_ID := 0
-const SLOT_COUNT := 10
+const SLOT_COUNT := 5
 
 @onready var dimmer: ColorRect = $Dimmer
 @onready var slots_container: VBoxContainer = $CenterContainer/PanelContainer/MarginContainer/Content/Slots

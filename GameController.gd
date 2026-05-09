@@ -87,6 +87,8 @@ func go_to_jail(player: Player):
 	ui.show_jail()
 
 func end_turn():
+	auto_save_game()
+
 	# Tìm người chơi tiếp theo chưa phá sản
 	var next_player_found = false
 	var safety_counter = 0 
@@ -107,6 +109,11 @@ func get_current_player() -> Player:
 
 
 func save_game(save_id: int) -> void:
+	if ui and ui.has_method("is_dice_rolling") and ui.is_dice_rolling():
+		if ui.has_method("show_message"):
+			ui.show_message("Cannot save while dice is rolling")
+		return
+
 	var storage_status = StorageService.check_storage_availability()
 	if not storage_status.get("ok", false):
 		if ui.has_method("show_message"):
@@ -114,7 +121,9 @@ func save_game(save_id: int) -> void:
 		return
 
 	var game_data = {
-		"players_state": _collect_players_state()
+		"players_state": _collect_players_state(),
+		"current_player": game_state.current_player,
+		"double_count": game_state.double_count
 	}
 
 	if StorageService.save_file(save_id, game_data):
@@ -144,10 +153,18 @@ func load_game(save_id: int) -> void:
 			ui.show_message("Corrupted Data")
 		return
 
+	if not loaded_data.has("current_player") or not loaded_data.has("double_count"):
+		if ui.has_method("show_message"):
+			ui.show_message("Corrupted Data")
+		return
+
 	if not _apply_players_state(players_state_data):
 		if ui.has_method("show_message"):
 			ui.show_message("Corrupted Data")
 		return
+
+	game_state.current_player = int(loaded_data.get("current_player", game_state.current_player))
+	game_state.double_count = int(loaded_data.get("double_count", game_state.double_count))
 
 	_refresh_player_tokens_from_state()
 
@@ -161,7 +178,9 @@ func auto_save_game() -> void:
 		return
 
 	var game_data = {
-		"players_state": _collect_players_state()
+		"players_state": _collect_players_state(),
+		"current_player": game_state.current_player,
+		"double_count": game_state.double_count
 	}
 
 	if StorageService.save_auto(game_data) and ui.has_method("show_message"):
@@ -169,6 +188,7 @@ func auto_save_game() -> void:
 
 
 func _collect_players_state() -> Array:
+	# TODO(UC-03): Extend saved payload when property/building/card systems are finalized.
 	var players_state_data: Array = []
 	for player in game_state.players:
 		players_state_data.append({
@@ -182,6 +202,7 @@ func _collect_players_state() -> Array:
 
 
 func _apply_players_state(players_state_data: Array) -> bool:
+	# TODO(UC-03): Restore property/building/card states when those domains are implemented.
 	var by_id := {}
 	for entry in players_state_data:
 		if typeof(entry) != TYPE_DICTIONARY:
