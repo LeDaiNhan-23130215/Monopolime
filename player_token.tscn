@@ -10,3 +10,9 @@ position = Vector2(29.5, 26.5)
 scale = Vector2(0.45833334, 0.45833334)
 
 [node name="Node2D" type="Node2D" parent="." unique_id=619730790]
+
+[node name="BalanceLabel" type="Label" parent="." unique_id=1081621733]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "$1500"
+horizontal_alignment = 1

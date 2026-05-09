@@ -251,15 +251,21 @@ func handle_landed_cell(player: Player, cell_index: int):
 
 			await self.turn_action_completed
 
-
 func process_reward(player: Player, amount: int = 200):
 	player.add_money(amount)
 
 	if ui.has_method("show_message"):
-		ui.show_message(
-			"Qua ô GO! Nhận $" + str(amount)
-		)
+		ui.show_message("Qua ô GO! Nhận $" + str(amount))
+		
+	if has_node("MoneySound"):
+		$MoneySound.play()
 
+	# --- HIỆN CHỮ MÀU XANH BAY LÊN ---
+	if player.token and player.token.has_method("show_floating_money"):
+		player.token.show_floating_money(amount)
+
+	if ui.has_method("update_all_balances"):
+		ui.update_all_balances(game_state.players)
 
 func process_payment(
 	payer: Player,
@@ -287,12 +293,24 @@ func execute_transaction(
 	amount: int
 ):
 	payer.deduct_money(amount)
+	
+	# --- HIỆN CHỮ MÀU ĐỎ CHO NGƯỜI BỊ TRỪ TIỀN ---
+	if payer.token and payer.token.has_method("show_floating_money"):
+		payer.token.show_floating_money(-amount)
 
 	if beneficiary:
 		beneficiary.add_money(amount)
+		# --- HIỆN CHỮ MÀU XANH CHO NGƯỜI NHẬN TIỀN ---
+		if beneficiary.token and beneficiary.token.has_method("show_floating_money"):
+			beneficiary.token.show_floating_money(amount)
+
+	if has_node("MoneySound"):
+		$MoneySound.play()
+
+	if ui.has_method("update_all_balances"):
+		ui.update_all_balances(game_state.players)
 
 	emit_signal("turn_action_completed")
-
 
 func handle_insufficient_funds(
 	payer: Player,
@@ -316,10 +334,28 @@ func handle_bankruptcy(
 	creditor: Player
 ):
 	print(debtor.name + " PHÁ SẢN!")
-
+	debtor.state.set_bankrupt(true)
 	debtor.transfer_all_assets_to(creditor)
 
 	if board.has_method("remove_player_token"):
 		board.remove_player_token(debtor)
+
+	if ui.has_method("show_bankruptcy_ui"):
+	
+		await ui.show_bankruptcy_ui(debtor.name)
+		
+	if ui.has_method("update_all_balances"):
+		ui.update_all_balances(game_state.players)
+		
+	var active_players = []
+	for p in game_state.players:
+		if not p.is_bankrupt():
+			active_players.append(p)
+			
+	if active_players.size() == 1:
+		print("GAME OVER! Người chiến thắng: ", active_players[0].name)
+		if ui.has_method("show_winner_ui"):
+			ui.show_winner_ui(active_players[0].name)
+			return 
 
 	emit_signal("turn_action_completed")
