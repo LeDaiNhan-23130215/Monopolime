@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bebd74jpd2j4k"]
+
+[ext_resource type="Script" uid="uid://carnhbaba5qri" path="res://Cells/ChanceCell.gd" id="1_u1ygb"]
+
+[node name="ChanceCell" type="Node2D" unique_id=1417237492]
+script = ExtResource("1_u1ygb")
