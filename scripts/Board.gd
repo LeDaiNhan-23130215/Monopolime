@@ -156,35 +156,47 @@ func _create_center_decoration():
 	var bg = ColorRect.new()
 	bg.position = Vector2(center_x, center_y)
 	bg.size = Vector2(center_w, center_h)
-	bg.color = Color(0.06, 0.09, 0.12, 0.95)
+	bg.color = Color(0.12, 0.35, 0.22, 1.0) # Casino green
 	center_node.add_child(bg)
 
 	# --- Logo text ---
 	var title = Label.new()
 	title.text = "MONOPOLIME"
-	title.position = Vector2(center_x + 50, center_y + 120)
+	title.position = Vector2(center_x + 50, center_y + 150)
 	title.size = Vector2(center_w - 100, 60)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	
+	# Add outline
+	title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	title.add_theme_constant_override("outline_size", 8)
 	center_node.add_child(title)
 
 	# --- Subtitle ---
 	var subtitle = Label.new()
 	subtitle.text = "🎲 Cờ Tỉ Phú Việt Nam 🎲"
-	subtitle.position = Vector2(center_x + 50, center_y + 170)
+	subtitle.position = Vector2(center_x + 50, center_y + 210)
 	subtitle.size = Vector2(center_w - 100, 30)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 14)
-	subtitle.add_theme_color_override("font_color", Color(0.7, 0.75, 0.8))
+	subtitle.add_theme_font_size_override("font_size", 16)
+	subtitle.add_theme_color_override("font_color", Color(0.8, 0.9, 0.85))
 	center_node.add_child(subtitle)
 
 	# --- Đường viền trang trí ---
 	var border = ColorRect.new()
-	border.position = Vector2(center_x + 10, center_y + 10)
-	border.size = Vector2(center_w - 20, center_h - 20)
-	border.color = Color(0, 0, 0, 0)  # Trong suốt, chỉ làm khung
-	center_node.add_child(border)
+	border.position = Vector2(center_x + 8, center_y + 8)
+	border.size = Vector2(center_w - 16, center_h - 16)
+	border.color = Color(0, 0, 0, 0)  # Trong suốt
+	var border_style = StyleBoxFlat.new()
+	border_style.bg_color = Color(0,0,0,0)
+	border_style.border_color = Color(0.8, 0.7, 0.3, 0.5)
+	border_style.set_border_width_all(2)
+	var panel = Panel.new()
+	panel.position = border.position
+	panel.size = border.size
+	panel.add_theme_stylebox_override("panel", border_style)
+	center_node.add_child(panel)
 
 	# --- Hướng dẫn nhanh ---
 	var help = Label.new()

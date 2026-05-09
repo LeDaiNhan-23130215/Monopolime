@@ -284,20 +284,20 @@ func _draw():
 	draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), bg_color)
 
 	# --- Viền ô ---
-	var border_color = Color(0.3, 0.35, 0.4, 0.8)
-	draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), border_color, false, 1.5)
+	var border_color = Color(0.5, 0.55, 0.6, 0.9)
+	draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), border_color, false, 2.0)
 
 	# --- Thanh màu nhóm (trên cùng) ---
 	if color_group != "":
 		var group_color = _get_group_color()
-		draw_rect(Rect2(0, 0, cell_size.x, 16), group_color)
+		draw_rect(Rect2(0, 0, cell_size.x, 22), group_color)
 		# Viền thanh màu
-		draw_rect(Rect2(0, 0, cell_size.x, 16), Color(0, 0, 0, 0.3), false, 1.0)
+		draw_rect(Rect2(0, 0, cell_size.x, 22), Color(0, 0, 0, 0.5), false, 1.5)
 
 	# --- Chỉ báo thế chấp ---
 	if is_mortgaged:
 		# Lớp phủ mờ
-		draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), Color(0.15, 0.15, 0.15, 0.7))
+		draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), Color(0.1, 0.1, 0.1, 0.85))
 		# Chữ "CẦM CỐ"
 		draw_string(
 			ThemeDB.fallback_font,
@@ -305,81 +305,81 @@ func _draw():
 			"CẦM CỐ",
 			HORIZONTAL_ALIGNMENT_CENTER,
 			80,
-			12,
-			Color(1.0, 0.3, 0.3)
+			14,
+			Color(1.0, 0.2, 0.2)
 		)
 
 	# --- Chỉ báo chủ sở hữu (thanh dưới) ---
 	if cell_owner != null and not is_mortgaged:
 		var owner_color = _get_owner_color()
-		draw_rect(Rect2(0, cell_size.y - 8, cell_size.x, 8), owner_color)
+		draw_rect(Rect2(0, cell_size.y - 12, cell_size.x, 12), owner_color)
 		# Hiệu ứng phát sáng
-		draw_rect(Rect2(0, cell_size.y - 10, cell_size.x, 2), Color(owner_color.r, owner_color.g, owner_color.b, 0.3))
+		draw_rect(Rect2(0, cell_size.y - 14, cell_size.x, 2), Color(owner_color.r, owner_color.g, owner_color.b, 0.6))
 
 	# --- Vẽ nhà ---
 	if house_count > 0 and house_count < 5:
 		for i in range(house_count):
 			var house_x = 8 + i * 22
 			# Bóng
-			draw_rect(Rect2(house_x + 1, 18, 18, 12), Color(0, 0, 0, 0.3))
+			draw_rect(Rect2(house_x + 1, 24, 18, 12), Color(0, 0, 0, 0.5))
 			# Nhà
-			draw_rect(Rect2(house_x, 17, 18, 12), Color(0.1, 0.75, 0.2))
+			draw_rect(Rect2(house_x, 23, 18, 12), Color(0.2, 0.8, 0.3))
 			# Mái
 			var points = PackedVector2Array([
-				Vector2(house_x, 17),
-				Vector2(house_x + 9, 10),
-				Vector2(house_x + 18, 17)
+				Vector2(house_x, 23),
+				Vector2(house_x + 9, 14),
+				Vector2(house_x + 18, 23)
 			])
-			draw_colored_polygon(points, Color(0.05, 0.55, 0.1))
+			draw_colored_polygon(points, Color(0.1, 0.6, 0.2))
 
 	elif house_count == 5:
 		# Khách sạn
-		draw_rect(Rect2(25, 16, 50, 16), Color(0.85, 0.1, 0.1))
-		draw_rect(Rect2(25, 16, 50, 16), Color(0.5, 0.05, 0.05), false, 1.0)
+		draw_rect(Rect2(25, 22, 50, 18), Color(0.9, 0.15, 0.15))
+		draw_rect(Rect2(25, 22, 50, 18), Color(0.4, 0.0, 0.0), false, 2.0)
 		# Cờ
-		draw_line(Vector2(50, 10), Vector2(50, 16), Color.YELLOW, 2.0)
+		draw_line(Vector2(50, 10), Vector2(50, 22), Color.YELLOW, 2.0)
 		var flag_points = PackedVector2Array([
 			Vector2(50, 10),
-			Vector2(58, 13),
-			Vector2(50, 16)
+			Vector2(60, 14),
+			Vector2(50, 18)
 		])
-		draw_colored_polygon(flag_points, Color(1.0, 0.85, 0.0))
+		draw_colored_polygon(flag_points, Color(1.0, 0.8, 0.0))
 
 	# --- Vẽ icon đặc biệt ---
 	if cell_type != "property" and icon != "":
 		draw_string(
 			ThemeDB.fallback_font,
-			Vector2(35, 60),
+			Vector2(35, 75),
 			icon,
 			HORIZONTAL_ALIGNMENT_CENTER,
 			40,
-			22
+			28
 		)
 
 
 func _get_cell_bg_color() -> Color:
 	match cell_type:
 		"go":
-			return Color(0.15, 0.2, 0.15)
+			return Color(0.15, 0.35, 0.2)
 		"chance":
-			return Color(0.25, 0.15, 0.05)
+			return Color(0.4, 0.25, 0.1)
 		"community":
-			return Color(0.1, 0.1, 0.25)
+			return Color(0.1, 0.25, 0.4)
 		"tax":
-			return Color(0.2, 0.12, 0.12)
+			return Color(0.35, 0.15, 0.15)
 		"jail":
-			return Color(0.18, 0.18, 0.18)
+			return Color(0.3, 0.2, 0.15)
 		"go_to_jail":
-			return Color(0.2, 0.1, 0.1)
+			return Color(0.5, 0.15, 0.15)
 		"parking":
-			return Color(0.15, 0.18, 0.15)
+			return Color(0.15, 0.3, 0.15)
 		"railroad":
-			return Color(0.12, 0.12, 0.12)
+			return Color(0.2, 0.2, 0.25)
 		"utility":
-			return Color(0.12, 0.15, 0.2)
+			return Color(0.25, 0.25, 0.3)
 		"property":
-			return Color(0.08, 0.1, 0.12)
-	return Color(0.1, 0.1, 0.1)
+			return Color(0.15, 0.18, 0.22)
+	return Color(0.15, 0.15, 0.15)
 
 
 func _get_group_color() -> Color:

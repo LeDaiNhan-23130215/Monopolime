@@ -53,15 +53,17 @@ func _ready():
 func _create_player_info_panel():
 	var ui_layer = get_node("UI")
 	player_info_panel = PanelContainer.new()
-	player_info_panel.position = Vector2(8, 8)
-	player_info_panel.size = Vector2(260, 220)
+	player_info_panel.position = Vector2(830, 20)
+	player_info_panel.size = Vector2(300, 220)
 
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.08, 0.12, 0.9)
-	style.border_color = Color(0.25, 0.4, 0.8, 0.6)
+	style.bg_color = Color(0.1, 0.12, 0.18, 0.95)
+	style.border_color = Color(0.8, 0.6, 0.2, 0.8)
 	style.set_border_width_all(2)
-	style.set_corner_radius_all(10)
-	style.set_content_margin_all(12)
+	style.set_corner_radius_all(12)
+	style.set_content_margin_all(16)
+	style.shadow_color = Color(0, 0, 0, 0.5)
+	style.shadow_size = 10
 	player_info_panel.add_theme_stylebox_override("panel", style)
 
 	player_info_label = RichTextLabel.new()
@@ -77,13 +79,17 @@ func _create_message_label():
 	var ui_layer = get_node("UI")
 	var msg_panel = PanelContainer.new()
 	msg_panel.name = "MessagePanel"
-	msg_panel.position = Vector2(280, 520)
-	msg_panel.size = Vector2(520, 45)
+	msg_panel.position = Vector2(100, 15)
+	msg_panel.size = Vector2(650, 50)
 
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.0, 0.0, 0.75)
-	style.set_corner_radius_all(8)
+	style.bg_color = Color(0.1, 0.1, 0.1, 0.85)
+	style.border_color = Color(0.8, 0.6, 0.2, 0.6)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(25)
 	style.set_content_margin_all(8)
+	style.shadow_color = Color(0, 0, 0, 0.3)
+	style.shadow_size = 5
 	msg_panel.add_theme_stylebox_override("panel", style)
 
 	message_label = Label.new()
