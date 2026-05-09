@@ -339,10 +339,10 @@ func update_player_info(players: Array):
 	var bb = "[b]📊 NGƯỜI CHƠI[/b]\n━━━━━━━━━━━━━━━\n"
 	
 	var avatar_paths = [
-		"res://resources/ui/avatars/avatar_boy.png",
-		"res://resources/ui/avatars/avatar_girl.png",
-		"res://resources/ui/avatars/avatar_cat.png",
-		"res://resources/ui/avatars/avatar_robot.png"
+		"res://resources/ui/avatars/avatar_boy.webp",
+		"res://resources/ui/avatars/avatar_girl.webp",
+		"res://resources/ui/avatars/avatar_cat.webp",
+		"res://resources/ui/avatars/avatar_robot.webp"
 	]
 	
 	for p in players:
@@ -560,7 +560,7 @@ func show_setup_menu():
 	setup_panel = PanelContainer.new()
 	setup_panel.name = "SetupPanel"
 	setup_panel.position = Vector2(0, 0)
-	setup_panel.size = get_viewport_rect().size
+	setup_panel.size = get_viewport().get_visible_rect().size
 	
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.05, 0.08, 0.1, 0.95)
@@ -588,10 +588,10 @@ func show_setup_menu():
 	vbox.add_child(hbox)
 	
 	var avatars = [
-		preload("res://resources/ui/avatars/avatar_boy.png"),
-		preload("res://resources/ui/avatars/avatar_girl.png"),
-		preload("res://resources/ui/avatars/avatar_cat.png"),
-		preload("res://resources/ui/avatars/avatar_robot.png")
+		preload("res://resources/ui/avatars/avatar_boy.webp"),
+		preload("res://resources/ui/avatars/avatar_girl.webp"),
+		preload("res://resources/ui/avatars/avatar_cat.webp"),
+		preload("res://resources/ui/avatars/avatar_robot.webp")
 	]
 	
 	var default_names = ["An", "Bình", "Cường", "Dũng"]
