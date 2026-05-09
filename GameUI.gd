@@ -1,6 +1,8 @@
 extends Node
 class_name GameUI
 
+signal setup_finished
+
 @onready var label = get_node("UI/Result")
 @onready var timer = get_node("UI/DiceTimer")
 @onready var double_label = get_node("UI/IsDoubleLabel")
@@ -32,7 +34,6 @@ var build_panel: PanelContainer
 var card_panel: PanelContainer
 var game_over_panel: PanelContainer
 
-
 func _ready():
 	var target_size = 64.0
 	var tex_size = dice1_sprite.texture.get_size().x
@@ -46,7 +47,6 @@ func _ready():
 	_create_build_panel()
 	_create_card_panel()
 	_create_game_over_panel()
-
 
 # ======== PLAYER INFO HUD ========
 
@@ -74,7 +74,6 @@ func _create_player_info_panel():
 	player_info_panel.add_child(player_info_label)
 	ui_layer.add_child(player_info_panel)
 
-
 func _create_message_label():
 	var ui_layer = get_node("UI")
 	var msg_panel = PanelContainer.new()
@@ -99,7 +98,6 @@ func _create_message_label():
 	message_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3))
 	msg_panel.add_child(message_label)
 	ui_layer.add_child(msg_panel)
-
 
 # ======== BUY PROMPT ========
 
@@ -333,13 +331,20 @@ func _create_game_over_panel():
 	game_over_panel.add_child(vbox)
 	ui_layer.add_child(game_over_panel)
 
-
 # ======== PUBLIC METHODS ========
 
 func update_player_info(players: Array):
 	if player_info_label == null:
 		return
 	var bb = "[b]📊 NGƯỜI CHƠI[/b]\n━━━━━━━━━━━━━━━\n"
+	
+	var avatar_paths = [
+		"res://resources/ui/avatars/avatar_boy.png",
+		"res://resources/ui/avatars/avatar_girl.png",
+		"res://resources/ui/avatars/avatar_cat.png",
+		"res://resources/ui/avatars/avatar_robot.png"
+	]
+	
 	for p in players:
 		var c = _color_tag(p.player_id)
 		var marker = "▶ " if game_controller and p == game_controller.get_current_player() else "  "
@@ -348,12 +353,17 @@ func update_player_info(players: Array):
 			status = " 💀"
 		elif p.state.in_jail:
 			status = " 🔒"
-		bb += marker + "[color=" + c + "]" + p.name + "[/color]" + status + "\n"
+			
+		var avatar = ""
+		if p.get("avatar_id") != null and p.avatar_id >= 0 and p.avatar_id < avatar_paths.size():
+			avatar = "[img=24x24]" + avatar_paths[p.avatar_id] + "[/img] "
+			
+		bb += marker + avatar + "[color=" + c + "]" + p.name + "[/color]" + status + "\n"
 		if not p.is_bankrupt():
-			bb += "   💰$" + str(p.state.balance) + "  🏠" + str(p.properties.size())
+			bb += "      💰$" + str(p.state.balance) + "  🏠" + str(p.properties.size())
 			if p.state.special_cards > 0:
 				bb += "  🃏" + str(p.state.special_cards)
-			bb += "\n"
+			bb += "\n\n"
 	player_info_label.text = bb
 
 
@@ -389,6 +399,7 @@ func show_buy_prompt(player: Player, cell: Cell):
 	buy_panel.get_node("VBox/BuyTitle").text = "🏠 Mua " + cell.cell_name + "?"
 	buy_panel.get_node("VBox/BuyInfo").text = "Giá: $" + str(cell.price) + "  |  Thuê: $" + str(cell.rent_price) + "\nSố dư: $" + str(player.state.balance)
 
+var _current_build_cell: Cell = null
 
 func show_build_prompt(player: Player, cell: Cell):
 	if build_panel == null:
@@ -433,8 +444,6 @@ func _on_buy_no():
 	buy_panel.visible = false
 	set_roll_enabled(true)
 	game_controller.emit_signal("buy_decision_made", false)
-
-var _current_build_cell: Cell = null
 
 func _on_build_yes():
 	build_panel.visible = false
@@ -539,3 +548,119 @@ func auto_mortgage_for_test(player: Player, amount_needed: int):
 				print("> Thế chấp: ", cell.cell_name, " -> $", amt)
 	await get_tree().create_timer(1.0).timeout
 	game_controller.emit_signal("turn_action_completed")
+
+# ======== SETUP MENU ========
+
+var setup_panel: PanelContainer
+var player_inputs = []
+
+func show_setup_menu():
+	var ui_layer = get_node("UI")
+	
+	setup_panel = PanelContainer.new()
+	setup_panel.name = "SetupPanel"
+	setup_panel.position = Vector2(0, 0)
+	setup_panel.size = get_viewport_rect().size
+	
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.08, 0.1, 0.95)
+	setup_panel.add_theme_stylebox_override("panel", style)
+	
+	var center = CenterContainer.new()
+	setup_panel.add_child(center)
+	
+	var vbox = VBoxContainer.new()
+	center.add_child(vbox)
+	
+	var title = Label.new()
+	title.text = "THIẾT LẬP NGƯỜI CHƠI"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 40)
+	title.add_theme_color_override("font_color", Color(1, 0.8, 0.2))
+	vbox.add_child(title)
+	
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 40)
+	vbox.add_child(spacer)
+	
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(hbox)
+	
+	var avatars = [
+		preload("res://resources/ui/avatars/avatar_boy.png"),
+		preload("res://resources/ui/avatars/avatar_girl.png"),
+		preload("res://resources/ui/avatars/avatar_cat.png"),
+		preload("res://resources/ui/avatars/avatar_robot.png")
+	]
+	
+	var default_names = ["An", "Bình", "Cường", "Dũng"]
+	
+	for i in range(4):
+		var pbox = VBoxContainer.new()
+		
+		var active_check = CheckBox.new()
+		active_check.text = "Tham gia"
+		active_check.button_pressed = (i < 2) # Default 2 players
+		pbox.add_child(active_check)
+		
+		var tex = TextureRect.new()
+		tex.texture = avatars[i]
+		tex.custom_minimum_size = Vector2(100, 100)
+		tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pbox.add_child(tex)
+		
+		var name_input = LineEdit.new()
+		name_input.text = default_names[i]
+		name_input.custom_minimum_size = Vector2(120, 30)
+		pbox.add_child(name_input)
+		
+		player_inputs.append({
+			"check": active_check,
+			"input": name_input,
+			"avatar_id": i
+		})
+		
+		hbox.add_child(pbox)
+		
+		if i < 3:
+			var sp = Control.new()
+			sp.custom_minimum_size = Vector2(30, 0)
+			hbox.add_child(sp)
+			
+	var spacer2 = Control.new()
+	spacer2.custom_minimum_size = Vector2(0, 50)
+	vbox.add_child(spacer2)
+	
+	var start_btn = Button.new()
+	start_btn.text = "BẮT ĐẦU GAME"
+	start_btn.custom_minimum_size = Vector2(250, 60)
+	start_btn.add_theme_font_size_override("font_size", 24)
+	var btn_style = StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.2, 0.6, 0.3)
+	btn_style.set_corner_radius_all(10)
+	start_btn.add_theme_stylebox_override("normal", btn_style)
+	start_btn.pressed.connect(_on_setup_start_pressed)
+	vbox.add_child(start_btn)
+	
+	ui_layer.add_child(setup_panel)
+
+func _on_setup_start_pressed():
+	var active_count = 0
+	for p in player_inputs:
+		if p["check"].button_pressed:
+			active_count += 1
+			
+	if active_count < 2:
+		show_message("Phải có ít nhất 2 người chơi!")
+		return
+		
+	var current_id = 0
+	for p in player_inputs:
+		if p["check"].button_pressed:
+			game_controller.game_state.add_player(current_id, p["input"].text, p["avatar_id"])
+			current_id += 1
+			
+	setup_panel.queue_free()
+	update_player_info(game_controller.game_state.players)
+	emit_signal("setup_finished")

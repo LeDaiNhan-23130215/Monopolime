@@ -3,6 +3,7 @@ class_name Player
 
 var player_id: int
 var name: String
+var avatar_id: int = 0
 
 var state: PlayerState
 var properties: Array = []
