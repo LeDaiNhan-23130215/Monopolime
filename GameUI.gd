@@ -339,10 +339,10 @@ func update_player_info(players: Array):
 	var bb = "[b]📊 NGƯỜI CHƠI[/b]\n━━━━━━━━━━━━━━━\n"
 	
 	var avatar_paths = [
-		"res://resources/ui/avatars/avatar_boy.webp",
-		"res://resources/ui/avatars/avatar_girl.webp",
-		"res://resources/ui/avatars/avatar_cat.webp",
-		"res://resources/ui/avatars/avatar_robot.webp"
+		"res://resources/ui/avatars/avatar_boy.jpg",
+		"res://resources/ui/avatars/avatar_girl.jpg",
+		"res://resources/ui/avatars/avatar_cat.jpg",
+		"res://resources/ui/avatars/avatar_robot.jpg"
 	]
 	
 	for p in players:
@@ -588,10 +588,10 @@ func show_setup_menu():
 	vbox.add_child(hbox)
 	
 	var avatars = [
-		preload("res://resources/ui/avatars/avatar_boy.webp"),
-		preload("res://resources/ui/avatars/avatar_girl.webp"),
-		preload("res://resources/ui/avatars/avatar_cat.webp"),
-		preload("res://resources/ui/avatars/avatar_robot.webp")
+		preload("res://resources/ui/avatars/avatar_boy.jpg"),
+		preload("res://resources/ui/avatars/avatar_girl.jpg"),
+		preload("res://resources/ui/avatars/avatar_cat.jpg"),
+		preload("res://resources/ui/avatars/avatar_robot.jpg")
 	]
 	
 	var default_names = ["An", "Bình", "Cường", "Dũng"]
