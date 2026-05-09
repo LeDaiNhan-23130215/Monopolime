@@ -3,6 +3,8 @@ class_name GameController
 
 signal turn_action_completed
 signal buy_decision_made(accepted: bool)
+signal auction_bid_made(amount: int)
+signal build_decision_made
 
 var board: Board
 var game_state: GameState
@@ -14,6 +16,10 @@ var is_rolling := false
 
 var event_handler: EventHandler = null
 
+# Lưu dice total để tính utility rent
+var last_dice_total: int = 0
+
+
 func get_event_handler() -> EventHandler:
 	if event_handler == null:
 		event_handler = EventHandler.new(self)
@@ -21,8 +27,12 @@ func get_event_handler() -> EventHandler:
 	return event_handler
 
 
+# =========================
+# LƯỢT CHƠI
+# =========================
+
 func start_turn():
-	print("\n===== TURN =====")
+	print("\n===== LƯỢT MỚI =====")
 
 	var player = get_current_player()
 
@@ -30,28 +40,27 @@ func start_turn():
 		end_turn()
 		return
 
-	print("Player:", player.name)
+	print("Người chơi: ", player.name, " | Vị trí: ", player.state.position, " | Tiền: $", player.state.balance)
 	ui.show_turn(player.player_id)
 	ui.update_player_info(game_state.players)
 
 	if player.state.in_jail:
-		print(player.name + " đang ở tù!")
-
-		# Kiểm tra thẻ Ra Tù Miễn Phí
+		print(player.name + " đang ở tù! (Lượt ", player.state.jail_turns, "/3)")
 		if player.state.special_cards > 0:
-			ui.show_message(player.name + " có thẻ Ra Tù. Nhấn Roll để dùng hoặc đổ Double.")
+			ui.show_message(player.name + " ở tù. Có thẻ Ra Tù. Nhấn Roll!")
+		else:
+			ui.show_message(player.name + " ở tù. Đổ Double để ra! (Lượt " + str(player.state.jail_turns + 1) + "/3)")
 
 
 func roll_dice():
 	if is_rolling:
 		return
 
-	print("ROLL DICE CALLED")
-
 	is_rolling = true
 	ui.set_roll_enabled(false)
 
 	final_result = dice.roll()
+	last_dice_total = final_result.total()
 	ui.start_dice_animation()
 
 
@@ -61,55 +70,15 @@ func resolve_roll():
 	ui.show_result(final_result)
 
 	# =========================
-	# Xử lý khi ở tù
+	# XỬ LÝ KHI Ở TÙ
 	# =========================
 
 	if player.state.in_jail:
-		# Cho phép dùng thẻ Ra Tù khi đổ xúc xắc
-		if player.state.special_cards > 0 and not final_result.is_double:
-			player.state.special_cards -= 1
-			player.state.set_in_jail(false)
-			print(player.name + " dùng thẻ Ra Tù Miễn Phí!")
-			ui.show_message(player.name + " dùng thẻ Ra Tù!")
-
-			await move_player(player, final_result.total())
-			await handle_landed_cell(player, player.state.position)
-
-		elif final_result.is_double:
-			print(player.name + " thoát tù bằng Double!")
-			ui.show_message(player.name + " đổ Double - Thoát tù!")
-
-			player.state.set_in_jail(false)
-			player.state.jail_turns = 0
-
-			await move_player(player, final_result.total())
-			await handle_landed_cell(player, player.state.position)
-		else:
-			player.state.jail_turns += 1
-			print(player.name + " không ra Double. Lượt tù: ", player.state.jail_turns)
-
-			# Sau 3 lượt tù, bắt buộc nộp phạt và ra
-			if player.state.jail_turns >= 3:
-				print(player.name + " đã ở tù 3 lượt - Nộp phạt $50 để ra!")
-				ui.show_message(player.name + " nộp phạt $50 để ra tù!")
-				process_payment(player, null, 50, "Phạt tù")
-				player.state.set_in_jail(false)
-				player.state.jail_turns = 0
-
-				await move_player(player, final_result.total())
-				await handle_landed_cell(player, player.state.position)
-			else:
-				ui.show_message(player.name + " vẫn ở tù (Lượt " + str(player.state.jail_turns) + "/3)")
-
-		end_turn()
-
-		is_rolling = false
-		ui.set_roll_enabled(true)
-
+		await _handle_jail_turn(player)
 		return
 
 	# =========================
-	# Double
+	# DOUBLE
 	# =========================
 
 	if final_result.is_double:
@@ -117,20 +86,18 @@ func resolve_roll():
 
 		ui.show_double()
 
+		# 3 lần double liên tiếp -> vào tù
 		if game_state.double_count >= 3:
-			go_to_jail(player)
-
+			ui.show_message(player.name + " đổ Double 3 lần! Vào Tù!")
+			await go_to_jail(player)
 			game_state.double_count = 0
-
 			end_turn()
-
 			is_rolling = false
 			ui.set_roll_enabled(true)
-
 			return
 
 	# =========================
-	# Move player
+	# DI CHUYỂN
 	# =========================
 
 	await move_player(player, final_result.total())
@@ -138,59 +105,98 @@ func resolve_roll():
 	await handle_landed_cell(player, player.state.position)
 
 	# =========================
-	# Extra turn nếu double
+	# EXTRA TURN NẾU DOUBLE
 	# =========================
 
 	if final_result.is_double:
 		is_rolling = false
 		ui.set_roll_enabled(true)
-
 		start_turn()
 		return
 
 	# =========================
-	# End turn bình thường
+	# KẾT THÚC LƯỢT
 	# =========================
 
 	game_state.double_count = 0
-
 	end_turn()
-
 	is_rolling = false
 	ui.set_roll_enabled(true)
 
 
+# =========================
+# XỬ LÝ TÙ
+# =========================
+
+func _handle_jail_turn(player: Player):
+	# Ưu tiên dùng thẻ Ra Tù nếu có VÀ không đổ được double
+	if player.state.special_cards > 0 and not final_result.is_double:
+		player.state.special_cards -= 1
+		player.state.set_in_jail(false)
+		ui.show_message(player.name + " dùng thẻ Ra Tù Miễn Phí!")
+		print(player.name + " dùng thẻ Ra Tù!")
+
+		await move_player(player, final_result.total())
+		await handle_landed_cell(player, player.state.position)
+
+	elif final_result.is_double:
+		player.state.set_in_jail(false)
+		player.state.jail_turns = 0
+		ui.show_message(player.name + " đổ Double - Thoát tù!")
+		print(player.name + " thoát tù bằng Double!")
+
+		await move_player(player, final_result.total())
+		await handle_landed_cell(player, player.state.position)
+
+	else:
+		player.state.jail_turns += 1
+		print(player.name + " không đổ được Double. Lượt tù: ", player.state.jail_turns)
+
+		# Sau 3 lượt tù -> bắt buộc nộp $50
+		if player.state.jail_turns >= 3:
+			ui.show_message(player.name + " hết 3 lượt! Nộp phạt $50 ra tù!")
+			process_payment(player, null, 50, "Phạt tù")
+			player.state.set_in_jail(false)
+			player.state.jail_turns = 0
+
+			await move_player(player, final_result.total())
+			await handle_landed_cell(player, player.state.position)
+		else:
+			ui.show_message(player.name + " vẫn ở tù (Lượt " + str(player.state.jail_turns) + "/3)")
+
+	end_turn()
+	is_rolling = false
+	ui.set_roll_enabled(true)
+
+
+# =========================
+# DI CHUYỂN
+# =========================
+
 func move_player(player: Player, steps: int) -> void:
-	await move_player_step_by_step(player, steps)
-
-
-func move_player_step_by_step(player: Player, steps: int) -> void:
 	for i in range(steps):
-
 		var next_pos = player.state.position + 1
 
+		# Đi qua GO -> nhận $200
 		if next_pos >= game_state.board_size:
 			process_reward(player)
 
 		next_pos %= game_state.board_size
-
 		player.state.update_position(next_pos)
 
 		var world_pos = board.get_cell_position(next_pos)
-
 		var offset = get_offset(player.player_id)
 
 		if player.token:
 			await player.token.move_to(world_pos + offset)
 
-		await get_tree().create_timer(0.1).timeout
+		await get_tree().create_timer(0.08).timeout
 
 
 func move_player_to_position(player: Player, pos: int) -> void:
 	player.state.update_position(pos)
 
 	var world_pos = board.get_cell_position(pos)
-
 	var offset = get_offset(player.player_id)
 
 	if player.token:
@@ -198,20 +204,21 @@ func move_player_to_position(player: Player, pos: int) -> void:
 
 
 func go_to_jail(player: Player):
-	print("GO TO JAIL!")
-
+	print("🔒 ", player.name, " VÀO TÙ!")
 	player.state.set_in_jail(true)
 	player.state.jail_turns = 0
 
 	ui.show_jail()
-	ui.show_message(player.name + " bị bắt vào Tù!")
 
 	var jail_pos = board.get_jail_position()
 	await move_player_to_position(player, jail_pos)
 
 
-func end_turn():
+# =========================
+# KẾT THÚC LƯỢT & GAME OVER
+# =========================
 
+func end_turn():
 	# Kiểm tra game over
 	var alive_players = []
 	for p in game_state.players:
@@ -227,14 +234,12 @@ func end_turn():
 			print("GAME OVER! Hòa!")
 		return
 
+	# Tìm người chơi tiếp theo (bỏ qua người phá sản)
 	var next_player_found = false
 	var safety_counter = 0
 
 	while not next_player_found and safety_counter < game_state.players.size():
-
-		game_state.current_player = (
-			game_state.current_player + 1
-		) % game_state.players.size()
+		game_state.current_player = (game_state.current_player + 1) % game_state.players.size()
 
 		if not get_current_player().is_bankrupt():
 			next_player_found = true
@@ -253,88 +258,76 @@ func get_current_player() -> Player:
 
 func get_offset(player_id: int) -> Vector2:
 	var offsets = [
-		Vector2(-10, -10),
-		Vector2(10, -10),
-		Vector2(-10, 10),
-		Vector2(10, 10)
+		Vector2(-12, -12),
+		Vector2(12, -12),
+		Vector2(-12, 12),
+		Vector2(12, 12)
 	]
-
 	return offsets[player_id % offsets.size()]
 
 
-func process_current_cell(player: Player):
-	var cell = board.get_cell(player.state.position)
-
-	if cell:
-		print("Player landed on:", cell.cell_name)
-
-
 # =========================
-# Financial
+# XỬ LÝ Ô ĐÁP XUỐNG
 # =========================
 
 func handle_landed_cell(player: Player, cell_index: int):
-
 	var cell = board.get_cell(cell_index)
 
 	if not cell:
 		return
 
-	print(player.name, " đáp xuống ô: ", cell.cell_name, " (", cell.cell_type, ")")
+	print(player.name, " đáp xuống: ", cell.cell_name, " (", cell.cell_type, ")")
 
-	# Xử lý nếu là ô sự kiện
+	# --- Ô sự kiện ---
 	if get_event_handler().handle_event(player, cell):
 		await get_event_handler().event_finished
 		ui.update_player_info(game_state.players)
 		return
 
-	# Ô đất trống - có thể mua
+	# --- Ô có thể mua ---
 	if cell.can_be_purchased():
-		print("Ô đất trống: ", cell.cell_name, " - Giá: $", cell.price)
-
 		if player.state.balance >= cell.price:
+			# Hiện popup mua đất
 			ui.show_buy_prompt(player, cell)
 			var accepted = await buy_decision_made
 
 			if accepted:
 				buy_property(player, cell)
 			else:
-				ui.show_message(player.name + " không mua " + cell.cell_name)
+				# Đấu giá nếu người chơi từ chối mua
+				ui.show_message(player.name + " không mua → Đấu giá " + cell.cell_name + "!")
+				await run_auction(cell)
 		else:
-			ui.show_message(player.name + " không đủ tiền mua " + cell.cell_name + " ($" + str(cell.price) + ")")
+			ui.show_message(player.name + " không đủ tiền → Đấu giá " + cell.cell_name + "!")
+			await run_auction(cell)
 
-	# Trả tiền thuê
-	elif (
-		cell.cell_owner != null
-		and cell.cell_owner != player
-		and not cell.is_mortgaged
-	):
+	# --- Ô đã có chủ (trả thuê) ---
+	elif cell.cell_owner != null and cell.cell_owner != player and not cell.is_mortgaged:
+		var rent_amount = cell.get_current_rent(last_dice_total)
 
-		var rent_amount = cell.get_current_rent()
 		ui.show_message(player.name + " trả $" + str(rent_amount) + " tiền thuê cho " + cell.cell_owner.name)
 
 		if player.state.balance >= rent_amount:
-			process_payment(
-				player,
-				cell.cell_owner,
-				rent_amount,
-				cell.cell_name
-			)
+			process_payment(player, cell.cell_owner, rent_amount, cell.cell_name)
 		else:
-			handle_insufficient_funds(
-				player,
-				cell.cell_owner,
-				rent_amount
-			)
-
+			handle_insufficient_funds(player, cell.cell_owner, rent_amount)
 			await self.turn_action_completed
 
-	# Đất của mình
+	# --- Ô của mình ---
 	elif cell.cell_owner == player:
 		ui.show_message("Đây là đất của bạn: " + cell.cell_name)
 
+		# Cho phép xây nhà nếu có đủ bộ màu
+		if cell.can_build_house():
+			ui.show_build_prompt(player, cell)
+			await build_decision_made
+
 	ui.update_player_info(game_state.players)
 
+
+# =========================
+# MUA ĐẤT
+# =========================
 
 func buy_property(player: Player, cell: Cell):
 	player.deduct_money(cell.price)
@@ -348,40 +341,61 @@ func buy_property(player: Player, cell: Cell):
 	ui.update_player_info(game_state.players)
 
 
+# =========================
+# ĐẤU GIÁ (Auction)
+# =========================
+
+func run_auction(cell: Cell):
+	print("--- ĐẤU GIÁ: ", cell.cell_name, " ---")
+
+	var highest_bid = 0
+	var highest_bidder: Player = null
+
+	# Đấu giá tự động giữa các AI/player
+	for player in game_state.players:
+		if player.is_bankrupt():
+			continue
+
+		# Logic đấu giá đơn giản: trả giá nếu có tiền và giá hợp lý
+		var max_willing = int(cell.price * 0.8) # Tối đa 80% giá niêm yết
+		var bid = min(max_willing, player.state.balance - 100) # Giữ lại ít nhất $100
+
+		if bid > highest_bid and bid > 0:
+			highest_bid = bid
+			highest_bidder = player
+
+	if highest_bidder != null:
+		highest_bidder.deduct_money(highest_bid)
+		cell.cell_owner = highest_bidder
+		highest_bidder.add_property(cell)
+		cell.queue_redraw()
+
+		ui.show_message(highest_bidder.name + " thắng đấu giá " + cell.cell_name + " với $" + str(highest_bid))
+		print(highest_bidder.name, " thắng đấu giá: ", cell.cell_name, " - $", highest_bid)
+	else:
+		ui.show_message("Không ai đấu giá " + cell.cell_name)
+		print("Đấu giá thất bại - không ai mua")
+
+	await get_tree().create_timer(1.5).timeout
+
+
+# =========================
+# TÀI CHÍNH
+# =========================
+
 func process_reward(player: Player, amount: int = 200):
 	player.add_money(amount)
-
-	if ui.has_method("show_message"):
-		ui.show_message(
-			player.name + " nhận $" + str(amount)
-		)
+	ui.show_message(player.name + " nhận $" + str(amount))
 
 
-func process_payment(
-	payer: Player,
-	beneficiary: Player,
-	amount: int,
-	reason: String
-):
+func process_payment(payer: Player, beneficiary: Player, amount: int, reason: String):
 	if payer.state.balance >= amount:
-		execute_transaction(
-			payer,
-			beneficiary,
-			amount
-		)
+		execute_transaction(payer, beneficiary, amount)
 	else:
-		handle_insufficient_funds(
-			payer,
-			beneficiary,
-			amount
-		)
+		handle_insufficient_funds(payer, beneficiary, amount)
 
 
-func execute_transaction(
-	payer: Player,
-	beneficiary: Player,
-	amount: int
-):
+func execute_transaction(payer: Player, beneficiary: Player, amount: int):
 	payer.deduct_money(amount)
 
 	if beneficiary:
@@ -390,34 +404,28 @@ func execute_transaction(
 	emit_signal("turn_action_completed")
 
 
-func handle_insufficient_funds(
-	payer: Player,
-	beneficiary: Player,
-	amount: int
-):
+func handle_insufficient_funds(payer: Player, beneficiary: Player, amount: int):
 	var total_cap = payer.get_total_capacity()
 
 	if total_cap < amount:
 		handle_bankruptcy(payer, beneficiary)
 	else:
-		if ui.has_method("request_mortgage"):
-			ui.request_mortgage(
-				payer,
-				amount - payer.state.balance
-			)
+		# Tự động thế chấp đất để có đủ tiền
+		ui.show_message(payer.name + " thiếu tiền! Đang thế chấp...")
+		ui.request_mortgage(payer, amount - payer.state.balance)
 
 
-func handle_bankruptcy(
-	debtor: Player,
-	creditor: Player
-):
-	print(debtor.name + " PHÁ SẢN!")
-
+func handle_bankruptcy(debtor: Player, creditor: Player):
+	print("💀 ", debtor.name, " PHÁ SẢN!")
 	ui.show_message("💀 " + debtor.name + " đã PHÁ SẢN!")
 
 	debtor.transfer_all_assets_to(creditor)
 
 	if board.has_method("remove_player_token"):
 		board.remove_player_token(debtor)
+
+	# Redraw tất cả ô đất
+	for cell in board.cells:
+		cell.queue_redraw()
 
 	emit_signal("turn_action_completed")
