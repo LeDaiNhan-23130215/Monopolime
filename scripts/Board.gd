@@ -61,6 +61,8 @@ func generate_board():
 	# Spawn cell
 	# =========================
 
+	var configs = BoardData.get_cell_configs()
+
 	for i in range(cell_positions.size()):
 		var cell = cell_scene.instantiate()
 
@@ -72,7 +74,49 @@ func generate_board():
 		cells_node.add_child(cell)
 		cells.append(cell)
 
+		# Gán dữ liệu cấu hình cho từng ô
+		if i < configs.size():
+			cell.setup(configs[i])
+
+	# Spawn cell labels
+	_create_cell_labels()
+
 	center_board()
+
+
+func _create_cell_labels():
+	# Xóa labels cũ nếu có
+	if has_node("Labels"):
+		$Labels.queue_free()
+		await get_tree().process_frame
+
+	var labels_node = Node2D.new()
+	labels_node.name = "Labels"
+	labels_node.z_index = 2
+	add_child(labels_node)
+
+	for i in range(cells.size()):
+		var cell = cells[i]
+		var label = Label.new()
+		label.text = cell.cell_name
+		label.position = cell_positions[i] + Vector2(0, 102)
+		label.add_theme_font_size_override("font_size", 9)
+		label.add_theme_color_override("font_color", Color.WHITE)
+		label.size = Vector2(size, 20)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+		# Thêm label giá tiền
+		if cell.price > 0:
+			var price_label = Label.new()
+			price_label.text = "$" + str(cell.price)
+			price_label.position = cell_positions[i] + Vector2(0, 114)
+			price_label.add_theme_font_size_override("font_size", 8)
+			price_label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5))
+			price_label.size = Vector2(size, 15)
+			price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			labels_node.add_child(price_label)
+
+		labels_node.add_child(label)
 
 
 func center_board():
@@ -120,6 +164,14 @@ func get_cell(index: int) -> Cell:
 	return null
 
 
+# Trả về vị trí ô Nhà Tù
+func get_jail_position() -> int:
+	for i in range(cells.size()):
+		if cells[i].cell_type == "jail":
+			return i
+	return 10 # Mặc định ô 10
+
+
 # Xóa token khi phá sản
 func remove_player_token(player: Player):
 	if player.token and is_instance_valid(player.token):
@@ -132,4 +184,5 @@ func reset_board():
 	for cell in cells:
 		cell.cell_owner = null
 		cell.is_mortgaged = false
+		cell.house_count = 0
 		cell.queue_redraw()
