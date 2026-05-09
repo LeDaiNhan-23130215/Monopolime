@@ -220,7 +220,8 @@ func center_board():
 
 	var viewport_size = get_viewport_rect().size
 
-	position = (viewport_size - board_size_vec) / 2
+	# Center the board, but shift it left by 100 pixels to make room for UI
+	position = (viewport_size - board_size_vec) / 2 - Vector2(100, 0)
 
 
 func clear_board():
