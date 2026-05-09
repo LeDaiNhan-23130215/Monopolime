@@ -5,6 +5,7 @@ signal save_slot_requested(slot_id: int)
 signal load_slot_requested(slot_id: int)
 signal menu_closed
 
+const AUTO_SLOT_ID := 0
 const SLOT_COUNT := 10
 
 @onready var dimmer: ColorRect = $Dimmer
@@ -13,6 +14,9 @@ const SLOT_COUNT := 10
 
 var slot_date_labels: Dictionary = {}
 var slot_load_buttons: Dictionary = {}
+var slot_save_buttons: Dictionary = {}
+var overwrite_dialog: ConfirmationDialog
+var pending_overwrite_slot_id := -1
 
 
 func _ready() -> void:
@@ -20,6 +24,7 @@ func _ready() -> void:
 	visible = false
 	dimmer.gui_input.connect(_on_dimmer_gui_input)
 	close_button.pressed.connect(close_menu)
+	_setup_overwrite_dialog()
 	_build_slots()
 
 
@@ -39,22 +44,27 @@ func close_menu() -> void:
 	if not visible:
 		return
 	visible = false
+	pending_overwrite_slot_id = -1
 	emit_signal("menu_closed")
 
 
 func _build_slots() -> void:
 	slot_date_labels.clear()
 	slot_load_buttons.clear()
+	slot_save_buttons.clear()
 
 	for child in slots_container.get_children():
 		child.queue_free()
 
-	for slot_id in range(1, SLOT_COUNT + 1):
+	for slot_id in range(AUTO_SLOT_ID, SLOT_COUNT + 1):
 		var row = HBoxContainer.new()
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 		var label = Label.new()
-		label.text = "Slot %02d" % [slot_id]
+		if slot_id == AUTO_SLOT_ID:
+			label.text = "Auto Save"
+		else:
+			label.text = "Slot %02d" % [slot_id]
 		label.custom_minimum_size = Vector2(90, 0)
 		row.add_child(label)
 
@@ -66,6 +76,7 @@ func _build_slots() -> void:
 		var save_button = Button.new()
 		save_button.text = "Save"
 		save_button.custom_minimum_size = Vector2(96, 0)
+		save_button.disabled = (slot_id == AUTO_SLOT_ID)
 		save_button.pressed.connect(_on_save_pressed.bind(slot_id))
 		row.add_child(save_button)
 
@@ -77,6 +88,7 @@ func _build_slots() -> void:
 
 		slot_date_labels[slot_id] = date_label
 		slot_load_buttons[slot_id] = load_button
+		slot_save_buttons[slot_id] = save_button
 
 		slots_container.add_child(row)
 
@@ -84,7 +96,7 @@ func _build_slots() -> void:
 
 
 func refresh_slots() -> void:
-	for slot_id in range(1, SLOT_COUNT + 1):
+	for slot_id in range(AUTO_SLOT_ID, SLOT_COUNT + 1):
 		var slot: SaveSlot = StorageService.load_file(slot_id)
 
 		var date_label := slot_date_labels.get(slot_id) as Label
@@ -95,8 +107,22 @@ func refresh_slots() -> void:
 		if load_button:
 			load_button.disabled = slot.is_empty()
 
+		var save_button := slot_save_buttons.get(slot_id) as Button
+		if save_button:
+			save_button.disabled = slot_id == AUTO_SLOT_ID
+
 
 func _on_save_pressed(slot_id: int) -> void:
+	if slot_id == AUTO_SLOT_ID:
+		return
+
+	var slot: SaveSlot = StorageService.load_file(slot_id)
+	if slot.occupied:
+		pending_overwrite_slot_id = slot_id
+		overwrite_dialog.dialog_text = "Slot %02d already has data. Overwrite?" % [slot_id]
+		overwrite_dialog.popup_centered()
+		return
+
 	emit_signal("save_slot_requested", slot_id)
 
 
@@ -107,3 +133,20 @@ func _on_load_pressed(slot_id: int) -> void:
 func _on_dimmer_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		get_viewport().set_input_as_handled()
+
+
+func _setup_overwrite_dialog() -> void:
+	overwrite_dialog = ConfirmationDialog.new()
+	overwrite_dialog.title = "Confirm Overwrite"
+	overwrite_dialog.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
+	overwrite_dialog.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	overwrite_dialog.confirmed.connect(_on_overwrite_confirmed)
+	add_child(overwrite_dialog)
+
+
+func _on_overwrite_confirmed() -> void:
+	if pending_overwrite_slot_id < 1:
+		return
+
+	emit_signal("save_slot_requested", pending_overwrite_slot_id)
+	pending_overwrite_slot_id = -1
