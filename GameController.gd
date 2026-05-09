@@ -279,8 +279,8 @@ func handle_landed_cell(player: Player, cell_index: int):
 	print(player.name, " đáp xuống: ", cell.cell_name, " (", cell.cell_type, ")")
 
 	# --- Ô sự kiện ---
-	if get_event_handler().handle_event(player, cell):
-		await get_event_handler().event_finished
+	var is_event = await get_event_handler().handle_event(player, cell)
+	if is_event:
 		ui.update_player_info(game_state.players)
 		return
 
