@@ -1,9 +1,11 @@
 extends Node
 
 const AUTO_SLOT_ID := 0
-const SLOT_COUNT := 10
+const SLOT_COUNT := 5
 const SLOT_FILE_TEMPLATE := "user://save_slot_%02d.sav"
 const STORAGE_CHECK_PATH := "user://.storage_check.tmp"
+const SAVE_SCHEMA_VERSION := 1
+const CHECKSUM_SALT := "UC03_SAVELOAD_V1"
 
 
 func save_file(save_id: int, game_data: Dictionary = {}) -> bool:
@@ -21,8 +23,10 @@ func save_file(save_id: int, game_data: Dictionary = {}) -> bool:
 		return false
 
 	var payload = slot.to_dict()
+	payload["schema_version"] = SAVE_SCHEMA_VERSION
 	for key in game_data.keys():
 		payload[key] = game_data[key]
+	payload["checksum"] = _build_checksum(payload)
 
 	file.store_string(_encode_payload(payload))
 	return true
@@ -36,8 +40,10 @@ func save_auto(game_data: Dictionary = {}) -> bool:
 		return false
 
 	var payload = slot.to_dict()
+	payload["schema_version"] = SAVE_SCHEMA_VERSION
 	for key in game_data.keys():
 		payload[key] = game_data[key]
+	payload["checksum"] = _build_checksum(payload)
 
 	file.store_string(_encode_payload(payload))
 	return true
@@ -65,7 +71,7 @@ func load_file(save_id: int) -> SaveSlot:
 	var loaded_slot = SaveSlot.from_dict(parsed)
 	loaded_slot.id = save_id
 	loaded_slot.is_auto = (save_id == AUTO_SLOT_ID)
-	loaded_slot.occupied = not loaded_slot.date_save.is_empty()
+	loaded_slot.occupied = bool(parsed.get("occupied", not loaded_slot.date_save.is_empty()))
 	return loaded_slot
 
 
@@ -86,6 +92,9 @@ func load_game_data(save_id: int) -> Dictionary:
 	var parsed = _decode_payload(raw_text)
 	if typeof(parsed) != TYPE_DICTIONARY:
 		push_warning("Save file is invalid for slot %d" % save_id)
+		return {}
+	if not _is_valid_payload(parsed):
+		push_warning("Save payload checksum/version failed for slot %d" % save_id)
 		return {}
 
 	return parsed
@@ -177,5 +186,53 @@ func _decode_payload(encoded_text: String) -> Variant:
 	var json_text = bytes.get_string_from_utf8()
 	return JSON.parse_string(json_text)
 
-func validate_checksum(data):
-	return 0
+
+func _is_valid_payload(payload: Dictionary) -> bool:
+	if int(payload.get("schema_version", -1)) != SAVE_SCHEMA_VERSION:
+		return false
+	return validate_checksum(payload)
+
+
+func _build_checksum(payload: Dictionary) -> String:
+	# TODO(UC-03): Replace static salt with stronger key management when security requirements are finalized.
+	var payload_for_hash = _normalized_payload_for_checksum(payload)
+	var content = JSON.stringify(payload_for_hash)
+	var ctx = HashingContext.new()
+	ctx.start(HashingContext.HASH_SHA256)
+	ctx.update((CHECKSUM_SALT + content).to_utf8_buffer())
+	return ctx.finish().hex_encode()
+
+
+func _normalized_payload_for_checksum(payload: Dictionary) -> Dictionary:
+	var normalized: Dictionary = {}
+	normalized["schema_version"] = int(payload.get("schema_version", SAVE_SCHEMA_VERSION))
+	normalized["id"] = int(payload.get("id", 0))
+	normalized["date_save"] = str(payload.get("date_save", ""))
+	normalized["is_auto"] = bool(payload.get("is_auto", false))
+	normalized["occupied"] = bool(payload.get("occupied", false))
+	normalized["current_player"] = int(payload.get("current_player", 0))
+	normalized["double_count"] = int(payload.get("double_count", 0))
+
+	var normalized_players_state: Array = []
+	var players_state = payload.get("players_state", [])
+	if typeof(players_state) == TYPE_ARRAY:
+		for entry in players_state:
+			if typeof(entry) != TYPE_DICTIONARY:
+				continue
+			normalized_players_state.append({
+				"player_id": int(entry.get("player_id", 0)),
+				"position": int(entry.get("position", 0)),
+				"balance": int(entry.get("balance", 0)),
+				"in_jail": bool(entry.get("in_jail", false)),
+				"bankrupt": bool(entry.get("bankrupt", false))
+			})
+
+	normalized["players_state"] = normalized_players_state
+	return normalized
+
+func validate_checksum(payload: Dictionary) -> bool:
+	var expected_checksum = str(payload.get("checksum", ""))
+	if expected_checksum.is_empty():
+		return false
+
+	return expected_checksum == _build_checksum(payload)

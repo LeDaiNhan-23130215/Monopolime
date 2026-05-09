@@ -164,6 +164,10 @@ func _on_load_slot_requested(slot_id: int):
 	game_controller.load_game(slot_id)
 
 
+func is_dice_rolling() -> bool:
+	return rolling
+
+
 # Hiển thị thông báo (Đi qua GO, thưởng, phạt...)
 func show_message(text: String):
 	label.text = text
