@@ -165,9 +165,6 @@ func set_roll_enabled(enabled: bool) -> void:
 func show_message(text: String) -> void:
 	label.text = text
 
-func _on_roll_dice_pressed() -> void:
-	game_controller.roll_dice()
-
 func _on_dice_timer_timeout() -> void:
 	if not rolling:
 		return
@@ -233,19 +230,6 @@ func _on_load_slot_requested(slot_id: int):
 
 func is_dice_rolling() -> bool:
 	return rolling
-
-
-# Hiển thị thông báo (Đi qua GO, thưởng, phạt...)
-func show_message(text: String):
-	label.text = text
-	print("[UI Message]: ", text)
-
-# Yêu cầu thế chấp khi không đủ tiền
-func request_mortgage(player: Player, amount_needed: int):
-	show_message(player.name + " thiếu $" + str(amount_needed) + "! Cần thế chấp.")
-	
-	# === LOGIC GIẢ LẬP ĐỂ TEST GAME KHÔNG BỊ KẸT MÀN HÌNH ===
-	auto_mortgage_for_test(player, amount_needed)
 
 func auto_mortgage_for_test(player: Player, amount_needed: int):
 	print("--- [Auto Test] Đang tự động bán đất để trả nợ cho ", player.name, " ---")
