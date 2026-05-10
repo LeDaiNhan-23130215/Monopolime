@@ -13,14 +13,10 @@ signal ui_action_done
 @onready var audio_roll       : AudioStreamPlayer2D = get_node("UI/AudioRoll")
 @onready var roll_button      : TextureButton       = get_node("UI/Roll Dice")
 
-# ─── Nút quản lý tài sản luôn hiện (chủ động, bất kỳ lúc nào) ───────
-# Đây là nút RIÊNG, luôn hiển thị khi đến lượt người chơi
-# Khác với asset_panel (chỉ hiện khi đứng trên ô đặc biệt)
+# ─── Nút quản lý tài sản luôn hiện suốt lượt (bất kỳ ô nào) ────────
 @onready var btn_open_manage  : Button         = get_node("UI/BtnOpenManage")
 
 # ─── UC7 panels ──────────────────────────────────────────────────────
-@onready var asset_panel      : PanelContainer = get_node("UI/AssetPanel")
-@onready var btn_manage       : Button         = get_node("UI/AssetPanel/BtnManage")
 
 @onready var action_popup     : PanelContainer = get_node("UI/ActionPopup")
 @onready var btn_buy          : Button         = get_node("UI/ActionPopup/VBox/BtnBuy")
@@ -34,15 +30,15 @@ signal ui_action_done
 @onready var prop_popup       : PanelContainer = get_node("UI/PropertyPopup")
 @onready var popup_title      : Label          = get_node("UI/PropertyPopup/VBox/Title")
 @onready var prop_list        : ItemList       = get_node("UI/PropertyPopup/VBox/PropertyList")
-@onready var btn_pp_confirm   : Button         = get_node("UI/PropertyPopup/VBox/BtnConfirm")
-@onready var btn_pp_cancel    : Button         = get_node("UI/PropertyPopup/VBox/BtnCancel")
+@onready var btn_pp_confirm   : Button         = get_node("UI/PropertyPopup/VBox/HBox/BtnConfirm")
+@onready var btn_pp_cancel    : Button         = get_node("UI/PropertyPopup/VBox/HBox/BtnCancel")
 
 @onready var trade_popup       : PanelContainer = get_node("UI/TradePopup")
 @onready var trade_title       : Label          = get_node("UI/TradePopup/VBox/Title")
 @onready var trade_player_list : OptionButton   = get_node("UI/TradePopup/VBox/PlayerList")
 @onready var trade_price_input : SpinBox        = get_node("UI/TradePopup/VBox/PriceInput")
-@onready var btn_td_confirm    : Button         = get_node("UI/TradePopup/VBox/BtnConfirm")
-@onready var btn_td_cancel     : Button         = get_node("UI/TradePopup/VBox/BtnCancel")
+@onready var btn_td_confirm    : Button         = get_node("UI/TradePopup/VBox/HBox/BtnConfirm")
+@onready var btn_td_cancel     : Button         = get_node("UI/TradePopup/VBox/HBox/BtnCancel")
 
 # ─── Dice textures ───────────────────────────────────────────────────
 var dice_textures: Array = [
@@ -75,7 +71,7 @@ var _mandatory := false
 
 
 # ═════════════════════════════════════════════════════════════════════
-# _ready – connect signals cần thiết trong code
+# _ready
 # ═════════════════════════════════════════════════════════════════════
 func _ready() -> void:
 	var tex_size     : float = dice1_sprite.texture.get_size().x
@@ -84,16 +80,14 @@ func _ready() -> void:
 	dice1_sprite.scale = base_scale
 	dice2_sprite.scale = base_scale
 
-	asset_panel.visible  = false
 	action_popup.visible = false
 	prop_popup.visible   = false
 	trade_popup.visible  = false
 
-	# Connect ItemList signal trong code để chắc chắn (tránh bug scene chưa connect)
+	# FIX: connect item_selected trong code để chắc chắn hoạt động
 	if not prop_list.item_selected.is_connected(_on_property_list_item_selected):
 		prop_list.item_selected.connect(_on_property_list_item_selected)
 
-	# Nút quản lý chủ động: ẩn ban đầu, chỉ hiện khi đến lượt
 	if btn_open_manage:
 		btn_open_manage.visible = false
 		if not btn_open_manage.pressed.is_connected(_on_btn_open_manage_pressed):
@@ -105,9 +99,9 @@ func _ready() -> void:
 # ═════════════════════════════════════════════════════════════════════
 func show_turn(player_index: int) -> void:
 	label.text = "Lượt của Player %d" % (player_index + 1)
-	# Hiện nút quản lý chủ động (BR-16: trong tù vẫn quản lý được)
+	# FIX: Luôn hiện nút quản lý tài sản khi đến lượt (bất kỳ ô nào - BR-16)
 	if btn_open_manage:
-		btn_open_manage.text    = "⚙ Quản lý tài sản (Player %d)" % (player_index + 1)
+		btn_open_manage.text    = "⚙ Quản lý tài sản (P%d)" % (player_index + 1)
 		btn_open_manage.visible = true
 
 func start_dice_animation() -> void:
@@ -132,8 +126,7 @@ func show_jail() -> void:
 
 func set_roll_enabled(enabled: bool) -> void:
 	roll_button.disabled = not enabled
-	# Khi lượt kết thúc (enabled=true = lượt tiếp theo bắt đầu),
-	# ẩn nút quản lý của lượt cũ
+	# FIX: Ẩn nút quản lý khi bắt đầu lượt mới (enabled=true = lượt tiếp theo)
 	if enabled and btn_open_manage:
 		btn_open_manage.visible = false
 
@@ -191,7 +184,6 @@ func prompt_buy_or_auction(player: Player, cell: PropertyCell, am: AssetManager)
 	_mandatory = true
 	var pd = cell.data as PropertyData
 	show_message("%s đứng trên %s ($%d)" % [player.name, cell.data.cell_name, pd.buy_price if pd else 0])
-	_show_manage_btn()
 	_open_action_menu()
 
 # Gọi khi đáp xuống đất của mình (bắt buộc xử lý)
@@ -200,44 +192,40 @@ func show_asset_management(player: Player, am: AssetManager) -> void:
 	_am        = am
 	_buy_cell  = null
 	_mandatory = true
-	_show_manage_btn()
+	_open_action_menu()
 
-# Gọi khi người chơi chủ động bấm nút "Quản lý tài sản" (tự nguyện)
+# FIX: Gọi khi người chơi chủ động bấm nút quản lý (tự nguyện, bất kỳ ô nào)
 func _on_btn_open_manage_pressed() -> void:
+	# Nếu đang trong mandatory mode, mở lại action menu (không thay đổi state)
+	if _mandatory and _player != null:
+		_open_action_menu()
+		return
 	var player = game_controller.get_current_player()
 	if player == null or player.is_bankrupt():
 		return
 	_player    = player
 	_am        = game_controller.asset_manager
 	_buy_cell  = null
-	_mandatory = false   # KHÔNG emit signal khi đóng
-	_show_manage_btn()
-	_open_action_menu()
-
-func _show_manage_btn() -> void:
-	btn_manage.text     = "%s – Quản lý tài sản" % _player.name
-	asset_panel.visible = true
-
-func _on_btn_manage_pressed() -> void:
+	_mandatory = false
 	_open_action_menu()
 
 func hide_manage_button() -> void:
-	asset_panel.visible  = false
 	action_popup.visible = false
 	prop_popup.visible   = false
 	trade_popup.visible  = false
 
-# Gọi khi người chơi hoàn thành (hoặc đóng) tất cả popup UC7
+# Gọi khi thực sự hoàn thành xong hành động (emit signal nếu mandatory)
 func _done_with_action() -> void:
-	_player   = null
-	_am       = null
-	_buy_cell = null
-	_cell     = null
-	_action   = ""
+	var was_mandatory = _mandatory
+	_player    = null
+	_am        = null
+	_buy_cell  = null
+	_cell      = null
+	_action    = ""
+	_mandatory = false
 	hide_manage_button()
-	if _mandatory:
-		_mandatory = false
-		emit_signal("ui_action_done")   # GameController đang await cái này
+	if was_mandatory:
+		emit_signal("ui_action_done")
 
 func _open_action_menu() -> void:
 	if _player == null:
@@ -262,22 +250,31 @@ func _open_action_menu() -> void:
 	btn_redeem.visible   = has_mortgage
 	btn_sell.visible     = has_props
 	btn_trade.visible    = true
+
+	# FIX: Text nút phân theo chế độ
+	if btn_close_action:
+		btn_close_action.text = "Kết thúc lượt" if _mandatory else "Đóng"
+
+	# FIX: Đóng popup con trước khi hiện ActionPopup
+	prop_popup.visible   = false
+	trade_popup.visible  = false
 	action_popup.visible = true
 
+# FIX: "Kết thúc lượt" / "Đóng"
+# mandatory → end turn (emit signal)
+# chủ động → chỉ ẩn menu, btn_open_manage VẪN hiện
 func _on_btn_close_action_pressed() -> void:
 	action_popup.visible = false
 	if _mandatory:
-		# Landing mandatory: đóng = từ chối hành động, vẫn phải end turn
 		_done_with_action()
 	else:
-		# Chủ động: đóng = chỉ tắt popup, giữ nút "Quản lý tài sản" vẫn hiện
+		# Chỉ đóng menu, không xóa trạng thái, không ẩn btn_open_manage
 		_player   = null
 		_am       = null
 		_buy_cell = null
 		_cell     = null
 		_action   = ""
-		asset_panel.visible = false
-		# KHÔNG gọi _done_with_action() vì không có signal cần emit
+			# btn_open_manage vẫn hiện để người chơi mở lại bất cứ lúc nào
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -349,11 +346,13 @@ func _on_btn_trade_pressed() -> void:
 func _open_prop_popup(title: String, cells: Array) -> void:
 	if cells.is_empty():
 		show_message("Không có ô đất phù hợp!")
-		_done_with_action()
+		# FIX: Quay lại ActionPopup thay vì đóng hẳn
+		_open_action_menu()
 		return
 	popup_title.text = title
 	prop_list.clear()
 	_cell = null
+	# FIX: Luôn disable Confirm khi mới mở - phải chọn item trước
 	if btn_pp_confirm:
 		btn_pp_confirm.disabled = true
 	for c in cells:
@@ -366,16 +365,18 @@ func _open_prop_popup(title: String, cells: Array) -> void:
 			prop_list.set_item_metadata(prop_list.item_count - 1, c)
 	prop_popup.visible = true
 
-# Signal connect trong _ready() để đảm bảo luôn hoạt động
+# FIX: Enable Confirm ngay khi chọn item trong list
 func _on_property_list_item_selected(index: int) -> void:
 	_cell = prop_list.get_item_metadata(index)
 	if btn_pp_confirm:
-		btn_pp_confirm.disabled = false
+		btn_pp_confirm.disabled = (_cell == null)
 
+# FIX: Hủy trong PropertyPopup → quay lại ActionPopup (không đóng hẳn)
 func _on_btn_pp_cancel_pressed() -> void:
 	prop_popup.visible = false
+	_cell   = null
 	_action = ""
-	_done_with_action()
+	_open_action_menu()
 
 func _on_btn_pp_confirm_pressed() -> void:
 	if _cell == null:
@@ -397,7 +398,7 @@ func _on_btn_pp_confirm_pressed() -> void:
 			show_message("Chuộc lại thành công!" if ok else "Chuộc lại thất bại!")
 			_done_with_action()
 		"sell":
-			_action = "sell"   # khôi phục để _open_trade_popup biết
+			_action = "sell"
 			_open_trade_popup()
 		"trade":
 			_action = "trade"
@@ -416,7 +417,8 @@ func _open_trade_popup() -> void:
 			trade_player_list.set_item_metadata(trade_player_list.item_count - 1, p)
 	if trade_player_list.item_count == 0:
 		show_message("Không có người chơi giao dịch!")
-		_done_with_action()
+		# FIX: Quay lại ActionPopup thay vì đóng hẳn
+		_open_action_menu()
 		return
 	trade_popup.visible = true
 
@@ -444,9 +446,12 @@ func _on_btn_td_confirm_pressed() -> void:
 
 	_done_with_action()
 
+# FIX: Hủy trong TradePopup → quay lại ActionPopup (không đóng hẳn)
 func _on_btn_td_cancel_pressed() -> void:
 	trade_popup.visible = false
-	_done_with_action()
+	_action = ""
+	_cell   = null
+	_open_action_menu()
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -481,7 +486,6 @@ func request_mortgage(player: Player, amount_needed: int) -> void:
 	_am        = game_controller.asset_manager
 	_mandatory = true
 	show_message("%s thiếu $%d! Hãy thế chấp hoặc bán." % [player.name, amount_needed])
-	_show_manage_btn()
 	btn_buy.visible      = false
 	btn_build.visible    = false
 	btn_redeem.visible   = false
