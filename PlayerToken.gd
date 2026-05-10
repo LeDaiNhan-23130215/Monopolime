@@ -15,7 +15,7 @@ func move_to(target_pos: Vector2) -> void:
 	await tween.finished
 	
 func get_random_token_texture():
-	var tex = TokenManage.get_random_texture()
+	var tex = TokenManager.get_random_texture()
 	token_sprite.texture = tex
 	
 	center_sprite()

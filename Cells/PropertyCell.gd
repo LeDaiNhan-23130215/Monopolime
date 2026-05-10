@@ -163,3 +163,56 @@ func reset_property():
 	is_mortgaged = false
 	house_count = 0
 	has_hotel = false
+	queue_redraw()
+
+
+# =========================
+# Visual Đánh dấu Chủ sở hữu
+# =========================
+func _draw() -> void:
+	# Ô vuông nền
+	draw_rect(Rect2(0, 0, 100, 100), Color.WHITE, false, 2.0)
+
+	if data != null:
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(10, 55),
+			data.cell_name,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			80, 16
+		)
+		# Hiển thị giá nếu chưa có chủ
+		if property_owner == null:
+			var pd = data as PropertyData
+			if pd != null:
+				draw_string(
+					ThemeDB.fallback_font,
+					Vector2(10, 75),
+					"$" + str(pd.buy_price),
+					HORIZONTAL_ALIGNMENT_LEFT,
+					80, 13
+				)
+
+	if property_owner != null:
+		var owner_colors = [
+			Color(0.25, 0.45, 1.0),  # Xanh dương
+			Color(1.0, 0.25, 0.25),  # Đỏ
+			Color(0.1, 0.8, 0.3),    # Xanh lá
+			Color(1.0, 0.75, 0.05),  # Vàng
+		]
+		var pc = owner_colors[property_owner.player_id % owner_colors.size()]
+
+		# Nền màu nhạt
+		draw_rect(Rect2(0, 0, 100, 100), Color(pc.r, pc.g, pc.b, 0.15))
+		# Viền sáng
+		draw_rect(Rect2(0, 0, 100, 100), Color(pc.r, pc.g, pc.b, 0.8), false, 2.5)
+		# Thanh màu đậm phía trên
+		draw_rect(Rect2(0, 0, 100, 12), pc)
+		# Chấm tròn góc dưới phải
+		draw_circle(Vector2(88, 88), 7, pc)
+		draw_circle(Vector2(88, 88), 5, Color(1, 1, 1, 0.9))
+
+	if is_mortgaged:
+		draw_rect(Rect2(0, 0, 100, 100), Color(0.1, 0.1, 0.1, 0.55))
+		draw_line(Vector2(5, 5), Vector2(95, 95), Color(1, 0.2, 0.2, 0.8), 2)
+		draw_line(Vector2(95, 5), Vector2(5, 95), Color(1, 0.2, 0.2, 0.8), 2)

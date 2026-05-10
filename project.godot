@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Monopolime"
-run/main_scene="uid://dm4vwoqxigo8c"
+run/main_scene="res://monopolime.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -19,10 +19,16 @@ config/icon="res://icon.svg"
 
 StorageService="*uid://bxbynds22lo3b"
 
+[display]
+
+window/size/viewport_width=1088
+window/size/viewport_height=612
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
 [global_group]
 
 "test group"=""
-TokenManage="*uid://chbjx6htmbaud"
 
 [physics]
 

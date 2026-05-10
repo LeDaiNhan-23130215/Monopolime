@@ -12,11 +12,12 @@
 [ext_resource type="Script" uid="uid://cbxfq6n7terf8" path="res://Cells/Cell.gd" id="10_oeeh8"]
 [ext_resource type="PackedScene" uid="uid://dmior1yjgw8w1" path="res://CellScenes/PropertyCell.tscn" id="10_uwyxl"]
 [ext_resource type="PackedScene" uid="uid://r8ic24ahsfvu" path="res://CellScenes/TaxCell.tscn" id="11_hj1c4"]
+[ext_resource type="PackedScene" path="res://SaveLoadMenu.tscn" id="11_nyn1k"]
 [ext_resource type="Script" uid="uid://chbjx6htmbaud" path="res://scripts/TokenManager/TokenManager.gd" id="11_y5t0d"]
 [ext_resource type="PackedScene" uid="uid://bebd74jpd2j4k" path="res://CellScenes/ChanceCell.tscn" id="12_tfrc1"]
 [ext_resource type="PackedScene" uid="uid://drvvf57bfb2xw" path="res://CellScenes/ChestCell.tscn" id="13_fhree"]
 [ext_resource type="PackedScene" uid="uid://d3krjl7alrwpm" path="res://CellScenes/SpecialCell.tscn" id="14_swiv5"]
-[ext_resource type="Script" uid="uid://blbexkkbfy25o" path="res://scripts/AssetManager.gd" id="20_uc7am"]
+[ext_resource type="Script" path="res://scripts/AssetManager.gd" id="20_uc7am"]
 
 [node name="Main" type="Node2D" unique_id=1488605029]
 script = ExtResource("1_wplms")
@@ -77,16 +78,14 @@ ignore_texture_size = true
 stretch_mode = 4
 
 [node name="AssetPanel" type="PanelContainer" parent="GameUI/UI" unique_id=2000000010]
-visible = false
-offset_left = 630.0
-offset_top = 420.0
-offset_right = 900.0
-offset_bottom = 460.0
 
-[node name="BtnManage" type="Button" parent="GameUI/UI/AssetPanel" unique_id=2000000011]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Quản lý tài sản"
+[node name="BtnOpenManage" type="Button" parent="GameUI/UI" unique_id=2000000070]
+visible = false
+offset_left = 10.0
+offset_top = 420.0
+offset_right = 300.0
+offset_bottom = 450.0
+text = "⚙ Quản lý tài sản"
 
 [node name="ActionPopup" type="PanelContainer" parent="GameUI/UI" unique_id=2000000020]
 visible = false
@@ -136,7 +135,7 @@ layout_mode = 2
 
 [node name="BtnClose" type="Button" parent="GameUI/UI/ActionPopup/VBox" unique_id=2000000031]
 layout_mode = 2
-text = "Đóng"
+text = "Kết thúc lượt"
 
 [node name="PropertyPopup" type="PanelContainer" parent="GameUI/UI" unique_id=2000000040]
 visible = false
@@ -228,6 +227,8 @@ custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 text = "Tiếp tục ▶"
 
+[node name="SaveLoadMenu" parent="GameUI" unique_id=2110449978 instance=ExtResource("11_nyn1k")]
+
 [node name="GameState" type="Node" parent="." unique_id=510804286]
 script = ExtResource("5_r4gxj")
 
@@ -252,7 +253,7 @@ script = ExtResource("11_y5t0d")
 
 [connection signal="timeout" from="GameUI/UI/DiceTimer" to="GameUI" method="_on_dice_timer_timeout"]
 [connection signal="pressed" from="GameUI/UI/Roll Dice" to="GameUI" method="_on_roll_dice_pressed"]
-[connection signal="pressed" from="GameUI/UI/AssetPanel/BtnManage" to="GameUI" method="_on_btn_manage_pressed"]
+[connection signal="pressed" from="GameUI/UI/BtnOpenManage" to="GameUI" method="_on_btn_open_manage_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnBuy" to="GameUI" method="_on_btn_buy_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnBuild" to="GameUI" method="_on_btn_build_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnMortgage" to="GameUI" method="_on_btn_mortgage_pressed"]
