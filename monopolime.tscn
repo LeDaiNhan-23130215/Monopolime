@@ -8,7 +8,7 @@
 [ext_resource type="Script" uid="uid://dhpcoe4d7fmxk" path="res://GameState.gd" id="5_r4gxj"]
 [ext_resource type="Texture2D" uid="uid://c20o0e1wt0f8v" path="res://resources/button_icon/RollButtonIcon.png" id="6_s088g"]
 [ext_resource type="Script" uid="uid://bodlhlq5ibv53" path="res://Dice.gd" id="8_fo70c"]
-[ext_resource type="Script" uid="uid://c76svja4gt2bo" path="res://scripts/Board.gd" id="8_s088g"]
+[ext_resource type="Script" uid="uid://brplgjoawe8oh" path="res://scripts/Board.gd" id="8_s088g"]
 [ext_resource type="Script" uid="uid://cbxfq6n7terf8" path="res://Cells/Cell.gd" id="10_oeeh8"]
 [ext_resource type="PackedScene" uid="uid://dmior1yjgw8w1" path="res://CellScenes/PropertyCell.tscn" id="10_uwyxl"]
 [ext_resource type="PackedScene" uid="uid://r8ic24ahsfvu" path="res://CellScenes/TaxCell.tscn" id="11_hj1c4"]
