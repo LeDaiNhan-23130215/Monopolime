@@ -42,6 +42,7 @@ func buy_property(player: Player, cell: PropertyCell) -> bool:
 	FinanceManager.deduct(player, price)
 	cell.property_owner = player
 	player.add_property(cell)
+	cell.queue_redraw()
 
 	_emit("buy", true, player.name + " mua " + cell.data.cell_name + " với giá $" + str(price))
 	return true
