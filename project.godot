@@ -19,6 +19,13 @@ config/icon="res://icon.svg"
 
 StorageService="*uid://bxbynds22lo3b"
 
+[display]
+
+window/size/viewport_width=1088
+window/size/viewport_height=612
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
 [global_group]
 
 "test group"=""
