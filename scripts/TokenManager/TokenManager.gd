@@ -1,14 +1,14 @@
-extends Node
+extends RefCounted
 class_name TokenManager
 
-var textures = [
+static var textures = [
 	preload("res://resources/PlayerToken/PlayerToken_Dog.png"),
 	preload("res://resources/PlayerToken/PlayerToken_Hat.png"),
 	preload("res://resources/PlayerToken/PlayerToken_Car.png"),
 	preload("res://resources/PlayerToken/PlayerToken_Something.png")
 ]
 
-func get_random_texture():
+static func get_random_texture():
 	if textures.is_empty():
 		return null
 
