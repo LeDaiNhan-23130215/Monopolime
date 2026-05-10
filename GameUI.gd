@@ -13,6 +13,7 @@ signal ui_action_done
 @onready var audio_roll       : AudioStreamPlayer2D = get_node("UI/AudioRoll")
 @onready var roll_button      : TextureButton       = get_node("UI/Roll Dice")
 
+@onready var save_load_menu = get_node("SaveLoadMenu")
 # ─── Nút quản lý tài sản luôn hiện suốt lượt (bất kỳ ô nào) ────────
 @onready var btn_open_manage  : Button         = get_node("UI/BtnOpenManage")
 
@@ -55,6 +56,7 @@ var rolling    := false
 var roll_time  := 0.0
 var base_scale := Vector2.ONE
 
+var paused_for_menu := false
 var game_controller : GameController
 
 # ─── UC7 internal state ──────────────────────────────────────────────
@@ -92,6 +94,36 @@ func _ready() -> void:
 		btn_open_manage.visible = false
 		if not btn_open_manage.pressed.is_connected(_on_btn_open_manage_pressed):
 			btn_open_manage.pressed.connect(_on_btn_open_manage_pressed)
+
+	save_load_menu.menu_closed.connect(_on_save_load_menu_closed)
+	save_load_menu.save_slot_requested.connect(_on_save_slot_requested)
+	save_load_menu.load_slot_requested.connect(_on_load_slot_requested)
+
+
+func _unhandled_input(event: InputEvent):
+	if event.is_action_pressed("ui_cancel") and not save_load_menu.visible:
+		_open_save_load_menu()
+		get_viewport().set_input_as_handled()
+
+
+func _open_save_load_menu():
+	save_load_menu.open_menu()
+	_set_roll_button_enabled(false)
+	if not get_tree().paused:
+		get_tree().paused = true
+		paused_for_menu = true
+
+
+func _on_save_load_menu_closed():
+	_set_roll_button_enabled(true)
+	if paused_for_menu:
+		get_tree().paused = false
+		paused_for_menu = false
+
+
+func _set_roll_button_enabled(enabled: bool):
+	if roll_button:
+		roll_button.disabled = not enabled
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -172,6 +204,10 @@ func shake() -> void:
 	cam.offset = Vector2.ZERO
 
 
+func _on_roll_dice_pressed() -> void:
+	if save_load_menu.visible:
+		return
+	game_controller.roll_dice()
 # ═════════════════════════════════════════════════════════════════════
 # UC7 – ENTRY POINTS
 # ═════════════════════════════════════════════════════════════════════
@@ -186,6 +222,48 @@ func prompt_buy_or_auction(player: Player, cell: PropertyCell, am: AssetManager)
 	show_message("%s đứng trên %s ($%d)" % [player.name, cell.data.cell_name, pd.buy_price if pd else 0])
 	_open_action_menu()
 
+func _on_save_slot_requested(slot_id: int):
+	game_controller.save_game(slot_id)
+	save_load_menu.refresh_slots()
+
+
+func _on_load_slot_requested(slot_id: int):
+	game_controller.load_game(slot_id)
+
+
+func is_dice_rolling() -> bool:
+	return rolling
+
+
+# Hiển thị thông báo (Đi qua GO, thưởng, phạt...)
+func show_message(text: String):
+	label.text = text
+	print("[UI Message]: ", text)
+
+# Yêu cầu thế chấp khi không đủ tiền
+func request_mortgage(player: Player, amount_needed: int):
+	show_message(player.name + " thiếu $" + str(amount_needed) + "! Cần thế chấp.")
+	
+	# === LOGIC GIẢ LẬP ĐỂ TEST GAME KHÔNG BỊ KẸT MÀN HÌNH ===
+	auto_mortgage_for_test(player, amount_needed)
+
+func auto_mortgage_for_test(player: Player, amount_needed: int):
+	print("--- [Auto Test] Đang tự động bán đất để trả nợ cho ", player.name, " ---")
+	
+	var target_balance = player.balance + amount_needed
+	
+	for cell in player.properties:
+		if not cell.is_mortgaged and player.balance < target_balance:
+			var amount = cell.mortgage_property()
+			print("> Tự động thế chấp: ", cell.cell_name, " lấy $", amount)
+			
+	# Chờ 1.5 giây để bạn kịp nhìn console
+	await get_tree().create_timer(1.5).timeout 
+	
+	# Quan trọng: Kích hoạt lại lượt đi cho GameController
+	print("Đã xoay đủ tiền, tiếp tục game!")
+	
+	game_controller.emit_signal("turn_action_completed")
 # Gọi khi đáp xuống đất của mình (bắt buộc xử lý)
 func show_asset_management(player: Player, am: AssetManager) -> void:
 	_player    = player

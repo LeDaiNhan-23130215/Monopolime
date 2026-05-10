@@ -17,6 +17,11 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+StorageService="*uid://bxbynds22lo3b"
+
+[global_group]
+
+"test group"=""
 TokenManage="*res://scripts/TokenManager/TokenManager.gd"
 
 [physics]
