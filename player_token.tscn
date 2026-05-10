@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://fny8natpl7kl"]
 
 [ext_resource type="Script" uid="uid://fs6tji5a2tlg" path="res://PlayerToken.gd" id="1_tnvn1"]
+[ext_resource type="AudioStream" uid="uid://wtqb2jbiq6ld" path="res://resources/audio/rollAudio/ribhavagrawal-coin-recieved-230517.mp3" id="2_pixbf"]
+[ext_resource type="AudioStream" uid="uid://sauwbfhdqcuj" path="res://resources/audio/rollAudio/eritnhut1992-buzzer-or-wrong-answer-20582.mp3" id="3_jwix1"]
 
 [node name="PlayerToken" type="Node2D" unique_id=1970298349]
 script = ExtResource("1_tnvn1")
@@ -16,3 +18,9 @@ offset_right = 40.0
 offset_bottom = 23.0
 text = "$1500"
 horizontal_alignment = 1
+
+[node name="AddMoneySound" type="AudioStreamPlayer" parent="." unique_id=295618832]
+stream = ExtResource("2_pixbf")
+
+[node name="DeductMoneySound" type="AudioStreamPlayer" parent="." unique_id=599022504]
+stream = ExtResource("3_jwix1")

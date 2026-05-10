@@ -25,14 +25,30 @@ func get_random_token():
 	if token:
 		token.token_texture = token.get_random_token_texture()
 
-# Cộng trừ tiền mặt thông qua state
+# ══════════════════════════════════════════════════════════════════════
+# CỘNG TRỪ TIỀN VÀ CẬP NHẬT UI
+# ══════════════════════════════════════════════════════════════════════
 func add_money(amount: int):
 	state.add_balance(amount)
 	print(name, " nhận $", amount, ". Số dư mới: $", state.balance)
+	# Cập nhật số tiền hiển thị trên Token
+	if token and token.has_method("update_money_display"):
+		token.update_money_display(state.balance)
 
 func deduct_money(amount: int):
 	state.deduct_balance(amount)
 	print(name, " bị trừ $", amount, ". Số dư mới: $", state.balance)
+	# Cập nhật số tiền hiển thị trên Token
+	if token and token.has_method("update_money_display"):
+		token.update_money_display(state.balance)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# TRẠNG THÁI PHÁ SẢN
+# ══════════════════════════════════════════════════════════════════════
+# Hàm để GameController gọi khi cập nhật trạng thái phá sản (Tránh lỗi hằng số)
+func set_bankrupt(value: bool) -> void:
+	state.set_bankrupt(value)
 
 # Hàm kiểm tra trạng thái phá sản (Lấy từ state)
 func is_bankrupt() -> bool:
@@ -67,5 +83,5 @@ func transfer_all_assets_to(creditor: Player):
 	special_card.clear()
 	
 	# Cập nhật trạng thái phá sản vào state
-	state.set_bankrupt(true) 
+	state.set_bankrupt(true)
 	print("--- ", name, " ĐÃ CHÍNH THỨC PHÁ SẢN VÀ CHUYỂN GIAO TÀI SẢN ---")

@@ -62,7 +62,10 @@ func resolve_roll():
 			print(player.name + " hết hạn tù – bắt buộc trả $50!")
 			if ui:
 				ui.show_message(player.name + " hết hạn tù! Trả $50 và di chuyển.")
-			player.deduct_money(50)
+			
+			# [TÍCH HỢP] Sử dụng FinanceManager để trừ tiền và hiện hiệu ứng
+			FinanceManager.deduct(player, 50)
+			
 			player.state.set_in_jail(false)
 			await move_player(player, final_result.total())
 			await handle_landed_cell(player, player.state.position)
@@ -122,6 +125,7 @@ func resolve_roll():
 func move_player(player: Player, steps: int) -> void:
 	for i in range(steps):
 		var next_pos = (player.state.position + 1)
+		# Kiểm tra đi qua ô Bắt đầu (Pass GO)
 		if next_pos >= game_state.board_size:
 			process_reward(player)
 		next_pos %= game_state.board_size
@@ -168,9 +172,10 @@ func get_current_player() -> Player:
 
 
 func get_offset(player_id: int) -> Vector2:
+	# Đã dọn dẹp khoảng trắng rác ở đây
 	var offsets = [
 		Vector2(-10, -10), Vector2(10, -10),
-		Vector2(-10, 10),  Vector2(10, 10)
+		Vector2(-10, 10), Vector2(10, 10)
 	]
 	return offsets[player_id % offsets.size()]
 
@@ -204,7 +209,8 @@ func handle_landed_cell(player: Player, cell_index: int):
 
 	# ── Tax ───────────────────────────────────────────────────────────
 	if cell.data is TaxData:
-		player.deduct_money(cell.data.tax_amount)
+		# [TÍCH HỢP] Sử dụng FinanceManager để đóng thuế
+		FinanceManager.deduct(player, cell.data.tax_amount)
 		if ui:
 			ui.show_message(player.name + " đóng thuế $" + str(cell.data.tax_amount))
 		return
@@ -226,19 +232,24 @@ func handle_landed_cell(player: Player, cell_index: int):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Financial
+# Financial (Đã tích hợp toàn bộ FinanceManager)
 # ══════════════════════════════════════════════════════════════════════
 func process_reward(player: Player, amount: int = 200):
-	player.add_money(amount)
+	# [TÍCH HỢP] Sử dụng FinanceManager để thưởng tiền đi qua Bắt đầu
+	FinanceManager.add(player, amount)
 	if ui:
 		ui.show_message("Qua GO nhận $" + str(amount))
 
 
 func process_payment(payer: Player, receiver: Player, amount: int, _reason: String):
-	if payer.state.balance >= amount:
-		payer.deduct_money(amount)
+	# [TÍCH HỢP] Kiểm tra bằng FinanceManager
+	if FinanceManager.can_afford(payer, amount):
 		if receiver:
-			receiver.add_money(amount)
+			# Chuyển tiền giữa 2 người chơi
+			FinanceManager.transfer(payer, receiver, amount)
+		else:
+			# Nếu không có người nhận (trả cho ngân hàng)
+			FinanceManager.deduct(payer, amount)
 	else:
 		handle_insufficient_funds(payer, receiver, amount)
 	emit_signal("turn_action_completed")
