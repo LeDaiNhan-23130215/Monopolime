@@ -12,6 +12,14 @@ var asset_manager: AssetManager
 var final_result: DiceResult = null
 var is_rolling := false
 
+var _event_handler: EventHandler = null
+
+func get_event_handler() -> EventHandler:
+	if _event_handler == null:
+		_event_handler = EventHandler.new(self)
+		add_child(_event_handler)
+	return _event_handler
+
 
 func _on_asset_action_completed(action: String, success: bool, message: String):
 	if ui:
@@ -25,6 +33,7 @@ func start_turn():
 		return
 	if ui:
 		ui.show_turn(player.player_id)
+		ui.refresh_player_panel(get_game_state_snapshot())
 
 
 func roll_dice():
@@ -339,13 +348,15 @@ func handle_landed_cell(player: Player, cell_index: int):
 		return
 
 	# ── Chance ────────────────────────────────────────────────────────
-	if cell.data is ChanceData:
-		print("Rút Chance")
+	if cell is ChanceCell:
+		if get_event_handler().handle_event(player, cell):
+			await get_event_handler().event_finished
 		return
 
 	# ── Chest ─────────────────────────────────────────────────────────
-	if cell.data is ChestData:
-		print("Rút Chest")
+	if cell is ChestCell:
+		if get_event_handler().handle_event(player, cell):
+			await get_event_handler().event_finished
 		return
 
 	# ── Go To Jail ────────────────────────────────────────────────────
@@ -361,6 +372,26 @@ func process_reward(player: Player, amount: int = 200):
 	player.add_money(amount)
 	if ui:
 		ui.show_message("Qua GO nhận $" + str(amount))
+	if ui:
+		ui.refresh_player_panel(get_game_state_snapshot())
+
+
+# Trả về snapshot trạng thái players để UI render bảng tài sản
+func get_game_state_snapshot() -> Array:
+	var snapshot = []
+	for p in game_state.players:
+		var prop_names: Array = []
+		for cell in p.properties:
+			if cell is PropertyCell:
+				prop_names.append(cell.data.cell_name)
+		snapshot.append({
+			"id": p.player_id,
+			"name": p.name,
+			"balance": p.state.balance,
+			"properties": prop_names,
+			"in_jail": p.state.in_jail
+		})
+	return snapshot
 
 
 func process_payment(payer: Player, receiver: Player, amount: int, _reason: String):

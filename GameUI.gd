@@ -71,6 +71,21 @@ var _buy_cell : PropertyCell = null
 #   _mandatory = false → người chơi chủ động bấm nút (KHÔNG await)
 var _mandatory := false
 
+# ─── UC09 Event & Player Panel ──────────────────────────────────────
+signal buy_decision_made(want_to_buy: bool)
+
+var _ev_overlay    : ColorRect     = null
+var _ev_panel      : Panel         = null
+var _ev_icon       : Label         = null
+var _ev_title      : Label         = null
+var _ev_desc       : Label         = null
+var _ev_btn_box    : HBoxContainer = null
+var _ev_callback   : Callable
+
+var _buy_panel     : Panel         = null
+
+var _pp_panel      : Panel         = null
+var _pp_content    : VBoxContainer = null
 
 # ═════════════════════════════════════════════════════════════════════
 # _ready
@@ -98,6 +113,8 @@ func _ready() -> void:
 	save_load_menu.menu_closed.connect(_on_save_load_menu_closed)
 	save_load_menu.save_slot_requested.connect(_on_save_slot_requested)
 	save_load_menu.load_slot_requested.connect(_on_load_slot_requested)
+
+	_create_uc09_ui()
 
 
 func _unhandled_input(event: InputEvent):
@@ -555,3 +572,213 @@ func request_mortgage(player: Player, amount_needed: int) -> void:
 	btn_mortgage.visible = true
 	btn_sell.visible     = true
 	action_popup.visible = true
+
+
+# ═════════════════════════════════════════════════════════════════════
+# UC09 – EVENT POPUP & PLAYER PANEL
+# ═════════════════════════════════════════════════════════════════════
+
+func _create_uc09_ui() -> void:
+	# --- Overlay ---
+	_ev_overlay = ColorRect.new()
+	_ev_overlay.color = Color(0, 0, 0, 0.55)
+	_ev_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ev_overlay.visible = false
+	get_node("UI").add_child(_ev_overlay)
+
+	# --- Event Panel ---
+	_ev_panel = Panel.new()
+	_ev_panel.set_size(Vector2(440, 340))
+	_ev_panel.set_position(Vector2(300, 130))
+	_ev_panel.visible = false
+	var es = StyleBoxFlat.new()
+	es.bg_color = Color(0.08, 0.06, 0.18, 0.97)
+	es.set_border_width_all(3)
+	es.border_color = Color(0.6, 0.4, 1.0)
+	es.set_corner_radius_all(16)
+	_ev_panel.add_theme_stylebox_override("panel", es)
+
+	var ev_vbox = VBoxContainer.new()
+	ev_vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ev_vbox.offset_left = 24; ev_vbox.offset_top = 18
+	ev_vbox.offset_right = -24; ev_vbox.offset_bottom = -18
+	ev_vbox.add_theme_constant_override("separation", 10)
+	_ev_panel.add_child(ev_vbox)
+
+	_ev_icon = Label.new()
+	_ev_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ev_icon.add_theme_font_size_override("font_size", 40)
+	ev_vbox.add_child(_ev_icon)
+
+	_ev_title = Label.new()
+	_ev_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ev_title.add_theme_font_size_override("font_size", 22)
+	_ev_title.add_theme_color_override("font_color", Color(0.9, 0.85, 1.0))
+	ev_vbox.add_child(_ev_title)
+
+	ev_vbox.add_child(HSeparator.new())
+
+	_ev_desc = Label.new()
+	_ev_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_ev_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ev_desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_ev_desc.add_theme_font_size_override("font_size", 16)
+	_ev_desc.add_theme_color_override("font_color", Color(1.0, 1.0, 0.85))
+	ev_vbox.add_child(_ev_desc)
+
+	_ev_btn_box = HBoxContainer.new()
+	_ev_btn_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_ev_btn_box.add_theme_constant_override("separation", 12)
+	ev_vbox.add_child(_ev_btn_box)
+
+	get_node("UI").add_child(_ev_panel)
+
+	# --- Player Panel (bảng tài sản bên phải) ---
+	_pp_panel = Panel.new()
+	_pp_panel.set_size(Vector2(195, 560))
+	_pp_panel.set_position(Vector2(880, 20))
+	var ps = StyleBoxFlat.new()
+	ps.bg_color = Color(0.05, 0.05, 0.12, 0.92)
+	ps.set_border_width_all(1)
+	ps.border_color = Color(0.4, 0.4, 0.8)
+	ps.set_corner_radius_all(8)
+	_pp_panel.add_theme_stylebox_override("panel", ps)
+
+	var pp_title = Label.new()
+	pp_title.text = "📊 Bảng Tài Sản"
+	pp_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pp_title.add_theme_font_size_override("font_size", 14)
+	pp_title.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+	pp_title.set_position(Vector2(0, 8))
+	pp_title.set_size(Vector2(195, 24))
+	_pp_panel.add_child(pp_title)
+
+	_pp_content = VBoxContainer.new()
+	_pp_content.set_position(Vector2(8, 38))
+	_pp_content.set_size(Vector2(179, 515))
+	_pp_content.add_theme_constant_override("separation", 10)
+	_pp_panel.add_child(_pp_content)
+
+	get_node("UI").add_child(_pp_panel)
+
+
+# Gọi từ EventHandler để hiển thị popup thẻ Cơ Hội / Khí Vận
+func show_event_popup(
+		title: String, description: String,
+		choices: Array, callback: Callable,
+		card_type: String = "") -> void:
+	print("--- SHOW EVENT POPUP: ", title, " ---")
+	_ev_callback = callback
+
+	match card_type:
+		"chance":
+			_ev_icon.text = "🎴"
+			_ev_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+			var s = _ev_panel.get_theme_stylebox("panel").duplicate()
+			s.border_color = Color(1.0, 0.75, 0.1)
+			_ev_panel.add_theme_stylebox_override("panel", s)
+		"community":
+			_ev_icon.text = "🎁"
+			_ev_title.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
+			var s = _ev_panel.get_theme_stylebox("panel").duplicate()
+			s.border_color = Color(0.2, 0.8, 1.0)
+			_ev_panel.add_theme_stylebox_override("panel", s)
+		_:
+			_ev_icon.text = "⚡"
+
+	_ev_title.text = title
+	_ev_desc.text  = description
+
+	for child in _ev_btn_box.get_children():
+		child.queue_free()
+
+	for i in range(choices.size()):
+		var btn = Button.new()
+		btn.text = choices[i]
+		btn.custom_minimum_size = Vector2(130, 44)
+		btn.add_theme_font_size_override("font_size", 14)
+		btn.pressed.connect(_on_ev_btn_pressed.bind(i))
+		_ev_btn_box.add_child(btn)
+
+	_ev_overlay.visible = true
+	_ev_panel.visible   = true
+	_ev_panel.move_to_front()
+
+
+func _on_ev_btn_pressed(choice_index: int) -> void:
+	_ev_overlay.visible = false
+	_ev_panel.visible   = false
+	if _ev_callback.is_valid():
+		_ev_callback.call(choice_index)
+
+
+# Cập nhật bảng tài sản từ snapshot do GameController cung cấp
+func refresh_player_panel(snapshot: Array) -> void:
+	if _pp_panel == null or _pp_content == null:
+		return
+
+	for child in _pp_content.get_children():
+		child.queue_free()
+
+	var player_colors = [
+		Color(0.3, 0.5, 1.0), Color(1.0, 0.35, 0.35),
+		Color(0.2, 0.85, 0.4), Color(1.0, 0.85, 0.1)
+	]
+	var player_emojis = ["🔵", "🔴", "🟢", "🟡"]
+
+	for p in snapshot:
+		var card = Panel.new()
+		card.custom_minimum_size = Vector2(179, 0)
+		var pid: int = p["id"]
+		var pc: Color = player_colors[pid % player_colors.size()]
+		var cs = StyleBoxFlat.new()
+		cs.bg_color = Color(pc.r * 0.25, pc.g * 0.25, pc.b * 0.25, 0.9)
+		cs.border_width_left = 2
+		cs.border_color = pc
+		cs.set_corner_radius_all(6)
+		card.add_theme_stylebox_override("panel", cs)
+
+		var vb = VBoxContainer.new()
+		vb.set_anchors_preset(Control.PRESET_FULL_RECT)
+		vb.offset_left = 8; vb.offset_top = 6
+		vb.offset_right = -6; vb.offset_bottom = -6
+		vb.add_theme_constant_override("separation", 3)
+		card.add_child(vb)
+
+		var name_lbl = Label.new()
+		var jail_tag = " 🔒" if p["in_jail"] else ""
+		name_lbl.text = player_emojis[pid % player_emojis.size()] + " " + p["name"] + jail_tag
+		name_lbl.add_theme_font_size_override("font_size", 13)
+		name_lbl.add_theme_color_override("font_color", pc)
+		vb.add_child(name_lbl)
+
+		var bal_lbl = Label.new()
+		bal_lbl.text = "💰 $" + str(p["balance"])
+		bal_lbl.add_theme_font_size_override("font_size", 12)
+		bal_lbl.add_theme_color_override(
+			"font_color",
+			Color.LIME_GREEN if p["balance"] >= 200 else Color.TOMATO
+		)
+		vb.add_child(bal_lbl)
+
+		if p["properties"].size() > 0:
+			var pt = Label.new()
+			pt.text = "🏠 Bất động sản:"
+			pt.add_theme_font_size_override("font_size", 10)
+			pt.add_theme_color_override("font_color", Color(0.7, 0.85, 0.7))
+			vb.add_child(pt)
+			for pname in p["properties"]:
+				var pl = Label.new()
+				pl.text = "  • " + pname
+				pl.add_theme_font_size_override("font_size", 10)
+				pl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+				pl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				vb.add_child(pl)
+		else:
+			var no_p = Label.new()
+			no_p.text = "  (chưa có đất)"
+			no_p.add_theme_font_size_override("font_size", 10)
+			no_p.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+			vb.add_child(no_p)
+
+		_pp_content.add_child(card)
