@@ -71,16 +71,9 @@ func transfer_all_assets_to(creditor: Player):
 		
 		# 2. Chuyển quyền sở hữu đất đai
 		for cell in properties:
-			cell.cell_owner = creditor
-			creditor.add_property(cell) # Dùng hàm add_property để đồng bộ
-			
-		# 3. Chuyển các thẻ đặc biệt
-		for card in special_card:
-			creditor.add_special_card(card)
-			
-	# Xóa sạch tài sản của người phá sản
-	state.balance = 0
-	properties.clear()
+			if cell is PropertyCell:
+				cell.property_owner = creditor
+				creditor.add_property(cell) # Dùng hàm add_property để đồng bộ
 	special_card.clear()
 	
 	# Cập nhật trạng thái phá sản vào state

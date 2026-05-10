@@ -85,8 +85,11 @@ func _draw_community() -> Dictionary:
 # =========================
 
 func handle_event(player: Player, cell: Cell) -> bool:
-	match cell.cell_type:
-		"chance":
+	if not cell or not cell.data:
+		return false
+	
+	match cell.data.cell_type:
+		CellType.Type.CHANCE:
 			var card = _draw_chance()
 			print("--- CƠ HỘI: ", card.text, " ---")
 			game_controller.ui.show_card_popup("CƠ HỘI", card.text, Color(1.0, 0.6, 0.2))
@@ -95,7 +98,7 @@ func handle_event(player: Player, cell: Cell) -> bool:
 			await _process_card(player, card)
 			return true
 
-		"community":
+		CellType.Type.CHEST:
 			var card = _draw_community()
 			print("--- KHÍ VẬN: ", card.text, " ---")
 			game_controller.ui.show_card_popup("KHÍ VẬN", card.text, Color(0.4, 0.6, 1.0))
@@ -104,32 +107,35 @@ func handle_event(player: Player, cell: Cell) -> bool:
 			await _process_card(player, card)
 			return true
 
-		"go_to_jail":
+		CellType.Type.GO_TO_JAIL:
 			print("--- VÀO TÙ! ---")
 			game_controller.ui.show_message("👮 " + player.name + " bị bắt! Vào Tù!")
 			await game_controller.go_to_jail(player)
 			call_deferred("emit_signal", "event_finished")
 			return true
 
-		"tax":
-			var tax_amount = cell.rent_price
-			print("--- THUẾ: $", tax_amount, " ---")
-			game_controller.ui.show_message("💸 " + player.name + " nộp thuế $" + str(tax_amount))
-			game_controller.process_payment(player, null, tax_amount, cell.cell_name)
-			call_deferred("emit_signal", "event_finished")
-			return true
+		CellType.Type.TAX:
+			if cell is TaxCell:
+				var tax_data = cell.data as TaxData
+				if tax_data:
+					var tax_amount = tax_data.tax_amount
+					print("--- THUẾ: $", tax_amount, " ---")
+					game_controller.ui.show_message("💸 " + player.name + " nộp thuế $" + str(tax_amount))
+					game_controller.process_payment(player, null, tax_amount, cell.data.cell_name)
+					call_deferred("emit_signal", "event_finished")
+					return true
 
-		"go":
+		CellType.Type.GO:
 			game_controller.ui.show_message("🏁 " + player.name + " đến ô GO!")
 			call_deferred("emit_signal", "event_finished")
 			return true
 
-		"jail":
+		CellType.Type.VISIT_JAIL:
 			game_controller.ui.show_message(player.name + " đi ngang qua Nhà Tù 🔒")
 			call_deferred("emit_signal", "event_finished")
 			return true
 
-		"parking":
+		CellType.Type.PARKING:
 			game_controller.ui.show_message(player.name + " nghỉ chân tại Bãi Đỗ Xe")
 			call_deferred("emit_signal", "event_finished")
 			return true
@@ -204,6 +210,9 @@ func _find_nearest_railroad(current_pos: int) -> int:
 	for i in range(1, board_size + 1):
 		var check_pos = (current_pos + i) % board_size
 		var cell = game_controller.board.get_cell(check_pos)
-		if cell and cell.cell_type == "railroad":
-			return check_pos
+		if cell and cell.data and cell.data.cell_type == CellType.Type.PROPERTY:
+			if cell is PropertyCell:
+				var prop_data = cell.data as PropertyData
+				if prop_data and prop_data.color_name == "railroad":
+					return check_pos
 	return current_pos

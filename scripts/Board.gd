@@ -4,7 +4,7 @@ class_name Board
 
 var cell_positions: Array[Vector2] = []
 var cells: Array[Cell] = []
-var board_layout = []
+var cell_metadata: Array = []  # Store {name, type, price} for each cell
 
 
 # =========================
@@ -58,8 +58,6 @@ func generate_board():
 
 	var cells_node = $Cells
 
-	create_board_layout()
-
 	$Cells.z_index = 0
 	$Tokens.z_index = 3
 
@@ -95,13 +93,45 @@ func generate_board():
 	var configs = BoardData.get_cell_configs()
 	for i in range(cell_positions.size()):
 
-		var data = board_layout[i]
+		var config = configs[i]
 
-		if data == null:
+		if config == null:
 			push_error(
-				"board_layout[" + str(i) + "] is NULL"
+				"configs[" + str(i) + "] is NULL"
 			)
 			continue
+
+		# Create appropriate CellData type from config dictionary
+		var data: CellData
+		
+		if config["type"] in ["property", "railroad", "utility"]:
+			var prop_data = PropertyData.new()
+			prop_data.cell_index = i
+			prop_data.cell_name = config["name"]
+			prop_data.cell_type = _get_cell_type_from_string(config["type"])
+			prop_data.buy_price = config.get("price", 0)
+			prop_data.base_rent = config.get("rent", 0)
+			prop_data.color_name = config.get("color", "")
+			prop_data.color_code = Color.WHITE
+			prop_data.build_cost = config.get("house_cost", 0)
+			prop_data.house_1_rent = config.get("rent_levels", [0, 0, 0, 0, 0, 0])[1] if config.get("rent_levels") else 0
+			prop_data.house_2_rent = config.get("rent_levels", [0, 0, 0, 0, 0, 0])[2] if config.get("rent_levels") else 0
+			prop_data.house_3_rent = config.get("rent_levels", [0, 0, 0, 0, 0, 0])[3] if config.get("rent_levels") else 0
+			prop_data.house_4_rent = config.get("rent_levels", [0, 0, 0, 0, 0, 0])[4] if config.get("rent_levels") else 0
+			prop_data.hotel_rent = config.get("rent_levels", [0, 0, 0, 0, 0, 0])[5] if config.get("rent_levels") else 0
+			data = prop_data
+		elif config["type"] == "tax":
+			var tax_data = TaxData.new()
+			tax_data.cell_index = i
+			tax_data.cell_name = config["name"]
+			tax_data.cell_type = _get_cell_type_from_string(config["type"])
+			tax_data.tax_amount = config.get("rent", 0)
+			data = tax_data
+		else:
+			data = CellData.new()
+			data.cell_index = i
+			data.cell_name = config["name"]
+			data.cell_type = _get_cell_type_from_string(config["type"])
 
 		print(
 			"Spawn: ",
@@ -111,7 +141,7 @@ func generate_board():
 		)
 
 		var scene = get_scene_by_type(
-			data.cell_type
+			config["type"]
 		)
 
 		if scene == null:
@@ -124,30 +154,22 @@ func generate_board():
 
 		cell.position = cell_positions[i]
 
-<<<<<<< HEAD
 		cell.setup(data)
-=======
-		if cell.get_script() != null:
-			cell.set("index", i)
-			if i < default_cell_names.size():
-				cell.set("cell_name", default_cell_names[i])
-				
-				# Ô sự kiện hoặc đặc biệt không thể mua được (giá = 0)
-				if default_cell_names[i] in ["Bắt Đầu", "Khí Vận", "Thuế", "Nhà Tù", "Cơ Hội", "Bãi Đỗ Xe", "Vào Tù"]:
-					cell.set("price", 0)
->>>>>>> hThanh
 
 		cells_node.add_child(cell)
 
 		cells.append(cell)
 		
+		# Store metadata for label creation
+		cell_metadata.append({
+			"name": data.cell_name,
+			"type": config["type"],
+			"price": config.get("price", 0)
+		})
+		
 		# _ready() đã được gọi khi add_child → refresh Labels ngay
 		if cell.has_method("refresh_display"):
 			cell.refresh_display()
-
-		# Gán dữ liệu cấu hình
-		if i < configs.size():
-			cell.setup(configs[i])
 
 	# =========================
 	# Tạo các lớp phủ giao diện
@@ -158,282 +180,47 @@ func generate_board():
 	center_board()
 
 
-<<<<<<< HEAD
-# =========================
-# Layout
-# =========================
-
-func create_board_layout():
-
-	board_layout.clear()
-
-	board_layout = [
-
-		create_go(0),
-
-		create_red_property(1),
-		create_red_property(2),
-
-		create_chance(3),
-
-		create_red_property(4),
-
-		create_visit_jail(5),
-
-		create_green_property(6),
-		create_green_property(7),
-
-		create_tax(8),
-
-		create_green_property(9),
-
-		create_parking(10),
-
-		create_yellow_property(11),
-		create_yellow_property(12),
-
-		create_chest(13),
-
-		create_yellow_property(14),
-
-		create_go_to_jail(15),
-
-		create_blue_property(16),
-		create_blue_property(17),
-
-		create_tax(18),
-
-		create_blue_property(19)
-	]
-
-
-# =========================
-# Scene Factory
-# =========================
-
 func get_scene_by_type(type):
-
 	match type:
-
-		CellType.Type.PROPERTY:
+		"property", "railroad", "utility":
 			return property_scene
-
-		CellType.Type.TAX:
+		"tax":
 			return tax_scene
-
-		CellType.Type.CHANCE:
+		"chance":
 			return chance_scene
-
-		CellType.Type.CHEST:
+		"community":
 			return chest_scene
-
 		_:
 			return special_scene
 
 
-# =========================
-# Property Factory
-# =========================
+func _get_cell_type_from_string(type_str: String) -> CellType.Type:
+	match type_str:
+		"property":
+			return CellType.Type.PROPERTY
+		"railroad":
+			return CellType.Type.PROPERTY
+		"utility":
+			return CellType.Type.PROPERTY
+		"tax":
+			return CellType.Type.TAX
+		"chance":
+			return CellType.Type.CHANCE
+		"community":
+			return CellType.Type.CHEST
+		"go":
+			return CellType.Type.GO
+		"go_to_jail":
+			return CellType.Type.GO_TO_JAIL
+		"jail":
+			return CellType.Type.VISIT_JAIL
+		"parking":
+			return CellType.Type.PARKING
+		_:
+			return CellType.Type.PROPERTY
 
-func create_red_property(index):
 
-	var data = PropertyData.new()
 
-	data.cell_index = index
-	data.cell_type = CellType.Type.PROPERTY
-	data.cell_name = "Red " + str(index)
-
-	data.color_name = "Red"
-	data.color_code = Color.RED
-
-	data.buy_price = 200
-	data.build_cost = 100
-
-	# Rent table (BR-09, BR-10)
-	data.base_rent = 10
-	data.house_1_rent = 30
-	data.house_2_rent = 90
-	data.house_3_rent = 270
-	data.house_4_rent = 400
-	data.hotel_rent = 550
-
-	return data
-
-
-func create_green_property(index):
-
-	var data = PropertyData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.PROPERTY
-	data.cell_name = "Green " + str(index)
-
-	data.color_name = "Green"
-	data.color_code = Color.GREEN
-
-	data.buy_price = 300
-	data.build_cost = 150
-
-	# Rent table (BR-09, BR-10)
-	data.base_rent = 14
-	data.house_1_rent = 40
-	data.house_2_rent = 100
-	data.house_3_rent = 300
-	data.house_4_rent = 450
-	data.hotel_rent = 600
-
-	return data
-
-
-func create_yellow_property(index):
-
-	var data = PropertyData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.PROPERTY
-	data.cell_name = "Yellow " + str(index)
-
-	data.color_name = "Yellow"
-	data.color_code = Color.YELLOW
-
-	data.buy_price = 400
-	data.build_cost = 200
-
-	# Rent table (BR-09, BR-10)
-	data.base_rent = 18
-	data.house_1_rent = 50
-	data.house_2_rent = 150
-	data.house_3_rent = 450
-	data.house_4_rent = 625
-	data.hotel_rent = 750
-
-	return data
-
-
-func create_blue_property(index):
-
-	var data = PropertyData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.PROPERTY
-	data.cell_name = "Blue " + str(index)
-
-	data.color_name = "Blue"
-	data.color_code = Color.BLUE
-
-	data.buy_price = 500
-	data.build_cost = 250
-
-	# Rent table (BR-09, BR-10)
-	data.base_rent = 26
-	data.house_1_rent = 100
-	data.house_2_rent = 300
-	data.house_3_rent = 750
-	data.house_4_rent = 900
-	data.hotel_rent = 1100
-
-	return data
-
-
-# =========================
-# Other Cells
-# =========================
-
-func create_tax(index):
-
-	var data = TaxData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.TAX
-	data.cell_name = "Tax"
-
-	data.tax_amount = 200
-
-	return data
-
-
-func create_chance(index):
-
-	var data = ChanceData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.CHANCE
-	data.cell_name = "Chance"
-
-	data.cards = [
-		"Nhận 200",
-		"Mất 100",
-		"Đi tù"
-	]
-
-	return data
-
-
-func create_chest(index):
-
-	var data = ChestData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.CHEST
-	data.cell_name = "Chest"
-
-	data.cards = [
-		"Nhận 300",
-		"Mất 150",
-		"Tiến tới GO"
-	]
-
-	return data
-
-
-func create_go(index):
-
-	var data = SpecialData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.GO
-	data.cell_name = "GO"
-
-	return data
-
-
-func create_visit_jail(index):
-
-	var data = SpecialData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.VISIT_JAIL
-	data.cell_name = "Visit Jail"
-
-	return data
-
-
-func create_parking(index):
-
-	var data = SpecialData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.PARKING
-	data.cell_name = "Parking"
-
-	return data
-
-
-func create_go_to_jail(index):
-
-	var data = SpecialData.new()
-
-	data.cell_index = index
-	data.cell_type = CellType.Type.GO_TO_JAIL
-	data.cell_name = "Go To Jail"
-
-	return data
-
-
-# =========================
-# Helpers
-# =========================
-=======
 func _create_cell_labels():
 	# Xóa labels cũ
 	if has_node("Labels"):
@@ -446,11 +233,15 @@ func _create_cell_labels():
 	add_child(labels_node)
 
 	for i in range(cells.size()):
+		if i >= cell_metadata.size():
+			break
+			
+		var metadata = cell_metadata[i]
 		var cell = cells[i]
 
 		# --- Label tên ô ---
 		var name_label = Label.new()
-		name_label.text = cell.cell_name
+		name_label.text = metadata["name"]
 		name_label.position = cell_positions[i] + Vector2(2, 68)
 		name_label.add_theme_font_size_override("font_size", 9)
 		name_label.size = Vector2(size - 4, 30)
@@ -459,7 +250,7 @@ func _create_cell_labels():
 
 		# Màu chữ tùy loại ô
 		var font_color = Color(0.85, 0.88, 0.92)
-		match cell.cell_type:
+		match metadata["type"]:
 			"go": font_color = Color(0.3, 1.0, 0.5)
 			"chance": font_color = Color(1.0, 0.7, 0.3)
 			"community": font_color = Color(0.5, 0.7, 1.0)
@@ -471,9 +262,9 @@ func _create_cell_labels():
 		labels_node.add_child(name_label)
 
 		# --- Label giá tiền ---
-		if cell.price > 0:
+		if metadata["price"] > 0:
 			var price_label = Label.new()
-			price_label.text = "$" + str(cell.price)
+			price_label.text = "$" + str(metadata["price"])
 			price_label.position = cell_positions[i] + Vector2(2, 54)
 			price_label.add_theme_font_size_override("font_size", 10)
 			price_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5))
@@ -555,8 +346,6 @@ func _create_center_decoration():
 	help.add_theme_color_override("font_color", Color(0.5, 0.55, 0.6))
 	center_node.add_child(help)
 
->>>>>>> hThanh
-
 func center_board():
 
 	if cell_positions.is_empty():
@@ -569,14 +358,8 @@ func center_board():
 
 	var viewport_size = get_viewport_rect().size
 
-<<<<<<< HEAD
-	position = (
-		viewport_size - board_size
-	) / 2.0
-=======
 	# Center the board, but shift it left by 100 pixels to make room for UI
 	position = (viewport_size - board_size_vec) / 2 - Vector2(100, 0)
->>>>>>> hThanh
 
 
 func clear_board():
@@ -588,6 +371,7 @@ func clear_board():
 
 	cells.clear()
 	cell_positions.clear()
+	cell_metadata.clear()
 
 
 func _process(_delta):
@@ -598,29 +382,6 @@ func _process(_delta):
 		center_board()
 
 
-<<<<<<< HEAD
-func get_cell_position(index: int) -> Vector2:
-
-	if cell_positions.is_empty():
-		return Vector2.ZERO
-
-	return cell_positions[
-		index % cell_positions.size()
-	] + Vector2(
-		size / 2.0,
-		size / 2.0
-	)
-
-
-func get_cell(index: int) -> Cell:
-
-	if index >= 0 and index < cells.size():
-		return cells[index]
-
-	return null
-
-
-=======
 func get_cell_position(cell_index: int) -> Vector2:
 	if cell_positions.is_empty():
 		return Vector2.ZERO
@@ -636,7 +397,7 @@ func get_cell(cell_index: int) -> Cell:
 
 func get_jail_position() -> int:
 	for i in range(cells.size()):
-		if cells[i].cell_type == "jail":
+		if cells[i].data and cells[i].data.cell_type == CellType.Type.VISIT_JAIL:
 			return i
 	return 10
 
@@ -645,8 +406,10 @@ func get_jail_position() -> int:
 func count_railroads_owned(player: Player) -> int:
 	var count = 0
 	for cell in cells:
-		if cell.cell_type == "railroad" and cell.cell_owner == player and not cell.is_mortgaged:
-			count += 1
+		if cell is PropertyCell:
+			var prop_data = cell.data as PropertyData
+			if prop_data and prop_data.color_name == "railroad" and cell.property_owner == player and not cell.is_mortgaged:
+				count += 1
 	return count
 
 
@@ -654,12 +417,13 @@ func count_railroads_owned(player: Player) -> int:
 func count_utilities_owned(player: Player) -> int:
 	var count = 0
 	for cell in cells:
-		if cell.cell_type == "utility" and cell.cell_owner == player and not cell.is_mortgaged:
-			count += 1
+		if cell is PropertyCell:
+			var prop_data = cell.data as PropertyData
+			if prop_data and prop_data.color_name == "utility" and cell.property_owner == player and not cell.is_mortgaged:
+				count += 1
 	return count
 
 
->>>>>>> hThanh
 func remove_player_token(player: Player):
 
 	if player.token \
@@ -671,14 +435,9 @@ func remove_player_token(player: Player):
 func reset_board():
 
 	for cell in cells:
-<<<<<<< HEAD
-
 		if cell is PropertyCell:
-
-			cell.reset_property()
-=======
-		cell.cell_owner = null
-		cell.is_mortgaged = false
-		cell.house_count = 0
+			cell.property_owner = null
+			cell.is_mortgaged = false
+			cell.house_count = 0
+			cell.has_hotel = false
 		cell.queue_redraw()
->>>>>>> hThanh

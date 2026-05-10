@@ -276,7 +276,7 @@ func handle_landed_cell(player: Player, cell_index: int):
 	if not cell:
 		return
 
-	print(player.name, " đáp xuống: ", cell.cell_name, " (", cell.cell_type, ")")
+	print(player.name, " đáp xuống: ", cell.data.cell_name, " (", cell.data.cell_type, ")")
 
 	# --- Ô sự kiện ---
 	var is_event = await get_event_handler().handle_event(player, cell)
@@ -285,8 +285,9 @@ func handle_landed_cell(player: Player, cell_index: int):
 		return
 
 	# --- Ô có thể mua ---
-	if cell.can_be_purchased():
-		if player.state.balance >= cell.price:
+	if cell is PropertyCell and cell.property_owner == null:
+		var prop_data = cell.data as PropertyData
+		if prop_data and player.state.balance >= prop_data.buy_price:
 			# Hiện popup mua đất
 			ui.show_buy_prompt(player, cell)
 			var accepted = await buy_decision_made
@@ -295,30 +296,30 @@ func handle_landed_cell(player: Player, cell_index: int):
 				buy_property(player, cell)
 			else:
 				# Đấu giá nếu người chơi từ chối mua
-				ui.show_message(player.name + " không mua → Đấu giá " + cell.cell_name + "!")
+				ui.show_message(player.name + " không mua → Đấu giá " + cell.data.cell_name + "!")
 				await run_auction(cell)
 		else:
-			ui.show_message(player.name + " không đủ tiền → Đấu giá " + cell.cell_name + "!")
+			ui.show_message(player.name + " không đủ tiền → Đấu giá " + cell.data.cell_name + "!")
 			await run_auction(cell)
 
 	# --- Ô đã có chủ (trả thuê) ---
-	elif cell.cell_owner != null and cell.cell_owner != player and not cell.is_mortgaged:
-		var rent_amount = cell.get_current_rent(last_dice_total)
+	elif cell is PropertyCell and cell.property_owner != null and cell.property_owner != player and not cell.is_mortgaged:
+		var rent_amount = cell.get_current_rent()
 
-		ui.show_message(player.name + " trả $" + str(rent_amount) + " tiền thuê cho " + cell.cell_owner.name)
+		ui.show_message(player.name + " trả $" + str(rent_amount) + " tiền thuê cho " + cell.property_owner.name)
 
 		if player.state.balance >= rent_amount:
-			process_payment(player, cell.cell_owner, rent_amount, cell.cell_name)
+			process_payment(player, cell.property_owner, rent_amount, cell.data.cell_name)
 		else:
-			handle_insufficient_funds(player, cell.cell_owner, rent_amount)
+			handle_insufficient_funds(player, cell.property_owner, rent_amount)
 			await self.turn_action_completed
 
 	# --- Ô của mình ---
-	elif cell.cell_owner == player:
-		ui.show_message("Đây là đất của bạn: " + cell.cell_name)
+	elif cell is PropertyCell and cell.property_owner == player:
+		ui.show_message("Đây là đất của bạn: " + cell.data.cell_name)
 
 		# Cho phép xây nhà nếu có đủ bộ màu
-		if cell.can_build_house():
+		if cell.property_owner == player and not cell.is_mortgaged:
 			ui.show_build_prompt(player, cell)
 			await build_decision_made
 
@@ -330,12 +331,15 @@ func handle_landed_cell(player: Player, cell_index: int):
 # =========================
 
 func buy_property(player: Player, cell: Cell):
-	player.deduct_money(cell.price)
-	cell.cell_owner = player
-	player.add_property(cell)
+	if cell is PropertyCell:
+		var prop_data = cell.data as PropertyData
+		if prop_data:
+			player.deduct_money(prop_data.buy_price)
+			cell.property_owner = player
+			player.add_property(cell)
 
-	ui.show_message(player.name + " mua " + cell.cell_name + " ($" + str(cell.price) + ")")
-	print(player.name, " đã mua: ", cell.cell_name)
+			ui.show_message(player.name + " mua " + cell.data.cell_name + " ($" + str(prop_data.buy_price) + ")")
+			print(player.name, " đã mua: ", cell.data.cell_name)
 
 	cell.queue_redraw()
 	ui.update_player_info(game_state.players)
@@ -346,7 +350,14 @@ func buy_property(player: Player, cell: Cell):
 # =========================
 
 func run_auction(cell: Cell):
-	print("--- ĐẤU GIÁ: ", cell.cell_name, " ---")
+	if not cell is PropertyCell:
+		return
+	
+	var prop_data = cell.data as PropertyData
+	if not prop_data:
+		return
+	
+	print("--- ĐẤU GIÁ: ", cell.data.cell_name, " ---")
 
 	var highest_bid = 0
 	var highest_bidder: Player = null
@@ -357,7 +368,7 @@ func run_auction(cell: Cell):
 			continue
 
 		# Logic đấu giá đơn giản: trả giá nếu có tiền và giá hợp lý
-		var max_willing = int(cell.price * 0.8) # Tối đa 80% giá niêm yết
+		var max_willing = int(prop_data.buy_price * 0.8) # Tối đa 80% giá niêm yết
 		var bid = min(max_willing, player.state.balance - 100) # Giữ lại ít nhất $100
 
 		if bid > highest_bid and bid > 0:
@@ -366,14 +377,14 @@ func run_auction(cell: Cell):
 
 	if highest_bidder != null:
 		highest_bidder.deduct_money(highest_bid)
-		cell.cell_owner = highest_bidder
+		cell.property_owner = highest_bidder
 		highest_bidder.add_property(cell)
 		cell.queue_redraw()
 
-		ui.show_message(highest_bidder.name + " thắng đấu giá " + cell.cell_name + " với $" + str(highest_bid))
-		print(highest_bidder.name, " thắng đấu giá: ", cell.cell_name, " - $", highest_bid)
+		ui.show_message(highest_bidder.name + " thắng đấu giá " + cell.data.cell_name + " với $" + str(highest_bid))
+		print(highest_bidder.name, " thắng đấu giá: ", cell.data.cell_name, " - $", highest_bid)
 	else:
-		ui.show_message("Không ai đấu giá " + cell.cell_name)
+		ui.show_message("Không ai đấu giá " + cell.data.cell_name)
 		print("Đấu giá thất bại - không ai mua")
 
 	await get_tree().create_timer(1.5).timeout
@@ -435,21 +446,6 @@ func handle_bankruptcy(debtor: Player, creditor: Player):
 	elif ui:
 		ui.show_message(debtor.name + " đã phá sản!")
 		await get_tree().create_timer(2.0).timeout
-
-func handle_bankruptcy(debtor: Player, creditor: Player):
-	print("💀 ", debtor.name, " PHÁ SẢN!")
-	ui.show_message("💀 " + debtor.name + " đã PHÁ SẢN!")
-
-	debtor.transfer_all_assets_to(creditor)
-
-	if board.has_method("remove_player_token"):
-		board.remove_player_token(debtor)
-
-	# Redraw tất cả ô đất
-	for cell in board.cells:
-		cell.queue_redraw()
-
-	emit_signal("turn_action_completed")
 
 func check_game_over():
 	var active_players = []

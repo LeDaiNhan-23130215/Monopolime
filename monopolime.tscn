@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://d1q2dxa3s47i4" path="res://GameController.gd" id="1_hth5n"]
 [ext_resource type="Script" uid="uid://duu0jlxm71k2f" path="res://Main.gd" id="1_wplms"]
 [ext_resource type="Texture2D" uid="uid://cwfa72ssep3sb" path="res://resources/dices/dice6.jpg" id="2_hb5le"]
-[ext_resource type="AudioStream" uid="uid://wtqb2jbiq6ld" path="res://resources/audio/rollAudio/ribhavagrawal-coin-recieved-230517.mp3" id="3_fo70c"]
 [ext_resource type="Script" uid="uid://cn550mdkqajxm" path="res://GameUI.gd" id="4_x4cqj"]
 [ext_resource type="AudioStream" uid="uid://bghhjbsv270nm" path="res://resources/audio/rollAudio/Dice_roll_sound.mp3" id="5_8j4tt"]
 [ext_resource type="Script" uid="uid://dhpcoe4d7fmxk" path="res://GameState.gd" id="5_r4gxj"]
@@ -17,7 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://bebd74jpd2j4k" path="res://CellScenes/ChanceCell.tscn" id="12_tfrc1"]
 [ext_resource type="PackedScene" uid="uid://drvvf57bfb2xw" path="res://CellScenes/ChestCell.tscn" id="13_fhree"]
 [ext_resource type="PackedScene" uid="uid://d3krjl7alrwpm" path="res://CellScenes/SpecialCell.tscn" id="14_swiv5"]
-[ext_resource type="Script" uid="uid://blbexkkbfy25o" path="res://scripts/AssetManager.gd" id="20_uc7am"]
+[ext_resource type="Script" path="res://scripts/AssetManager.gd" id="20_uc7am"]
 
 [node name="Main" type="Node2D" unique_id=1488605029]
 script = ExtResource("1_wplms")
