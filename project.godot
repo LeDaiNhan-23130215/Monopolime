@@ -18,7 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 StorageService="*uid://bxbynds22lo3b"
-TokenManage="*uid://chbjx6htmbaud"
+TokenManage="*res://scripts/TokenManager/TokenManager.gd"
 
 [global_group]
 
