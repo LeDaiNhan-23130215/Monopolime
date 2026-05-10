@@ -6,6 +6,7 @@ var balance: int = 1500
 var in_jail: bool = false
 var bankrupt: bool = false
 var special_cards: int = 0
+var jail_turns: int = 0
 
 func update_position(new_position: int):
 	position = new_position
@@ -15,10 +16,12 @@ func add_balance(amount: int):
 
 func deduct_balance(amount: int):
 	balance -= amount
-	
+
 
 func set_in_jail(flag: bool):
 	in_jail = flag
+	if not flag:
+		jail_turns = 0
 
 func set_bankrupt(flag: bool):
 	bankrupt = flag

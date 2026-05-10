@@ -1,17 +1,14 @@
 extends Node
 class_name GameUI
 
-signal buy_decision_made(want_to_buy: bool)
+signal setup_finished
 
 @onready var label = get_node("UI/Result")
 @onready var timer = get_node("UI/DiceTimer")
 @onready var double_label = get_node("UI/IsDoubleLabel")
-
 @onready var dice1_sprite = get_node("UI/Dice1")
 @onready var dice2_sprite = get_node("UI/Dice2")
-
 @onready var audio_roll = get_node("UI/AudioRoll")
-
 @onready var roll_button = get_node("UI/Roll Dice")
 
 var dice_textures = [
@@ -25,578 +22,731 @@ var dice_textures = [
 
 var rolling := false
 var roll_time := 0.0
-
 var base_scale := Vector2.ONE
-
 var game_controller: GameController
 
-# --- EVENT UI VARS ---
-var event_panel: Panel
-var event_overlay: ColorRect
-var event_icon: Label
-var event_title: Label
-var event_desc: Label
-var event_buttons_container: HBoxContainer
-var event_callback_callable: Callable
-# ---------------------
-
+# Dynamic UI nodes
+var player_info_panel: PanelContainer
+var player_info_label: RichTextLabel
+var message_label: Label
+var buy_panel: PanelContainer
+var build_panel: PanelContainer
+var card_panel: PanelContainer
+var game_over_panel: PanelContainer
 
 func _ready():
-
 	var target_size = 64.0
-
 	var tex_size = dice1_sprite.texture.get_size().x
-
-	var scale_factor = target_size / tex_size
-
-	base_scale = Vector2.ONE * scale_factor
-
+	base_scale = Vector2.ONE * (target_size / tex_size)
 	dice1_sprite.scale = base_scale
 	dice2_sprite.scale = base_scale
 
-	_create_event_popup()
+	_create_player_info_panel()
+	_create_message_label()
+	_create_buy_panel()
+	_create_build_panel()
+	_create_card_panel()
+	_create_game_over_panel()
 
+# ======== PLAYER INFO HUD ========
 
-func _create_event_popup():
-	# Overlay mờ nền khi popup hiện
-	event_overlay = ColorRect.new()
-	event_overlay.color = Color(0, 0, 0, 0.55)
-	event_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	event_overlay.visible = false
-	get_node("UI").add_child(event_overlay)
-	
-	event_panel = Panel.new()
-	event_panel.set_size(Vector2(440, 340))
-	event_panel.set_position(Vector2(300, 130))
-	event_panel.visible = false
-	
-	var stylebox = StyleBoxFlat.new()
-	stylebox.bg_color = Color(0.08, 0.06, 0.18, 0.97)
-	stylebox.border_width_left = 3
-	stylebox.border_width_top = 3
-	stylebox.border_width_right = 3
-	stylebox.border_width_bottom = 3
-	stylebox.border_color = Color(0.6, 0.4, 1.0, 1)
-	stylebox.corner_radius_top_left = 16
-	stylebox.corner_radius_top_right = 16
-	stylebox.corner_radius_bottom_left = 16
-	stylebox.corner_radius_bottom_right = 16
-	stylebox.shadow_color = Color(0, 0, 0, 0.5)
-	stylebox.shadow_size = 12
-	event_panel.add_theme_stylebox_override("panel", stylebox)
-	
-	var vbox = VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.offset_left = 24; vbox.offset_top = 18
-	vbox.offset_right = -24; vbox.offset_bottom = -18
-	vbox.add_theme_constant_override("separation", 10)
-	event_panel.add_child(vbox)
-	
-	# Biểu tượng loại thẻ
-	event_icon = Label.new()
-	event_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	event_icon.add_theme_font_size_override("font_size", 40)
-	vbox.add_child(event_icon)
-	
-	# Tiêu đề
-	event_title = Label.new()
-	event_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	event_title.add_theme_font_size_override("font_size", 22)
-	event_title.add_theme_color_override("font_color", Color(0.9, 0.85, 1.0))
-	vbox.add_child(event_title)
-	
-	var sep = HSeparator.new()
-	vbox.add_child(sep)
-	
-	# Nội dung thẻ
-	event_desc = Label.new()
-	event_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	event_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	event_desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	event_desc.add_theme_font_size_override("font_size", 16)
-	event_desc.add_theme_color_override("font_color", Color(1.0, 1.0, 0.85))
-	vbox.add_child(event_desc)
-	
-	# Nút bấm
-	event_buttons_container = HBoxContainer.new()
-	event_buttons_container.alignment = BoxContainer.ALIGNMENT_CENTER
-	event_buttons_container.add_theme_constant_override("separation", 12)
-	vbox.add_child(event_buttons_container)
-	
-	# Add trực tiếp, KHÔNG dùng call_deferred
-	get_node("UI").add_child(event_panel)
+func _create_player_info_panel():
+	var ui_layer = get_node("UI")
+	player_info_panel = PanelContainer.new()
+	player_info_panel.position = Vector2(830, 20)
+	player_info_panel.size = Vector2(300, 220)
 
-# Hiển thị sự kiện với danh sách các nút lựa chọn
-func show_event_popup(title: String, description: String, choices: Array, callback: Callable, card_type: String = ""):
-	print("--- SHOW EVENT POPUP: ", title, " ---")
-	event_callback_callable = callback
-	
-	# Cài icon + màu theo loại thẻ
-	match card_type:
-		"chance":
-			event_icon.text = "🎴"
-			event_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
-			var s = event_panel.get_theme_stylebox("panel").duplicate()
-			s.border_color = Color(1.0, 0.75, 0.1, 1)
-			event_panel.add_theme_stylebox_override("panel", s)
-		"community":
-			event_icon.text = "🎁"
-			event_title.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
-			var s = event_panel.get_theme_stylebox("panel").duplicate()
-			s.border_color = Color(0.2, 0.8, 1.0, 1)
-			event_panel.add_theme_stylebox_override("panel", s)
-		_:
-			event_icon.text = "⚡"
-	
-	event_title.text = title
-	event_desc.text = description
-	
-	for child in event_buttons_container.get_children():
-		child.queue_free()
-	
-	for i in range(choices.size()):
-		var btn = Button.new()
-		btn.text = choices[i]
-		btn.custom_minimum_size = Vector2(130, 44)
-		btn.add_theme_font_size_override("font_size", 14)
-		btn.pressed.connect(self._on_event_button_pressed.bind(i))
-		event_buttons_container.add_child(btn)
-	
-	if event_overlay:
-		event_overlay.visible = true
-	event_panel.visible = true
-	event_panel.move_to_front()
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.1, 0.12, 0.18, 0.95)
+	style.border_color = Color(0.8, 0.6, 0.2, 0.8)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(12)
+	style.set_content_margin_all(16)
+	style.shadow_color = Color(0, 0, 0, 0.5)
+	style.shadow_size = 10
+	player_info_panel.add_theme_stylebox_override("panel", style)
 
-func _on_event_button_pressed(choice_index: int):
-	print("--- EVENT BUTTON PRESSED: ", choice_index, " ---")
-	if event_overlay:
-		event_overlay.visible = false
-	event_panel.visible = false
-	if event_callback_callable.is_valid():
-		event_callback_callable.call(choice_index)
+	player_info_label = RichTextLabel.new()
+	player_info_label.bbcode_enabled = true
+	player_info_label.fit_content = true
+	player_info_label.scroll_active = false
+	player_info_label.add_theme_font_size_override("normal_font_size", 12)
+	player_info_panel.add_child(player_info_label)
+	ui_layer.add_child(player_info_panel)
 
+func _create_message_label():
+	var ui_layer = get_node("UI")
+	var msg_panel = PanelContainer.new()
+	msg_panel.name = "MessagePanel"
+	msg_panel.position = Vector2(100, 15)
+	msg_panel.size = Vector2(650, 50)
 
-# =========================
-# Player Status Panel
-# =========================
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.1, 0.1, 0.1, 0.85)
+	style.border_color = Color(0.8, 0.6, 0.2, 0.6)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(25)
+	style.set_content_margin_all(8)
+	style.shadow_color = Color(0, 0, 0, 0.3)
+	style.shadow_size = 5
+	msg_panel.add_theme_stylebox_override("panel", style)
 
-var player_panel: Panel
-var player_panel_content: VBoxContainer
-var player_panel_rows: Array = []  # Array of VBoxContainer per player
+	message_label = Label.new()
+	message_label.text = "🎲 Chào mừng đến với Monopolime!"
+	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message_label.add_theme_font_size_override("font_size", 15)
+	message_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3))
+	msg_panel.add_child(message_label)
+	ui_layer.add_child(msg_panel)
 
-func _create_player_panel():
-	player_panel = Panel.new()
-	player_panel.set_size(Vector2(195, 560))
-	player_panel.set_position(Vector2(880, 20))
-	
-	var stylebox = StyleBoxFlat.new()
-	stylebox.bg_color = Color(0.05, 0.05, 0.12, 0.92)
-	stylebox.border_width_left = 1
-	stylebox.border_width_top = 1
-	stylebox.border_width_right = 1
-	stylebox.border_width_bottom = 1
-	stylebox.border_color = Color(0.4, 0.4, 0.8, 1)
-	stylebox.corner_radius_top_left = 8
-	stylebox.corner_radius_top_right = 8
-	stylebox.corner_radius_bottom_left = 8
-	stylebox.corner_radius_bottom_right = 8
-	player_panel.add_theme_stylebox_override("panel", stylebox)
-	
-	var title = Label.new()
-	title.text = "📊 Bảng Tài Sản"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 14)
-	title.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
-	title.set_position(Vector2(0, 8))
-	title.set_size(Vector2(195, 24))
-	player_panel.add_child(title)
-	
-	player_panel_content = VBoxContainer.new()
-	player_panel_content.set_position(Vector2(8, 38))
-	player_panel_content.set_size(Vector2(179, 515))
-	player_panel_content.add_theme_constant_override("separation", 10)
-	player_panel.add_child(player_panel_content)
-	
-	get_node("UI").add_child(player_panel)
+# ======== BUY PROMPT ========
 
-func refresh_player_panel(snapshot: Array):
-	if player_panel == null:
-		_create_player_panel()
-	
-	for child in player_panel_content.get_children():
-		child.queue_free()
-	
-	var player_colors = [
-		Color(0.3, 0.5, 1.0),
-		Color(1.0, 0.35, 0.35),
-		Color(0.2, 0.85, 0.4),
-		Color(1.0, 0.85, 0.1)
-	]
-	var player_emojis = ["🔵", "🔴", "🟢", "🟡"]
-	
-	for p in snapshot:
-		var card = Panel.new()
-		card.custom_minimum_size = Vector2(179, 0)
-		
-		var card_style = StyleBoxFlat.new()
-		var pc = player_colors[p["id"] % player_colors.size()]
-		card_style.bg_color = Color(pc.r * 0.25, pc.g * 0.25, pc.b * 0.25, 0.9)
-		card_style.border_width_left = 2
-		card_style.border_color = pc
-		card_style.corner_radius_top_left = 6
-		card_style.corner_radius_top_right = 6
-		card_style.corner_radius_bottom_left = 6
-		card_style.corner_radius_bottom_right = 6
-		card.add_theme_stylebox_override("panel", card_style)
-		
-		var vbox = VBoxContainer.new()
-		vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-		vbox.offset_left = 8
-		vbox.offset_top = 6
-		vbox.offset_right = -6
-		vbox.offset_bottom = -6
-		vbox.add_theme_constant_override("separation", 3)
-		card.add_child(vbox)
-		
-		# Tên người chơi + trạng thái tù
-		var name_row = Label.new()
-		var jail_tag = " 🔒" if p["in_jail"] else ""
-		name_row.text = player_emojis[p["id"] % player_emojis.size()] + " " + p["name"] + jail_tag
-		name_row.add_theme_font_size_override("font_size", 13)
-		name_row.add_theme_color_override("font_color", pc)
-		vbox.add_child(name_row)
-		
-		# Số tiền
-		var balance_row = Label.new()
-		balance_row.text = "💰 $" + str(p["balance"])
-		balance_row.add_theme_font_size_override("font_size", 12)
-		balance_row.add_theme_color_override(
-			"font_color",
-			Color.LIME_GREEN if p["balance"] >= 200 else Color.TOMATO
-		)
-		vbox.add_child(balance_row)
-		
-		# Danh sách đất
-		if p["properties"].size() > 0:
-			var prop_title = Label.new()
-			prop_title.text = "🏠 Bất động sản:"
-			prop_title.add_theme_font_size_override("font_size", 10)
-			prop_title.add_theme_color_override("font_color", Color(0.7, 0.85, 0.7))
-			vbox.add_child(prop_title)
-			
-			for prop_name in p["properties"]:
-				var prop_label = Label.new()
-				prop_label.text = "  • " + prop_name
-				prop_label.add_theme_font_size_override("font_size", 10)
-				prop_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
-				prop_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-				vbox.add_child(prop_label)
-		else:
-			var no_prop = Label.new()
-			no_prop.text = "  (chưa có đất)"
-			no_prop.add_theme_font_size_override("font_size", 10)
-			no_prop.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-			vbox.add_child(no_prop)
-		
-		player_panel_content.add_child(card)
-
-
-# =========================
-# Buy Property Popup
-# =========================
-
-var buy_panel: Panel
-var buy_callback: Callable
-
-func _ensure_buy_popup():
-	if buy_panel != null:
-		return
-	
-	buy_panel = Panel.new()
-	buy_panel.set_size(Vector2(380, 240))
-	buy_panel.set_position(Vector2(354, 186))
+func _create_buy_panel():
+	var ui_layer = get_node("UI")
+	buy_panel = PanelContainer.new()
+	buy_panel.name = "BuyPanel"
+	buy_panel.position = Vector2(340, 280)
+	buy_panel.size = Vector2(400, 170)
 	buy_panel.visible = false
-	
-	var stylebox = StyleBoxFlat.new()
-	stylebox.bg_color = Color(0.08, 0.15, 0.08, 0.96)
-	stylebox.border_width_left = 2
-	stylebox.border_width_top = 2
-	stylebox.border_width_right = 2
-	stylebox.border_width_bottom = 2
-	stylebox.border_color = Color(0.3, 0.9, 0.3, 1)
-	stylebox.corner_radius_top_left = 12
-	stylebox.corner_radius_top_right = 12
-	stylebox.corner_radius_bottom_left = 12
-	stylebox.corner_radius_bottom_right = 12
-	buy_panel.add_theme_stylebox_override("panel", stylebox)
-	
-	get_node("UI").add_child(buy_panel)
 
-func show_buy_popup(cell_name: String, price: int, rent: int, player_balance: int):
-	_ensure_buy_popup()
-	buy_callback = Callable()
-	
-	# Xóa nội dung cũ
-	for child in buy_panel.get_children():
-		child.queue_free()
-	
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.08, 0.16, 0.95)
+	style.border_color = Color(0.2, 0.75, 0.4)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(14)
+	style.set_content_margin_all(16)
+	buy_panel.add_theme_stylebox_override("panel", style)
+
 	var vbox = VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.offset_left = 20; vbox.offset_top = 15
-	vbox.offset_right = -20; vbox.offset_bottom = -15
-	vbox.add_theme_constant_override("separation", 8)
-	buy_panel.add_child(vbox)
-	
+	vbox.name = "VBox"
+
 	var title = Label.new()
-	title.text = "🏠 " + cell_name
+	title.name = "BuyTitle"
+	title.text = "Mua đất?"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 20)
-	title.add_theme_color_override("font_color", Color(0.9, 1.0, 0.9))
+	title.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
 	vbox.add_child(title)
-	
-	var sep = HSeparator.new()
-	vbox.add_child(sep)
-	
-	var info_price = Label.new()
-	info_price.text = "💰 Giá mua: $" + str(price)
-	info_price.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
-	vbox.add_child(info_price)
-	
-	var info_rent = Label.new()
-	info_rent.text = "🏷 Tiền thuê: $" + str(rent) + " / lượt"
-	info_rent.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
-	vbox.add_child(info_rent)
-	
-	var info_balance = Label.new()
-	info_balance.text = "👛 Số dư hiện tại: $" + str(player_balance)
-	var can_afford = player_balance >= price
-	info_balance.add_theme_color_override("font_color", Color.LIME_GREEN if can_afford else Color.TOMATO)
-	vbox.add_child(info_balance)
-	
+
+	var info = Label.new()
+	info.name = "BuyInfo"
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info.add_theme_font_size_override("font_size", 13)
+	info.add_theme_color_override("font_color", Color.WHITE)
+	vbox.add_child(info)
+
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 10)
+	vbox.add_child(spacer)
+
 	var hbox = HBoxContainer.new()
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", 16)
-	vbox.add_child(hbox)
-	
-	var btn_buy = Button.new()
-	btn_buy.text = "✅ Mua ($" + str(price) + ")"
-	btn_buy.custom_minimum_size = Vector2(140, 44)
-	btn_buy.disabled = not can_afford
-	btn_buy.pressed.connect(func(): _on_buy_choice(true))
-	hbox.add_child(btn_buy)
-	
-	var btn_skip = Button.new()
-	btn_skip.text = "❌ Bỏ qua"
-	btn_skip.custom_minimum_size = Vector2(100, 44)
-	btn_skip.pressed.connect(func(): _on_buy_choice(false))
-	hbox.add_child(btn_skip)
-	
-	buy_panel.visible = true
-	buy_panel.move_to_front()
-	print("--- SHOW BUY POPUP: ", cell_name, " $", price, " ---")
 
-func _on_buy_choice(want_to_buy: bool):
-	buy_panel.visible = false
-	emit_signal("buy_decision_made", want_to_buy)
+	var buy_btn = Button.new()
+	buy_btn.name = "BuyYes"
+	buy_btn.text = "✅ MUA"
+	buy_btn.custom_minimum_size = Vector2(130, 42)
+	buy_btn.add_theme_font_size_override("font_size", 16)
+	buy_btn.pressed.connect(_on_buy_yes)
+	hbox.add_child(buy_btn)
+
+	var sp2 = Control.new()
+	sp2.custom_minimum_size = Vector2(20, 0)
+	hbox.add_child(sp2)
+
+	var skip_btn = Button.new()
+	skip_btn.name = "BuyNo"
+	skip_btn.text = "❌ BỎ QUA"
+	skip_btn.custom_minimum_size = Vector2(130, 42)
+	skip_btn.add_theme_font_size_override("font_size", 16)
+	skip_btn.pressed.connect(_on_buy_no)
+	hbox.add_child(skip_btn)
+
+	vbox.add_child(hbox)
+	buy_panel.add_child(vbox)
+	ui_layer.add_child(buy_panel)
+
+
+# ======== BUILD PROMPT ========
+
+func _create_build_panel():
+	var ui_layer = get_node("UI")
+	build_panel = PanelContainer.new()
+	build_panel.name = "BuildPanel"
+	build_panel.position = Vector2(340, 280)
+	build_panel.size = Vector2(400, 170)
+	build_panel.visible = false
+
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.12, 0.06, 0.95)
+	style.border_color = Color(0.3, 0.85, 0.3)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(14)
+	style.set_content_margin_all(16)
+	build_panel.add_theme_stylebox_override("panel", style)
+
+	var vbox = VBoxContainer.new()
+	vbox.name = "VBox"
+
+	var title = Label.new()
+	title.name = "BuildTitle"
+	title.text = "🏗️ Xây nhà?"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4))
+	vbox.add_child(title)
+
+	var info = Label.new()
+	info.name = "BuildInfo"
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info.add_theme_font_size_override("font_size", 13)
+	info.add_theme_color_override("font_color", Color.WHITE)
+	vbox.add_child(info)
+
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 10)
+	vbox.add_child(spacer)
+
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	var build_btn = Button.new()
+	build_btn.name = "BuildYes"
+	build_btn.text = "🏠 XÂY"
+	build_btn.custom_minimum_size = Vector2(130, 42)
+	build_btn.add_theme_font_size_override("font_size", 16)
+	build_btn.pressed.connect(_on_build_yes)
+	hbox.add_child(build_btn)
+
+	var sp2 = Control.new()
+	sp2.custom_minimum_size = Vector2(20, 0)
+	hbox.add_child(sp2)
+
+	var skip_btn = Button.new()
+	skip_btn.name = "BuildNo"
+	skip_btn.text = "⏭️ BỎ QUA"
+	skip_btn.custom_minimum_size = Vector2(130, 42)
+	skip_btn.add_theme_font_size_override("font_size", 16)
+	skip_btn.pressed.connect(_on_build_no)
+	hbox.add_child(skip_btn)
+
+	vbox.add_child(hbox)
+	build_panel.add_child(vbox)
+	ui_layer.add_child(build_panel)
+
+
+# ======== CARD POPUP ========
+
+func _create_card_panel():
+	var ui_layer = get_node("UI")
+	card_panel = PanelContainer.new()
+	card_panel.name = "CardPanel"
+	card_panel.position = Vector2(300, 180)
+	card_panel.size = Vector2(480, 180)
+	card_panel.visible = false
+
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.05, 0.1, 0.95)
+	style.border_color = Color(1.0, 0.7, 0.2)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(16)
+	style.set_content_margin_all(20)
+	card_panel.add_theme_stylebox_override("panel", style)
+
+	var vbox = VBoxContainer.new()
+	vbox.name = "VBox"
+
+	var card_title = Label.new()
+	card_title.name = "CardTitle"
+	card_title.text = "CƠ HỘI"
+	card_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_title.add_theme_font_size_override("font_size", 26)
+	card_title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
+	vbox.add_child(card_title)
+
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 8)
+	vbox.add_child(spacer)
+
+	var card_text = Label.new()
+	card_text.name = "CardText"
+	card_text.text = ""
+	card_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_text.add_theme_font_size_override("font_size", 16)
+	card_text.add_theme_color_override("font_color", Color.WHITE)
+	card_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(card_text)
+
+	card_panel.add_child(vbox)
+	ui_layer.add_child(card_panel)
+
+
+# ======== GAME OVER ========
+
+func _create_game_over_panel():
+	var ui_layer = get_node("UI")
+	game_over_panel = PanelContainer.new()
+	game_over_panel.name = "GameOverPanel"
+	game_over_panel.position = Vector2(220, 180)
+	game_over_panel.size = Vector2(640, 260)
+	game_over_panel.visible = false
+
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.03, 0.0, 0.1, 0.95)
+	style.border_color = Color(1.0, 0.8, 0.0)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(18)
+	style.set_content_margin_all(24)
+	game_over_panel.add_theme_stylebox_override("panel", style)
+
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	var winner_lbl = Label.new()
+	winner_lbl.name = "WinnerLabel"
+	winner_lbl.text = "🎉 GAME OVER!"
+	winner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	winner_lbl.add_theme_font_size_override("font_size", 36)
+	winner_lbl.add_theme_color_override("font_color", Color(1, 0.85, 0))
+	vbox.add_child(winner_lbl)
+
+	var details = Label.new()
+	details.name = "DetailsLabel"
+	details.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	details.add_theme_font_size_override("font_size", 18)
+	details.add_theme_color_override("font_color", Color.WHITE)
+	vbox.add_child(details)
+
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 20)
+	vbox.add_child(spacer)
+
+	var restart_btn = Button.new()
+	restart_btn.text = "🔄 CHƠI LẠI"
+	restart_btn.custom_minimum_size = Vector2(200, 50)
+	restart_btn.add_theme_font_size_override("font_size", 20)
+	restart_btn.pressed.connect(func(): get_tree().reload_current_scene())
+	vbox.add_child(restart_btn)
+
+	game_over_panel.add_child(vbox)
+	ui_layer.add_child(game_over_panel)
+
+# ======== PUBLIC METHODS ========
+
+func update_player_info(players: Array):
+	if player_info_label == null:
+		return
+	var bb = "[b]📊 NGƯỜI CHƠI[/b]\n━━━━━━━━━━━━━━━\n"
+	
+	var avatar_paths = [
+		"res://resources/ui/avatars/avatar_boy.jpg",
+		"res://resources/ui/avatars/avatar_girl.jpg",
+		"res://resources/ui/avatars/avatar_cat.jpg",
+		"res://resources/ui/avatars/avatar_robot.jpg"
+	]
+	
+	for p in players:
+		var c = _color_tag(p.player_id)
+		var marker = "▶ " if game_controller and p == game_controller.get_current_player() else "  "
+		var status = ""
+		if p.is_bankrupt():
+			status = " 💀"
+		elif p.state.in_jail:
+			status = " 🔒"
+			
+		var avatar = ""
+		if p.get("avatar_id") != null and p.avatar_id >= 0 and p.avatar_id < avatar_paths.size():
+			avatar = "[img=24x24]" + avatar_paths[p.avatar_id] + "[/img] "
+			
+		bb += marker + avatar + "[color=" + c + "]" + p.name + "[/color]" + status + "\n"
+		if not p.is_bankrupt():
+			bb += "      💰$" + str(p.state.balance) + "  🏠" + str(p.properties.size())
+			if p.state.special_cards > 0:
+				bb += "  🃏" + str(p.state.special_cards)
+			bb += "\n\n"
+	player_info_label.text = bb
+
+
+func _color_tag(id: int) -> String:
+	match id:
+		0: return "#FF6666"
+		1: return "#6699FF"
+		2: return "#66FF66"
+		3: return "#FFFF66"
+	return "#FFFFFF"
 
 
 func show_turn(player_index):
-	label.text = "Player %d's turn" % (player_index + 1)
+	var pname = ""
+	if game_controller and player_index < game_controller.game_state.players.size():
+		pname = game_controller.game_state.players[player_index].name
+	else:
+		pname = "Player " + str(player_index + 1)
+	label.text = "Lượt: " + pname
 
+
+func show_message(text: String):
+	if message_label:
+		message_label.text = text
+	print("[UI] ", text)
+
+
+func show_buy_prompt(player: Player, cell: Cell):
+	if buy_panel == null:
+		return
+	set_roll_enabled(false)
+	buy_panel.visible = true
+	buy_panel.get_node("VBox/BuyTitle").text = "🏠 Mua " + cell.cell_name + "?"
+	buy_panel.get_node("VBox/BuyInfo").text = "Giá: $" + str(cell.price) + "  |  Thuê: $" + str(cell.rent_price) + "\nSố dư: $" + str(player.state.balance)
+
+var _current_build_cell: Cell = null
+
+func show_build_prompt(player: Player, cell: Cell):
+	if build_panel == null:
+		return
+	_current_build_cell = cell
+	set_roll_enabled(false)
+	build_panel.visible = true
+	var type_name = "Khách sạn" if cell.house_count == 4 else "Nhà"
+	build_panel.get_node("VBox/BuildTitle").text = "🏗️ Xây " + type_name + "?"
+	build_panel.get_node("VBox/BuildInfo").text = cell.cell_name + " | Chi phí: $" + str(cell.house_cost) + "\nHiện có: " + str(cell.house_count) + "/5 | Số dư: $" + str(player.state.balance)
+
+
+func show_card_popup(title: String, text: String, color: Color):
+	if card_panel == null:
+		return
+	card_panel.visible = true
+	card_panel.get_node("VBox/CardTitle").text = title
+	card_panel.get_node("VBox/CardTitle").add_theme_color_override("font_color", color)
+	card_panel.get_node("VBox/CardText").text = text
+
+
+func hide_card_popup():
+	if card_panel:
+		card_panel.visible = false
+
+
+func show_game_over(winner: Player):
+	if game_over_panel == null:
+		return
+	set_roll_enabled(false)
+	game_over_panel.visible = true
+	game_over_panel.get_node("VBox/WinnerLabel").text = "🎉 " + winner.name + " CHIẾN THẮNG! 🎉"
+	game_over_panel.get_node("VBox/DetailsLabel").text = "Tài sản: $" + str(winner.state.balance) + " | Đất: " + str(winner.properties.size())
+
+
+func _on_buy_yes():
+	buy_panel.visible = false
+	set_roll_enabled(true)
+	game_controller.emit_signal("buy_decision_made", true)
+
+func _on_buy_no():
+	buy_panel.visible = false
+	set_roll_enabled(true)
+	game_controller.emit_signal("buy_decision_made", false)
+
+func _on_build_yes():
+	build_panel.visible = false
+	set_roll_enabled(true)
+	if _current_build_cell and _current_build_cell.can_build_house():
+		_current_build_cell.build_house()
+		show_message("Đã xây nhà trên " + _current_build_cell.cell_name)
+	game_controller.emit_signal("build_decision_made")
+
+func _on_build_no():
+	build_panel.visible = false
+	set_roll_enabled(true)
+	game_controller.emit_signal("build_decision_made")
+
+
+# ======== DICE ANIMATION ========
 
 func start_dice_animation():
-
 	rolling = true
 	roll_time = 0.0
-
 	timer.start()
-
 	audio_roll.play()
-
 	shake()
 
-
 func show_result(result):
-
-	label.text = "Dice: %d + %d = %d" % [
-		result.dice1,
-		result.dice2,
-		result.total()
-	]
-
+	label.text = "🎲 %d + %d = %d" % [result.dice1, result.dice2, result.total()]
 	audio_roll.stop()
 
-
 func show_double():
-
 	double_label.visible = true
-	double_label.text = "DOUBLE!"
-
-	await get_tree().create_timer(2.0).timeout
-
+	double_label.text = "✨ DOUBLE! ✨"
+	await get_tree().create_timer(1.5).timeout
 	double_label.visible = false
 
+func show_jail():
+	label.text = "🔒 VÀO TÙ!"
 
 func update_position(player, pos):
 	print("Player", player, "->", pos)
 
-
-func show_jail():
-	label.text = "GO TO JAIL!"
-
-
-func _on_dice_timer_timeout():
-
-	if not rolling:
-		return
-
-	roll_time += timer.wait_time
-
-	var fake1 = randi_range(1, 6)
-	var fake2 = randi_range(1, 6)
-
-	dice1_sprite.texture = dice_textures[fake1 - 1]
-	dice2_sprite.texture = dice_textures[fake2 - 1]
-
-	dice1_sprite.rotation = randf_range(-0.3, 0.3)
-	dice2_sprite.rotation = randf_range(-0.3, 0.3)
-
-	bounce(dice1_sprite)
-	bounce(dice2_sprite)
-
-	if roll_time >= 0.7:
-
-		timer.stop()
-
-		rolling = false
-
-		var result = game_controller.final_result
-
-		dice1_sprite.texture = dice_textures[result.dice1 - 1]
-		dice2_sprite.texture = dice_textures[result.dice2 - 1]
-
-		dice1_sprite.rotation = 0
-		dice2_sprite.rotation = 0
-
-		await game_controller.resolve_roll()
-
-
-func bounce(sprite):
-
-	sprite.scale = base_scale
-
-	var tween = create_tween()
-
-	tween.tween_property(
-		sprite,
-		"scale",
-		base_scale * 1.2,
-		0.1
-	)
-
-	tween.tween_property(
-		sprite,
-		"scale",
-		base_scale,
-		0.1
-	)
-
-
-func shake():
-
-	var cam = get_viewport().get_camera_2d()
-
-	if cam == null:
-		return
-
-	for i in range(5):
-
-		cam.offset = Vector2(
-			randf_range(-5, 5),
-			randf_range(-5, 5)
-		)
-
-		await get_tree().create_timer(0.03).timeout
-
-	cam.offset = Vector2.ZERO
-
+func set_roll_enabled(enabled: bool):
+	roll_button.disabled = not enabled
 
 func _on_roll_dice_pressed() -> void:
 	game_controller.roll_dice()
 
+func _on_dice_timer_timeout():
+	if not rolling:
+		return
+	roll_time += timer.wait_time
+	var fake1 = randi_range(1, 6)
+	var fake2 = randi_range(1, 6)
+	dice1_sprite.texture = dice_textures[fake1 - 1]
+	dice2_sprite.texture = dice_textures[fake2 - 1]
+	dice1_sprite.rotation = randf_range(-0.3, 0.3)
+	dice2_sprite.rotation = randf_range(-0.3, 0.3)
+	bounce(dice1_sprite)
+	bounce(dice2_sprite)
 
-func set_roll_enabled(enabled: bool):
-	roll_button.disabled = not enabled
+	if roll_time >= 0.7:
+		timer.stop()
+		rolling = false
+		var result = game_controller.final_result
+		dice1_sprite.texture = dice_textures[result.dice1 - 1]
+		dice2_sprite.texture = dice_textures[result.dice2 - 1]
+		dice1_sprite.rotation = 0
+		dice2_sprite.rotation = 0
+		await game_controller.resolve_roll()
+
+func bounce(sprite):
+	sprite.scale = base_scale
+	var tween = create_tween()
+	tween.tween_property(sprite, "scale", base_scale * 1.2, 0.1)
+	tween.tween_property(sprite, "scale", base_scale, 0.1)
+
+func shake():
+	var cam = get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	for i in range(5):
+		cam.offset = Vector2(randf_range(-5, 5), randf_range(-5, 5))
+		await get_tree().create_timer(0.03).timeout
+	cam.offset = Vector2.ZERO
 
 
-# =========================
-# Message
-# =========================
+# ======== MORTGAGE ========
 
-func show_message(text: String):
+func request_mortgage(player: Player, amount_needed: int):
+	show_message(player.name + " thiếu $" + str(amount_needed) + "! Tự động thế chấp...")
+	auto_mortgage_for_test(player, amount_needed)
 
-	label.text = text
-
-	print("[UI Message]: ", text)
-
-
-# =========================
-# Mortgage
-# =========================
-
-func request_mortgage(
-	player: Player,
-	amount_needed: int
-):
-
-	show_message(
-		player.name
-		+ " thiếu $"
-		+ str(amount_needed)
-		+ "! Cần thế chấp."
-	)
-
-	auto_mortgage_for_test(
-		player,
-		amount_needed
-	)
-
-
-func auto_mortgage_for_test(
-	player: Player,
-	amount_needed: int
-):
-
-	print(
-		"--- [Auto Test] Đang tự động bán đất cho ",
-		player.name,
-		" ---"
-	)
-
-	var target_balance = (
-		player.state.balance + amount_needed
-	)
-
+func auto_mortgage_for_test(player: Player, amount_needed: int):
+	print("--- Tự động thế chấp cho ", player.name, " ---")
+	var target = player.state.balance + amount_needed
 	for cell in player.properties:
+		if not cell.is_mortgaged and player.state.balance < target:
+			# Bán nhà trước
+			while cell.house_count > 0:
+				cell.sell_house()
+			var amt = cell.mortgage_property()
+			if amt > 0:
+				print("> Thế chấp: ", cell.cell_name, " -> $", amt)
+	await get_tree().create_timer(1.0).timeout
+	game_controller.emit_signal("turn_action_completed")
 
-		if (
-			not cell.is_mortgaged
-			and player.state.balance < target_balance
-		):
+# ======== SETUP MENU ========
 
-			var amount = cell.mortgage_property()
+var setup_panel: PanelContainer
+var added_players: Array = []
 
-			print(
-				"> Tự động thế chấp: ",
-				cell.cell_name,
-				" lấy $",
-				amount
-			)
+var avatars = [
+	preload("res://resources/ui/avatars/avatar_boy.jpg"),
+	preload("res://resources/ui/avatars/avatar_girl.jpg"),
+	preload("res://resources/ui/avatars/avatar_cat.jpg"),
+	preload("res://resources/ui/avatars/avatar_robot.jpg")
+]
+var current_avatar_idx = 0
+var avatar_display: TextureRect
+var name_input: LineEdit
+var players_list_vbox: VBoxContainer
+var start_game_btn: Button
 
-	await get_tree().create_timer(1.5).timeout
+func show_setup_menu():
+	var ui_layer = get_node("UI")
+	
+	setup_panel = PanelContainer.new()
+	setup_panel.name = "SetupPanel"
+	setup_panel.position = Vector2(0, 0)
+	setup_panel.size = get_viewport().get_visible_rect().size
+	
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.08, 0.1, 0.95)
+	setup_panel.add_theme_stylebox_override("panel", style)
+	
+	var center = CenterContainer.new()
+	setup_panel.add_child(center)
+	
+	var main_vbox = VBoxContainer.new()
+	main_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	center.add_child(main_vbox)
+	
+	var title = Label.new()
+	title.text = "THÊM NGƯỜI CHƠI"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_color_override("font_color", Color(1, 0.8, 0.2))
+	main_vbox.add_child(title)
+	
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 20)
+	main_vbox.add_child(spacer)
+	
+	# === ADD PLAYER FORM ===
+	var form_bg = PanelContainer.new()
+	var fstyle = StyleBoxFlat.new()
+	fstyle.bg_color = Color(0.1, 0.15, 0.2)
+	fstyle.set_corner_radius_all(15)
+	fstyle.set_content_margin_all(15)
+	form_bg.add_theme_stylebox_override("panel", fstyle)
+	main_vbox.add_child(form_bg)
+	
+	var form_hbox = HBoxContainer.new()
+	form_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	form_bg.add_child(form_hbox)
+	
+	# Avatar Selector
+	var prev_btn = Button.new()
+	prev_btn.text = "<"
+	prev_btn.custom_minimum_size = Vector2(40, 60)
+	prev_btn.pressed.connect(func(): _change_avatar(-1))
+	form_hbox.add_child(prev_btn)
+	
+	avatar_display = TextureRect.new()
+	avatar_display.texture = avatars[current_avatar_idx]
+	avatar_display.custom_minimum_size = Vector2(80, 80)
+	avatar_display.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	form_hbox.add_child(avatar_display)
+	
+	var next_btn = Button.new()
+	next_btn.text = ">"
+	next_btn.custom_minimum_size = Vector2(40, 60)
+	next_btn.pressed.connect(func(): _change_avatar(1))
+	form_hbox.add_child(next_btn)
+	
+	var sp1 = Control.new()
+	sp1.custom_minimum_size = Vector2(20, 0)
+	form_hbox.add_child(sp1)
+	
+	name_input = LineEdit.new()
+	name_input.placeholder_text = "Nhập tên..."
+	name_input.custom_minimum_size = Vector2(200, 40)
+	form_hbox.add_child(name_input)
+	
+	var sp2 = Control.new()
+	sp2.custom_minimum_size = Vector2(20, 0)
+	form_hbox.add_child(sp2)
+	
+	var add_btn = Button.new()
+	add_btn.text = "➕ THÊM"
+	add_btn.custom_minimum_size = Vector2(100, 40)
+	add_btn.pressed.connect(_on_add_player_pressed)
+	form_hbox.add_child(add_btn)
+	
+	# === PLAYERS LIST ===
+	var sp3 = Control.new()
+	sp3.custom_minimum_size = Vector2(0, 20)
+	main_vbox.add_child(sp3)
+	
+	var list_title = Label.new()
+	list_title.text = "DANH SÁCH (Ít nhất 2 người):"
+	list_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	main_vbox.add_child(list_title)
+	
+	players_list_vbox = VBoxContainer.new()
+	players_list_vbox.custom_minimum_size = Vector2(400, 150)
+	main_vbox.add_child(players_list_vbox)
+	
+	# === START BTN ===
+	var sp4 = Control.new()
+	sp4.custom_minimum_size = Vector2(0, 20)
+	main_vbox.add_child(sp4)
+	
+	start_game_btn = Button.new()
+	start_game_btn.text = "BẮT ĐẦU GAME"
+	start_game_btn.custom_minimum_size = Vector2(300, 60)
+	start_game_btn.add_theme_font_size_override("font_size", 24)
+	start_game_btn.disabled = true
+	var btn_style = StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.2, 0.6, 0.3)
+	btn_style.set_corner_radius_all(10)
+	start_game_btn.add_theme_stylebox_override("normal", btn_style)
+	start_game_btn.pressed.connect(_on_start_game_pressed)
+	main_vbox.add_child(start_game_btn)
+	
+	ui_layer.add_child(setup_panel)
 
-	print("Đã xoay đủ tiền, tiếp tục game!")
+func _change_avatar(dir: int):
+	current_avatar_idx += dir
+	if current_avatar_idx < 0:
+		current_avatar_idx = avatars.size() - 1
+	elif current_avatar_idx >= avatars.size():
+		current_avatar_idx = 0
+	avatar_display.texture = avatars[current_avatar_idx]
 
-	game_controller.emit_signal(
-		"turn_action_completed"
-	)
+func _on_add_player_pressed():
+	if added_players.size() >= 4:
+		show_message("Tối đa 4 người chơi!")
+		return
+	var pname = name_input.text.strip_edges()
+	if pname == "":
+		pname = "Player " + str(added_players.size() + 1)
+		
+	var pdata = {
+		"name": pname,
+		"avatar_id": current_avatar_idx
+	}
+	added_players.append(pdata)
+	
+	name_input.text = ""
+	_change_avatar(1)
+	_update_players_list_ui()
+
+func _update_players_list_ui():
+	for c in players_list_vbox.get_children():
+		c.queue_free()
+		
+	for i in range(added_players.size()):
+		var p = added_players[i]
+		var hb = HBoxContainer.new()
+		hb.alignment = BoxContainer.ALIGNMENT_CENTER
+		
+		var tex = TextureRect.new()
+		tex.texture = avatars[p["avatar_id"]]
+		tex.custom_minimum_size = Vector2(40, 40)
+		tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		hb.add_child(tex)
+		
+		var lbl = Label.new()
+		lbl.text = "  " + p["name"]
+		lbl.custom_minimum_size = Vector2(150, 40)
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		hb.add_child(lbl)
+		
+		var rm_btn = Button.new()
+		rm_btn.text = "X"
+		rm_btn.add_theme_color_override("font_color", Color.RED)
+		rm_btn.pressed.connect(self._remove_player.bind(i))
+		hb.add_child(rm_btn)
+		
+		players_list_vbox.add_child(hb)
+		
+	start_game_btn.disabled = (added_players.size() < 2)
+
+func _remove_player(idx: int):
+	added_players.remove_at(idx)
+	_update_players_list_ui()
+
+func _on_start_game_pressed():
+	var current_id = 0
+	for p in added_players:
+		game_controller.game_state.add_player(current_id, p["name"], p["avatar_id"])
+		current_id += 1
+		
+	setup_panel.queue_free()
+	update_player_info(game_controller.game_state.players)
+	emit_signal("setup_finished")

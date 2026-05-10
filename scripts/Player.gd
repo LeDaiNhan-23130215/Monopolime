@@ -3,6 +3,7 @@ class_name Player
 
 var player_id: int
 var name: String
+var avatar_id: int = 0
 
 var state: PlayerState
 var properties: Array = []
@@ -54,7 +55,7 @@ func transfer_all_assets_to(creditor: Player):
 		
 		# 2. Chuyển quyền sở hữu đất đai
 		for cell in properties:
-			cell.owner = creditor
+			cell.cell_owner = creditor
 			creditor.add_property(cell) # Dùng hàm add_property để đồng bộ
 			
 		# 3. Chuyển các thẻ đặc biệt

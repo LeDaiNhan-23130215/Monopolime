@@ -5,185 +5,205 @@ signal event_finished
 
 var game_controller: GameController
 
-# ===========================
-# Bộ thẻ CƠ HỘI (Chance)
-# ===========================
+# =========================
+# THẺ CƠ HỘI (Chance) - 16 thẻ
+# =========================
 var chance_cards = [
-	{
-		"type": "reward", "title": "🎴 Cơ Hội",
-		"desc": "Trúng giải thưởng khu phố!\nBạn nhận được $150.",
-		"amount": 150
-	},
-	{
-		"type": "penalty", "title": "🎴 Cơ Hội",
-		"desc": "Vi phạm luật giao thông!\nBạn bị phạt $50.",
-		"amount": 50
-	},
-	{
-		"type": "move", "title": "🎴 Cơ Hội",
-		"desc": "Tiến thẳng đến ô Bắt Đầu!\nBạn nhận $200 khi đi qua.",
-		"target": 0
-	},
-	{
-		"type": "jail", "title": "🎴 Cơ Hội",
-		"desc": "Vào tù ngay lập tức!\nKhông được đi qua ô Bắt Đầu.",
-		"amount": 0
-	},
-	{
-		"type": "choice", "title": "🎴 Cơ Hội",
-		"desc": "Bạn có thể:\n• Nộp phạt $50\n• Hoặc rút thẻ Khí Vận thử vận may!",
-		"choices": ["💸 Nộp phạt $50", "🎁 Rút Khí Vận"]
-	},
-	{
-		"type": "reward", "title": "🎴 Cơ Hội",
-		"desc": "Cổ tức ngân hàng trả về!\nBạn nhận $100.",
-		"amount": 100
-	},
-	{
-		"type": "card", "title": "🎴 Cơ Hội",
-		"desc": "Thẻ Ra Tù Miễn Phí!\nGiữ thẻ này, dùng bất cứ lúc nào.",
-		"amount": 0
-	},
-	{
-		"type": "penalty", "title": "🎴 Cơ Hội",
-		"desc": "Sửa chữa nhà cửa bắt buộc!\nMỗi ngôi nhà phải trả $25.",
-		"amount": 75
-	},
+	{"text": "🏦 Ngân hàng trả cổ tức! Nhận $50", "action": "gain", "amount": 50},
+	{"text": "🏆 Bạn thắng cuộc thi sắc đẹp! Nhận $100", "action": "gain", "amount": 100},
+	{"text": "📈 Cổ phiếu tăng giá! Nhận $150", "action": "gain", "amount": 150},
+	{"text": "🎁 Bảo hiểm đáo hạn! Nhận $100", "action": "gain", "amount": 100},
+	{"text": "🚗 Bị phạt vượt đèn đỏ! Nộp $50", "action": "lose", "amount": 50},
+	{"text": "🔧 Sửa chữa nhà cửa! Nộp $100", "action": "lose", "amount": 100},
+	{"text": "🏥 Viện phí khám bệnh! Nộp $75", "action": "lose", "amount": 75},
+	{"text": "🏁 Tiến đến ô GO! Nhận $200", "action": "move_to_go"},
+	{"text": "👮 Đi thẳng vào Tù! Không qua GO!", "action": "go_jail"},
+	{"text": "⬅️ Lùi 3 bước!", "action": "move_back", "steps": 3},
+	{"text": "🚂 Đi đến Ga gần nhất!", "action": "move_nearest_railroad"},
+	{"text": "🃏 Nhận thẻ Ra Tù Miễn Phí!", "action": "get_card"},
+	{"text": "🎂 Sinh nhật! Mỗi người chơi trả bạn $25", "action": "birthday", "amount": 25},
+	{"text": "💰 Tiền cho thuê! Nhận $25", "action": "gain", "amount": 25},
+	{"text": "🏫 Học phí! Nộp $150", "action": "lose", "amount": 150},
+	{"text": "🎰 Trúng xổ số! Nhận $200", "action": "gain", "amount": 200},
 ]
 
-# ===========================
-# Bộ thẻ KHÍ VẬN (Community Chest)
-# ===========================
-var community_chest_cards = [
-	{
-		"type": "reward", "title": "🎁 Khí Vận",
-		"desc": "Hoàn thuế thu nhập!\nChính phủ trả lại $200 cho bạn.",
-		"amount": 200
-	},
-	{
-		"type": "penalty", "title": "🎁 Khí Vận",
-		"desc": "Đóng phí bảo hiểm y tế!\nBạn mất $50.",
-		"amount": 50
-	},
-	{
-		"type": "card", "title": "🎁 Khí Vận",
-		"desc": "Thẻ Ra Tù Miễn Phí!\nGiữ thẻ này để thoát tù không tốn tiền.",
-		"amount": 0
-	},
-	{
-		"type": "reward", "title": "🎁 Khí Vận",
-		"desc": "Sinh nhật của bạn!\nMỗi người chơi khác tặng bạn $50.",
-		"amount": 100
-	},
-	{
-		"type": "move", "title": "🎁 Khí Vận",
-		"desc": "Lệnh di chuyển đặc biệt!\nTiến đến ô Bắt Đầu và nhận $200.",
-		"target": 0
-	},
-	{
-		"type": "penalty", "title": "🎁 Khí Vận",
-		"desc": "Phí đỗ xe quá hạn!\nBạn bị phạt $30.",
-		"amount": 30
-	},
-	{
-		"type": "reward", "title": "🎁 Khí Vận",
-		"desc": "Đoạt giải đẹp trong cuộc thi!\nBạn nhận $100.",
-		"amount": 100
-	},
-	{
-		"type": "jail", "title": "🎁 Khí Vận",
-		"desc": "Cảnh sát bắt bạn!\nVào tù ngay, không qua ô Bắt Đầu.",
-		"amount": 0
-	},
+# =========================
+# THẺ KHÍ VẬN (Community Chest) - 16 thẻ
+# =========================
+var community_cards = [
+	{"text": "💎 Kế thừa di sản! Nhận $200", "action": "gain", "amount": 200},
+	{"text": "📋 Hoàn thuế! Nhận $75", "action": "gain", "amount": 75},
+	{"text": "📊 Bán cổ phiếu! Nhận $45", "action": "gain", "amount": 45},
+	{"text": "🏥 Chi phí bệnh viện! Nộp $100", "action": "lose", "amount": 100},
+	{"text": "⚖️ Phí luật sư! Nộp $50", "action": "lose", "amount": 50},
+	{"text": "🏫 Quỹ học bổng! Nhận $50", "action": "gain", "amount": 50},
+	{"text": "🏦 Sai sót ngân hàng! Nhận $75", "action": "gain", "amount": 75},
+	{"text": "👮 Đi thẳng vào Tù!", "action": "go_jail"},
+	{"text": "🃏 Nhận thẻ Ra Tù Miễn Phí!", "action": "get_card"},
+	{"text": "🎰 Trúng giải! Nhận $100", "action": "gain", "amount": 100},
+	{"text": "💊 Thuốc men! Nộp $50", "action": "lose", "amount": 50},
+	{"text": "🎁 Quà Giáng sinh! Nhận $100", "action": "gain", "amount": 100},
+	{"text": "🔧 Sửa chữa đường phố! Nộp $40", "action": "lose", "amount": 40},
+	{"text": "📦 Nhận hàng bán! Nhận $50", "action": "gain", "amount": 50},
+	{"text": "🏁 Tiến đến ô GO!", "action": "move_to_go"},
+	{"text": "🎂 Sinh nhật bạn! Mỗi người trả $10", "action": "birthday", "amount": 10},
 ]
 
-var current_event_player: Player
-var current_event_card: Dictionary
+# Xáo bài
+var _chance_deck: Array = []
+var _community_deck: Array = []
 
-func _init(controller: GameController):
+
+func _init(controller: GameController = null):
 	game_controller = controller
+	_shuffle_decks()
 
-# Trả về true nếu ô này là ô sự kiện và đã được xử lý
+
+func _shuffle_decks():
+	_chance_deck = chance_cards.duplicate()
+	_chance_deck.shuffle()
+	_community_deck = community_cards.duplicate()
+	_community_deck.shuffle()
+
+
+func _draw_chance() -> Dictionary:
+	if _chance_deck.is_empty():
+		_chance_deck = chance_cards.duplicate()
+		_chance_deck.shuffle()
+	return _chance_deck.pop_front()
+
+
+func _draw_community() -> Dictionary:
+	if _community_deck.is_empty():
+		_community_deck = community_cards.duplicate()
+		_community_deck.shuffle()
+	return _community_deck.pop_front()
+
+
+# =========================
+# XỬ LÝ SỰ KIỆN
+# =========================
+
 func handle_event(player: Player, cell: Cell) -> bool:
-	if cell.cell_name in ["Cơ Hội", "Thẻ Cơ Hội", "Cơ hội"]:
-		print("--- SỰ KIỆN: CƠ HỘI ---")
-		trigger_card_event(player, "chance")
-		return true
-	elif cell.cell_name in ["Khí Vận", "Thẻ Khí Vận", "Khí vận", "Sự Kiện"]:
-		print("--- SỰ KIỆN: KHÍ VẬN ---")
-		trigger_card_event(player, "community")
-		return true
-	elif cell.cell_name in ["Vào Tù", "Vào tù"]:
-		print("--- SỰ KIỆN: VÀO TÙ ---")
-		handle_go_to_jail(player)
-		return true
-	elif cell.cell_name in ["Thuế", "Đóng Thuế", "Thuế thu nhập"]:
-		print("--- SỰ KIỆN: ĐÓNG THUẾ ---")
-		handle_tax(player, 200)
-		return true
+	match cell.cell_type:
+		"chance":
+			var card = _draw_chance()
+			print("--- CƠ HỘI: ", card.text, " ---")
+			game_controller.ui.show_card_popup("CƠ HỘI", card.text, Color(1.0, 0.6, 0.2))
+			await get_tree().create_timer(2.0).timeout
+			game_controller.ui.hide_card_popup()
+			await _process_card(player, card)
+			return true
+
+		"community":
+			var card = _draw_community()
+			print("--- KHÍ VẬN: ", card.text, " ---")
+			game_controller.ui.show_card_popup("KHÍ VẬN", card.text, Color(0.4, 0.6, 1.0))
+			await get_tree().create_timer(2.0).timeout
+			game_controller.ui.hide_card_popup()
+			await _process_card(player, card)
+			return true
+
+		"go_to_jail":
+			print("--- VÀO TÙ! ---")
+			game_controller.ui.show_message("👮 " + player.name + " bị bắt! Vào Tù!")
+			await game_controller.go_to_jail(player)
+			call_deferred("emit_signal", "event_finished")
+			return true
+
+		"tax":
+			var tax_amount = cell.rent_price
+			print("--- THUẾ: $", tax_amount, " ---")
+			game_controller.ui.show_message("💸 " + player.name + " nộp thuế $" + str(tax_amount))
+			game_controller.process_payment(player, null, tax_amount, cell.cell_name)
+			call_deferred("emit_signal", "event_finished")
+			return true
+
+		"go":
+			game_controller.ui.show_message("🏁 " + player.name + " đến ô GO!")
+			call_deferred("emit_signal", "event_finished")
+			return true
+
+		"jail":
+			game_controller.ui.show_message(player.name + " đi ngang qua Nhà Tù 🔒")
+			call_deferred("emit_signal", "event_finished")
+			return true
+
+		"parking":
+			game_controller.ui.show_message(player.name + " nghỉ chân tại Bãi Đỗ Xe")
+			call_deferred("emit_signal", "event_finished")
+			return true
+
 	return false
 
-func trigger_card_event(player: Player, type: String):
-	current_event_player = player
 
-	var card_list = chance_cards if type == "chance" else community_chest_cards
-	current_event_card = card_list[randi() % card_list.size()]
-
-	var choices = []
-	if current_event_card.type == "choice":
-		choices = current_event_card.choices
-	else:
-		choices = ["✅ Xác nhận"]
-
-	game_controller.ui.show_event_popup(
-		current_event_card.title,
-		current_event_card.desc,
-		choices,
-		self._on_event_choice_selected,
-		type
-	)
-
-func _on_event_choice_selected(choice_index: int):
-	match current_event_card.type:
-		"reward":
-			print("Sự kiện Nhận tiền: ", current_event_card.desc)
-			game_controller.process_reward(current_event_player, current_event_card.amount)
+func _process_card(player: Player, card: Dictionary):
+	match card.action:
+		"gain":
+			game_controller.process_reward(player, card.amount)
 			call_deferred("emit_signal", "event_finished")
-		"penalty":
-			print("Sự kiện Mất tiền: ", current_event_card.desc)
-			game_controller.process_payment(current_event_player, null, current_event_card.amount, "Phạt sự kiện")
-			call_deferred("emit_signal", "event_finished")
-		"move":
-			print("Sự kiện Di chuyển: ô ", current_event_card.target)
-			# Tặng $200 nếu là di chuyển về ô 0
-			if current_event_card.target == 0:
-				game_controller.process_reward(current_event_player, 200)
-			game_controller.move_player_to_position(current_event_player, current_event_card.target)
-			call_deferred("emit_signal", "event_finished")
-		"card":
-			print("Sự kiện Thẻ đặc biệt: Ra Tù Miễn Phí")
-			current_event_player.state.special_cards += 1
-			call_deferred("emit_signal", "event_finished")
-		"jail":
-			print("Sự kiện Vào tù!")
-			handle_go_to_jail(current_event_player)
-		"choice":
-			print("Sự kiện Lựa chọn: người chơi chọn ", choice_index)
-			if choice_index == 0:
-				game_controller.process_payment(current_event_player, null, 50, "Nộp phạt Cơ Hội")
-				call_deferred("emit_signal", "event_finished")
-			else:
-				# Rút thẻ Khí Vận
-				trigger_card_event(current_event_player, "community")
 
-func handle_cell_after_move(player: Player, cell_index: int):
-	game_controller.handle_landed_cell(player, cell_index)
+		"lose":
+			game_controller.process_payment(player, null, card.amount, card.text)
+			call_deferred("emit_signal", "event_finished")
+
+		"move_to_go":
+			# Di chuyển đến GO và nhận $200
+			game_controller.process_reward(player, 200)
+			await game_controller.move_player_to_position(player, 0)
+			call_deferred("emit_signal", "event_finished")
+
+		"move_back":
+			var steps = card.get("steps", 3)
+			var new_pos = player.state.position - steps
+			if new_pos < 0:
+				new_pos += game_controller.game_state.board_size
+			await game_controller.move_player_to_position(player, new_pos)
+			# Xử lý ô mới sau khi di chuyển
+			call_deferred("_handle_cell_after_move", player, new_pos)
+
+		"move_nearest_railroad":
+			var nearest = _find_nearest_railroad(player.state.position)
+			if player.state.position > nearest:
+				# Đi qua GO
+				game_controller.process_reward(player, 200)
+			await game_controller.move_player_to_position(player, nearest)
+			call_deferred("_handle_cell_after_move", player, nearest)
+
+		"go_jail":
+			await game_controller.go_to_jail(player)
+			call_deferred("emit_signal", "event_finished")
+
+		"get_card":
+			player.state.special_cards += 1
+			game_controller.ui.show_message(player.name + " nhận thẻ Ra Tù! (Tổng: " + str(player.state.special_cards) + ")")
+			print(player.name + " nhận thẻ Ra Tù Miễn Phí!")
+			call_deferred("emit_signal", "event_finished")
+
+		"birthday":
+			var total_received = 0
+			for p in game_controller.game_state.players:
+				if p != player and not p.is_bankrupt():
+					var gift = card.amount
+					if p.state.balance >= gift:
+						p.deduct_money(gift)
+						player.add_money(gift)
+						total_received += gift
+			game_controller.ui.show_message("🎂 " + player.name + " nhận $" + str(total_received) + " quà sinh nhật!")
+			call_deferred("emit_signal", "event_finished")
+
+
+func _handle_cell_after_move(player: Player, cell_index: int):
+	await game_controller.handle_landed_cell(player, cell_index)
 	emit_signal("event_finished")
 
-func handle_go_to_jail(player: Player):
-	game_controller.go_to_jail(player)
-	call_deferred("emit_signal", "event_finished")
 
-func handle_tax(player: Player, amount: int):
-	game_controller.process_payment(player, null, amount, "Đóng thuế")
-	call_deferred("emit_signal", "event_finished")
+func _find_nearest_railroad(current_pos: int) -> int:
+	# Tìm nhà ga gần nhất phía trước
+	var board_size = game_controller.game_state.board_size
+	for i in range(1, board_size + 1):
+		var check_pos = (current_pos + i) % board_size
+		var cell = game_controller.board.get_cell(check_pos)
+		if cell and cell.cell_type == "railroad":
+			return check_pos
+	return current_pos
