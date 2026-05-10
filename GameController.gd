@@ -22,157 +22,223 @@ func start_turn():
 		return
 
 	print("Player:", player.name)
-	ui.show_turn(player.player_id)
+
+	if ui:
+		ui.show_turn(player.player_id)
 
 	if player.state.in_jail:
-		print(player.name + " đang ở tù! Cần đổ Double để thoát.")
+		print(player.name + " đang ở tù!")
 
 
 func roll_dice():
+
 	if is_rolling:
 		return
 
 	print("ROLL DICE CALLED")
 
 	is_rolling = true
-	ui.set_roll_enabled(false)
+
+	if ui:
+		ui.set_roll_enabled(false)
 
 	final_result = dice.roll()
-	ui.start_dice_animation()
+
+	if ui:
+		ui.start_dice_animation()
 
 
 func resolve_roll():
+
 	var player = get_current_player()
 
-	ui.show_result(final_result)
+	if ui:
+		ui.show_result(final_result)
 
 	# =========================
-	# Xử lý khi ở tù
+	# Jail
 	# =========================
 
 	if player.state.in_jail:
+
 		if final_result.is_double:
+
 			print(player.name + " thoát tù!")
 
 			player.state.set_in_jail(false)
 
-			await move_player(player, final_result.total())
-			await handle_landed_cell(player, player.state.position)
+			await move_player(
+				player,
+				final_result.total()
+			)
+
+			await handle_landed_cell(
+				player,
+				player.state.position
+			)
+
 		else:
-			print(player.name + " không ra Double.")
+			print(player.name + " không ra double.")
 
 		end_turn()
 
 		is_rolling = false
-		ui.set_roll_enabled(true)
+
+		if ui:
+			ui.set_roll_enabled(true)
 
 		return
+
 
 	# =========================
 	# Double
 	# =========================
 
 	if final_result.is_double:
+
 		game_state.double_count += 1
 
-		ui.show_double()
+		if ui:
+			ui.show_double()
 
 		if game_state.double_count >= 3:
-			go_to_jail(player)
+
+			await go_to_jail(player)
 
 			game_state.double_count = 0
 
 			end_turn()
 
 			is_rolling = false
-			ui.set_roll_enabled(true)
+
+			if ui:
+				ui.set_roll_enabled(true)
 
 			return
 
-	# =========================
-	# Move player
-	# =========================
-
-	await move_player(player, final_result.total())
-
-	await handle_landed_cell(player, player.state.position)
 
 	# =========================
-	# Extra turn nếu double
+	# Move
+	# =========================
+
+	await move_player(
+		player,
+		final_result.total()
+	)
+
+	await handle_landed_cell(
+		player,
+		player.state.position
+	)
+
+
+	# =========================
+	# Extra Turn
 	# =========================
 
 	if final_result.is_double:
+
 		is_rolling = false
-		ui.set_roll_enabled(true)
+
+		if ui:
+			ui.set_roll_enabled(true)
 
 		start_turn()
+
 		return
 
-	# =========================
-	# End turn bình thường
-	# =========================
 
 	game_state.double_count = 0
 
 	end_turn()
 
 	is_rolling = false
-	ui.set_roll_enabled(true)
+
+	if ui:
+		ui.set_roll_enabled(true)
 
 
-func move_player(player: Player, steps: int) -> void:
-	await move_player_step_by_step(player, steps)
+func move_player(
+	player: Player,
+	steps: int
+) -> void:
 
-
-func move_player_step_by_step(player: Player, steps: int) -> void:
 	for i in range(steps):
 
-		var next_pos = player.state.position + 1
+		var next_pos = (
+			player.state.position + 1
+		)
 
 		if next_pos >= game_state.board_size:
 			process_reward(player)
 
 		next_pos %= game_state.board_size
 
-		player.state.update_position(next_pos)
+		player.state.update_position(
+			next_pos
+		)
 
-		var world_pos = board.get_cell_position(next_pos)
+		var world_pos = board.get_cell_position(
+			next_pos
+		)
 
-		var offset = get_offset(player.player_id)
+		var offset = get_offset(
+			player.player_id
+		)
 
 		if player.token:
-			await player.token.move_to(world_pos + offset)
+			await player.token.move_to(
+				world_pos + offset
+			)
 
-		await get_tree().create_timer(0.1).timeout
+		await get_tree().create_timer(
+			0.1
+		).timeout
 
 
-func move_player_to_position(player: Player, pos: int) -> void:
+func move_player_to_position(
+	player: Player,
+	pos: int
+) -> void:
+
 	player.state.update_position(pos)
 
 	var world_pos = board.get_cell_position(pos)
 
-	var offset = get_offset(player.player_id)
+	var offset = get_offset(
+		player.player_id
+	)
 
 	if player.token:
-		await player.token.move_to(world_pos + offset)
+		await player.token.move_to(
+			world_pos + offset
+		)
 
 
 func go_to_jail(player: Player):
+
 	print("GO TO JAIL!")
 
 	player.state.set_in_jail(true)
 
-	ui.show_jail()
+	if ui:
+		ui.show_jail()
 
-	await move_player_to_position(player, 10)
+	await move_player_to_position(
+		player,
+		10
+	)
 
 
 func end_turn():
 
 	var next_player_found = false
-	var safety_counter = 0
+	var safety = 0
 
-	while not next_player_found and safety_counter < game_state.players.size():
+	while (
+		not next_player_found
+		and safety < game_state.players.size()
+	):
 
 		game_state.current_player = (
 			game_state.current_player + 1
@@ -181,75 +247,140 @@ func end_turn():
 		if not get_current_player().is_bankrupt():
 			next_player_found = true
 
-		safety_counter += 1
+		safety += 1
 
 	if next_player_found:
 		start_turn()
 	else:
-		print("GAME OVER!")
+		print("GAME OVER")
 
 
 func get_current_player() -> Player:
-	return game_state.players[game_state.current_player]
+
+	return game_state.players[
+		game_state.current_player
+	]
 
 
-func get_offset(player_id: int) -> Vector2:
+func get_offset(
+	player_id: int
+) -> Vector2:
+
 	var offsets = [
+
 		Vector2(-10, -10),
 		Vector2(10, -10),
+
 		Vector2(-10, 10),
 		Vector2(10, 10)
 	]
 
-	return offsets[player_id % offsets.size()]
-
-
-func process_current_cell(player: Player):
-	var cell = board.get_cell(player.state.position)
-
-	if cell:
-		print("Player landed on:", cell.cell_name)
+	return offsets[
+		player_id % offsets.size()
+	]
 
 
 # =========================
-# Financial
+# Cell Logic
 # =========================
 
-func handle_landed_cell(player: Player, cell_index: int):
+func handle_landed_cell(
+	player: Player,
+	cell_index: int
+):
 
-	var cell = board.get_cell(cell_index)
+	var cell = board.get_cell(
+		cell_index
+	)
 
 	if not cell:
 		return
 
-	# Ô đất trống
-	if cell.cell_owner == null and cell.price > 0:
-		print("Ô đất trống.")
 
-	# Trả tiền thuê
-	elif (
-		cell.cell_owner != null
-		and cell.cell_owner != player
-		and not cell.is_mortgaged
-	):
+	# =========================
+	# Property
+	# =========================
 
-		var rent_amount = cell.get_current_rent()
+	if cell is PropertyCell:
 
-		if player.state.balance >= rent_amount:
+		var property_cell = (
+			cell as PropertyCell
+		)
+
+		var property_data = (
+			property_cell.data
+			as PropertyData
+		)
+
+		# Chưa có chủ
+		if property_cell.property_owner == null:
+
+			print(
+				"Có thể mua: ",
+				property_data.cell_name
+			)
+
+			return
+
+		# Trả tiền thuê
+		if (
+			property_cell.property_owner
+			!= player
+			and not property_cell.is_mortgaged
+		):
+
+			var rent = (
+				property_cell.get_current_rent()
+			)
+
 			process_payment(
 				player,
-				cell.cell_owner,
-				rent_amount,
-				cell.cell_name
-			)
-		else:
-			handle_insufficient_funds(
-				player,
-				cell.cell_owner,
-				rent_amount
+				property_cell.property_owner,
+				rent,
+				property_data.cell_name
 			)
 
-			await self.turn_action_completed
+			return
+
+
+	# =========================
+	# Tax
+	# =========================
+
+	if cell.data is TaxData:
+
+		var tax_data = (
+			cell.data as TaxData
+		)
+
+		print(
+			"Đóng thuế: ",
+			tax_data.tax_amount
+		)
+
+		player.deduct_money(
+			tax_data.tax_amount
+		)
+
+		return
+
+
+	# =========================
+	# Chance
+	# =========================
+
+	if cell.data is ChanceData:
+
+		print("Rút Chance")
+
+		return
+
+
+	# =========================
+	# Chest
+	# =========================
+
+	if cell.data is ChestData:
 
 func process_reward(player: Player, amount: int = 200):
 	player.add_money(amount)
@@ -269,20 +400,23 @@ func process_reward(player: Player, amount: int = 200):
 
 func process_payment(
 	payer: Player,
-	beneficiary: Player,
+	receiver: Player,
 	amount: int,
-	reason: String
+	_reason: String
 ):
+
 	if payer.state.balance >= amount:
-		execute_transaction(
-			payer,
-			beneficiary,
-			amount
-		)
+
+		payer.deduct_money(amount)
+
+		if receiver:
+			receiver.add_money(amount)
+
 	else:
+
 		handle_insufficient_funds(
 			payer,
-			beneficiary,
+			receiver,
 			amount
 		)
 
@@ -314,19 +448,18 @@ func execute_transaction(
 
 func handle_insufficient_funds(
 	payer: Player,
-	beneficiary: Player,
+	receiver: Player,
 	amount: int
 ):
-	var total_cap = payer.get_total_capacity()
 
-	if total_cap < amount:
-		handle_bankruptcy(payer, beneficiary)
-	else:
-		if ui.has_method("request_mortgage"):
-			ui.request_mortgage(
-				payer,
-				amount - payer.state.balance
-			)
+	var total = payer.get_total_capacity()
+
+	if total < amount:
+
+		handle_bankruptcy(
+			payer,
+			receiver
+		)
 
 
 func handle_bankruptcy(
@@ -337,8 +470,18 @@ func handle_bankruptcy(
 	debtor.state.set_bankrupt(true)
 	debtor.transfer_all_assets_to(creditor)
 
-	if board.has_method("remove_player_token"):
-		board.remove_player_token(debtor)
+	print(
+		debtor.name,
+		" PHÁ SẢN!"
+	)
+
+	debtor.transfer_all_assets_to(
+		creditor
+	)
+
+	board.remove_player_token(
+		debtor
+	)
 
 	if ui.has_method("show_bankruptcy_ui"):
 	
@@ -359,3 +502,6 @@ func handle_bankruptcy(
 			return 
 
 	emit_signal("turn_action_completed")
+	emit_signal(
+		"turn_action_completed"
+	)
