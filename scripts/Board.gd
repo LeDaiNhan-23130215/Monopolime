@@ -212,6 +212,14 @@ func create_red_property(index):
 	data.buy_price = 200
 	data.build_cost = 100
 
+	# Rent table (BR-09, BR-10)
+	data.base_rent = 10
+	data.house_1_rent = 30
+	data.house_2_rent = 90
+	data.house_3_rent = 270
+	data.house_4_rent = 400
+	data.hotel_rent = 550
+
 	return data
 
 
@@ -228,6 +236,14 @@ func create_green_property(index):
 
 	data.buy_price = 300
 	data.build_cost = 150
+
+	# Rent table (BR-09, BR-10)
+	data.base_rent = 14
+	data.house_1_rent = 40
+	data.house_2_rent = 100
+	data.house_3_rent = 300
+	data.house_4_rent = 450
+	data.hotel_rent = 600
 
 	return data
 
@@ -246,6 +262,14 @@ func create_yellow_property(index):
 	data.buy_price = 400
 	data.build_cost = 200
 
+	# Rent table (BR-09, BR-10)
+	data.base_rent = 18
+	data.house_1_rent = 50
+	data.house_2_rent = 150
+	data.house_3_rent = 450
+	data.house_4_rent = 625
+	data.hotel_rent = 750
+
 	return data
 
 
@@ -262,6 +286,14 @@ func create_blue_property(index):
 
 	data.buy_price = 500
 	data.build_cost = 250
+
+	# Rent table (BR-09, BR-10)
+	data.base_rent = 26
+	data.house_1_rent = 100
+	data.house_2_rent = 300
+	data.house_3_rent = 750
+	data.house_4_rent = 900
+	data.hotel_rent = 1100
 
 	return data
 
@@ -436,5 +468,4 @@ func reset_board():
 
 		if cell is PropertyCell:
 
-			cell.property_owner = null
-			cell.is_mortgaged = false
+			cell.reset_property()
