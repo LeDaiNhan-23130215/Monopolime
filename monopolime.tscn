@@ -122,13 +122,13 @@ text = "🏦  Thế chấp tài sản"
 layout_mode = 2
 text = "💰  Chuộc lại tài sản"
 
+[node name="BtnSellHouse" type="Button" parent="GameUI/UI/ActionPopup/VBox" unique_id=2000000200]
+layout_mode = 2
+text = "🏠  Bán nhà / Khách sạn về Ngân hàng"
+
 [node name="BtnSell" type="Button" parent="GameUI/UI/ActionPopup/VBox" unique_id=2000000028]
 layout_mode = 2
-text = "💸  Bán tài sản"
-
-[node name="BtnTrade" type="Button" parent="GameUI/UI/ActionPopup/VBox" unique_id=2000000029]
-layout_mode = 2
-text = "🔄  Trao đổi tài sản"
+text = "🏚  Bán đất về Ngân hàng"
 
 [node name="Separator1" type="HSeparator" parent="GameUI/UI/ActionPopup/VBox" unique_id=2000000030]
 layout_mode = 2
@@ -173,60 +173,6 @@ layout_mode = 2
 disabled = true
 text = "Xác nhận ✔"
 
-[node name="TradePopup" type="PanelContainer" parent="GameUI/UI" unique_id=2000000050]
-visible = false
-offset_left = 250.0
-offset_top = 160.0
-offset_right = 620.0
-offset_bottom = 420.0
-
-[node name="VBox" type="VBoxContainer" parent="GameUI/UI/TradePopup" unique_id=2000000051]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="Title" type="Label" parent="GameUI/UI/TradePopup/VBox" unique_id=2000000052]
-layout_mode = 2
-text = "Giao dịch"
-horizontal_alignment = 1
-
-[node name="LabelPlayer" type="Label" parent="GameUI/UI/TradePopup/VBox" unique_id=2000000053]
-layout_mode = 2
-text = "Người nhận / Người mua:"
-
-[node name="PlayerList" type="OptionButton" parent="GameUI/UI/TradePopup/VBox" unique_id=2000000054]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="LabelPrice" type="Label" parent="GameUI/UI/TradePopup/VBox" unique_id=2000000055]
-layout_mode = 2
-text = "Giá giao dịch ($):"
-
-[node name="PriceInput" type="SpinBox" parent="GameUI/UI/TradePopup/VBox" unique_id=2000000056]
-layout_mode = 2
-size_flags_horizontal = 3
-max_value = 9999.0
-step = 10.0
-value = 200.0
-
-[node name="NoteLabel" type="Label" parent="GameUI/UI/TradePopup/VBox" unique_id=2000000057]
-layout_mode = 2
-text = "* Người nhận sẽ được hỏi xác nhận"
-autowrap_mode = 3
-
-[node name="HBox" type="HBoxContainer" parent="GameUI/UI/TradePopup/VBox" unique_id=2000000058]
-layout_mode = 2
-alignment = 2
-
-[node name="BtnCancel" type="Button" parent="GameUI/UI/TradePopup/VBox/HBox" unique_id=2000000059]
-custom_minimum_size = Vector2(100, 0)
-layout_mode = 2
-text = "Hủy"
-
-[node name="BtnConfirm" type="Button" parent="GameUI/UI/TradePopup/VBox/HBox" unique_id=2000000060]
-custom_minimum_size = Vector2(120, 0)
-layout_mode = 2
-text = "Tiếp tục ▶"
-
 [node name="SaveLoadMenu" parent="GameUI" unique_id=2110449978 instance=ExtResource("11_nyn1k")]
 
 [node name="GameState" type="Node" parent="." unique_id=510804286]
@@ -258,11 +204,9 @@ script = ExtResource("11_y5t0d")
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnBuild" to="GameUI" method="_on_btn_build_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnMortgage" to="GameUI" method="_on_btn_mortgage_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnRedeem" to="GameUI" method="_on_btn_redeem_pressed"]
+[connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnSellHouse" to="GameUI" method="_on_btn_sell_house_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnSell" to="GameUI" method="_on_btn_sell_pressed"]
-[connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnTrade" to="GameUI" method="_on_btn_trade_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnClose" to="GameUI" method="_on_btn_close_action_pressed"]
 [connection signal="item_selected" from="GameUI/UI/PropertyPopup/VBox/PropertyList" to="GameUI" method="_on_property_list_item_selected"]
 [connection signal="pressed" from="GameUI/UI/PropertyPopup/VBox/HBox/BtnCancel" to="GameUI" method="_on_btn_pp_cancel_pressed"]
 [connection signal="pressed" from="GameUI/UI/PropertyPopup/VBox/HBox/BtnConfirm" to="GameUI" method="_on_btn_pp_confirm_pressed"]
-[connection signal="pressed" from="GameUI/UI/TradePopup/VBox/HBox/BtnCancel" to="GameUI" method="_on_btn_td_cancel_pressed"]
-[connection signal="pressed" from="GameUI/UI/TradePopup/VBox/HBox/BtnConfirm" to="GameUI" method="_on_btn_td_confirm_pressed"]

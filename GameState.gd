@@ -10,8 +10,8 @@ var double_count = 0
 
 func _ready():
 	players = [
-		create_player(0, "A"),
-		create_player(1, "B")
+		create_player(0, "P1"),
+		create_player(1, "P2")
 	]
 
 func create_player(id, name):

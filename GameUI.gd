@@ -24,8 +24,8 @@ signal ui_action_done
 @onready var btn_build        : Button         = get_node("UI/ActionPopup/VBox/BtnBuild")
 @onready var btn_mortgage     : Button         = get_node("UI/ActionPopup/VBox/BtnMortgage")
 @onready var btn_redeem       : Button         = get_node("UI/ActionPopup/VBox/BtnRedeem")
+@onready var btn_sell_house   : Button         = get_node("UI/ActionPopup/VBox/BtnSellHouse")
 @onready var btn_sell         : Button         = get_node("UI/ActionPopup/VBox/BtnSell")
-@onready var btn_trade        : Button         = get_node("UI/ActionPopup/VBox/BtnTrade")
 @onready var btn_close_action : Button         = get_node("UI/ActionPopup/VBox/BtnClose")
 
 @onready var prop_popup       : PanelContainer = get_node("UI/PropertyPopup")
@@ -34,12 +34,7 @@ signal ui_action_done
 @onready var btn_pp_confirm   : Button         = get_node("UI/PropertyPopup/VBox/HBox/BtnConfirm")
 @onready var btn_pp_cancel    : Button         = get_node("UI/PropertyPopup/VBox/HBox/BtnCancel")
 
-@onready var trade_popup       : PanelContainer = get_node("UI/TradePopup")
-@onready var trade_title       : Label          = get_node("UI/TradePopup/VBox/Title")
-@onready var trade_player_list : OptionButton   = get_node("UI/TradePopup/VBox/PlayerList")
-@onready var trade_price_input : SpinBox        = get_node("UI/TradePopup/VBox/PriceInput")
-@onready var btn_td_confirm    : Button         = get_node("UI/TradePopup/VBox/HBox/BtnConfirm")
-@onready var btn_td_cancel     : Button         = get_node("UI/TradePopup/VBox/HBox/BtnCancel")
+
 
 # ─── Dice textures ───────────────────────────────────────────────────
 var dice_textures: Array = [
@@ -97,9 +92,14 @@ func _ready() -> void:
 	dice1_sprite.scale = base_scale
 	dice2_sprite.scale = base_scale
 
+	# FIX HITBOX: CanvasLayer phải follow viewport để mouse coords khớp UI
+	# khi window bị resize khác resolution gốc
+	var canvas_layer = get_node("UI") as CanvasLayer
+	if canvas_layer:
+		canvas_layer.follow_viewport_enabled = true
+
 	action_popup.visible = false
 	prop_popup.visible   = false
-	trade_popup.visible  = false
 
 	# FIX: connect item_selected trong code để chắc chắn hoạt động
 	if not prop_list.item_selected.is_connected(_on_property_list_item_selected):
@@ -147,10 +147,12 @@ func _set_roll_button_enabled(enabled: bool):
 # DICE
 # ═════════════════════════════════════════════════════════════════════
 func show_turn(player_index: int) -> void:
-	label.text = "Lượt của Player %d" % (player_index + 1)
+	var player = game_controller.get_current_player()
+	var pname = player.name if player else ("P%d" % (player_index + 1))
+	label.text = "Lượt của %s" % pname
 	# FIX: Luôn hiện nút quản lý tài sản khi đến lượt (bất kỳ ô nào - BR-16)
 	if btn_open_manage:
-		btn_open_manage.text    = "⚙ Quản lý tài sản (P%d)" % (player_index + 1)
+		btn_open_manage.text    = "⚙ Quản lý tài sản (%s)" % pname
 		btn_open_manage.visible = true
 
 func start_dice_animation() -> void:
@@ -227,7 +229,7 @@ func _on_roll_dice_pressed() -> void:
 # ═════════════════════════════════════════════════════════════════════
 
 # Gọi khi đáp xuống ô chưa có chủ (bắt buộc xử lý)
-func prompt_buy_or_auction(player: Player, cell: PropertyCell, am: AssetManager) -> void:
+func prompt_buy_or_pass(player: Player, cell: PropertyCell, am: AssetManager) -> void:
 	_player    = player
 	_am        = am
 	_buy_cell  = cell
@@ -291,7 +293,6 @@ func _on_btn_open_manage_pressed() -> void:
 func hide_manage_button() -> void:
 	action_popup.visible = false
 	prop_popup.visible   = false
-	trade_popup.visible  = false
 
 # Gọi khi thực sự hoàn thành xong hành động (emit signal nếu mandatory)
 func _done_with_action() -> void:
@@ -314,21 +315,25 @@ func _open_action_menu() -> void:
 	var has_props    = false
 	var has_mortgage = false
 
+	var has_houses = false
 	for c in _player.properties:
 		if c is PropertyCell:
 			has_props = true
 			if c.is_mortgaged:
 				has_mortgage = true
+			if c.house_count > 0 or c.has_hotel:
+				has_houses = true
 			if not c.is_mortgaged and not c.has_hotel:
 				if PropertyController.can_build_on(c, _player, all_cells):
 					can_build = true
 
-	btn_buy.visible      = (_buy_cell != null)
-	btn_build.visible    = can_build
-	btn_mortgage.visible = has_props
-	btn_redeem.visible   = has_mortgage
-	btn_sell.visible     = has_props
-	btn_trade.visible    = true
+	btn_buy.visible        = (_buy_cell != null)
+	btn_build.visible      = can_build
+	btn_mortgage.visible   = has_props
+	btn_redeem.visible     = has_mortgage
+	# Nút bán nhà: chỉ hiện khi có ít nhất 1 nhà hoặc khách sạn
+	btn_sell_house.visible = has_houses
+	btn_sell.visible       = has_props
 
 	# FIX: Text nút phân theo chế độ
 	if btn_close_action:
@@ -336,7 +341,6 @@ func _open_action_menu() -> void:
 
 	# FIX: Đóng popup con trước khi hiện ActionPopup
 	prop_popup.visible   = false
-	trade_popup.visible  = false
 	action_popup.visible = true
 
 # FIX: "Kết thúc lượt" / "Đóng"
@@ -367,8 +371,7 @@ func _on_btn_buy_pressed() -> void:
 	if ok:
 		show_message("Mua thành công!")
 	else:
-		show_message("Không đủ tiền! Tiến hành đấu giá...")
-		_am.auction_property(_buy_cell, game_controller.game_state.players)
+		show_message("Không đủ tiền! Ô đất này chưa có chủ sở hữu.")
 	_done_with_action()
 
 func _on_btn_build_pressed() -> void:
@@ -400,23 +403,27 @@ func _on_btn_redeem_pressed() -> void:
 			eligible.append(c)
 	_open_prop_popup("Chọn ô để chuộc lại (+10% lãi)", eligible)
 
+# Bán nhà / khách sạn về Ngân hàng
+func _on_btn_sell_house_pressed() -> void:
+	action_popup.visible = false
+	_action = "sell_house"
+	var eligible: Array = []
+	for c in _player.properties:
+		if c is PropertyCell and (c.house_count > 0 or c.has_hotel):
+			eligible.append(c)
+	_open_prop_popup("Chọn ô để bán nhà / khách sạn (nhận 50% chi phí xây)", eligible)
+
+# Bán đất về Ngân hàng
 func _on_btn_sell_pressed() -> void:
 	action_popup.visible = false
 	_action = "sell"
 	var eligible: Array = []
 	for c in _player.properties:
-		if c is PropertyCell and not c.is_mortgaged:
-			eligible.append(c)
-	_open_prop_popup("Chọn ô muốn bán", eligible)
-
-func _on_btn_trade_pressed() -> void:
-	action_popup.visible = false
-	_action = "trade"
-	var eligible: Array = []
-	for c in _player.properties:
 		if c is PropertyCell:
 			eligible.append(c)
-	_open_prop_popup("Chọn ô bạn muốn đưa ra trao đổi", eligible)
+	_open_prop_popup("Chọn ô muốn bán về Ngân hàng (nhận 50% giá mua)", eligible)
+
+
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -476,85 +483,22 @@ func _on_btn_pp_confirm_pressed() -> void:
 			var ok = _am.redeem_property(_player, _cell)
 			show_message("Chuộc lại thành công!" if ok else "Chuộc lại thất bại!")
 			_done_with_action()
+		"sell_house":
+			var ok = _am.sell_house_to_bank(_player, _cell)
+			show_message("Bán nhà thành công!" if ok else "Bán nhà thất bại!")
+			_done_with_action()
 		"sell":
-			_action = "sell"
-			_open_trade_popup()
-		"trade":
-			_action = "trade"
-			_open_trade_popup()
-
-
-# ═════════════════════════════════════════════════════════════════════
-# TRADE POPUP
-# ═════════════════════════════════════════════════════════════════════
-func _open_trade_popup() -> void:
-	trade_title.text = ("Bán \"%s\" cho ai?" if _action == "sell" else "Trao đổi \"%s\" với ai?") % _cell.data.cell_name
-	trade_player_list.clear()
-	for p in game_controller.game_state.players:
-		if p != _player and not p.is_bankrupt():
-			trade_player_list.add_item("%s ($%d)" % [p.name, p.state.balance])
-			trade_player_list.set_item_metadata(trade_player_list.item_count - 1, p)
-	if trade_player_list.item_count == 0:
-		show_message("Không có người chơi giao dịch!")
-		# FIX: Quay lại ActionPopup thay vì đóng hẳn
-		_open_action_menu()
-		return
-	trade_popup.visible = true
-
-func _on_btn_td_confirm_pressed() -> void:
-	trade_popup.visible = false
-	var target : Player = trade_player_list.get_item_metadata(trade_player_list.selected)
-	var price  : int    = int(trade_price_input.value)
-
-	var msg = ""
-	if _action == "sell":
-		msg = "[%s] đề xuất bán \"%s\" giá $%d. Đồng ý?" % [_player.name, _cell.data.cell_name, price]
-	else:
-		msg = "[%s] đề xuất trao đổi \"%s\" + $%d. Đồng ý?" % [_player.name, _cell.data.cell_name, price]
-
-	var ok = await _confirm_from_receiver_v2(target, msg)
-	if ok:
-		var result = false
-		if _action == "sell":
-			result = _am.sell_property(_player, target, _cell, price)
-		else:
-			result = _am.trade_property(_player, target, [_cell], price, [], 0)
-		show_message("Giao dịch thành công!" if result else "Giao dịch thất bại!")
-	else:
-		show_message("Đối phương từ chối.")
-
-	_done_with_action()
-
-# FIX: Hủy trong TradePopup → quay lại ActionPopup (không đóng hẳn)
-func _on_btn_td_cancel_pressed() -> void:
-	trade_popup.visible = false
-	_action = ""
-	_cell   = null
-	_open_action_menu()
-
-
-# ═════════════════════════════════════════════════════════════════════
-# DIALOG HELPER
-# ═════════════════════════════════════════════════════════════════════
-func _confirm_from_receiver_v2(receiver: Player, message: String) -> bool:
-	var dialog = ConfirmationDialog.new()
-	dialog.title       = "Xác nhận – " + receiver.name
-	dialog.dialog_text = message
-	dialog.get_ok_button().text     = "Đồng ý"
-	dialog.get_cancel_button().text = "Từ chối"
-	add_child(dialog)
-
-	var accepted := false
-	var waiting  := true
-	dialog.confirmed.connect(func(): accepted = true;  waiting = false)
-	dialog.canceled.connect( func(): accepted = false; waiting = false)
-	dialog.popup_centered()
-
-	while waiting:
-		await get_tree().process_frame
-
-	dialog.queue_free()
-	return accepted
+			if _cell.house_count > 0 or _cell.has_hotel:
+				show_message("Phải bán hết nhà / khách sạn trước khi bán đất!")
+				_open_action_menu()
+				return
+			if _cell.is_mortgaged:
+				show_message(_cell.data.cell_name + " đang thế chấp! Hãy chuộc lại trước.")
+				_open_action_menu()
+				return
+			var ok = _am.sell_property_to_bank(_player, _cell)
+			show_message("Bán đất thành công!" if ok else "Bán đất thất bại!")
+			_done_with_action()
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -564,14 +508,14 @@ func request_mortgage(player: Player, amount_needed: int) -> void:
 	_player    = player
 	_am        = game_controller.asset_manager
 	_mandatory = true
-	show_message("%s thiếu $%d! Hãy thế chấp hoặc bán." % [player.name, amount_needed])
-	btn_buy.visible      = false
-	btn_build.visible    = false
-	btn_redeem.visible   = false
-	btn_trade.visible    = false
-	btn_mortgage.visible = true
-	btn_sell.visible     = true
-	action_popup.visible = true
+	show_message("%s thiếu $%d! Hãy thế chấp hoặc bán nhà / đất." % [player.name, amount_needed])
+	btn_buy.visible        = false
+	btn_build.visible      = false
+	btn_redeem.visible     = false
+	btn_mortgage.visible   = true
+	btn_sell_house.visible = true
+	btn_sell.visible       = true
+	action_popup.visible   = true
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -635,8 +579,8 @@ func _create_uc09_ui() -> void:
 
 	# --- Player Panel (bảng tài sản bên phải) ---
 	_pp_panel = Panel.new()
-	_pp_panel.set_size(Vector2(195, 560))
-	_pp_panel.set_position(Vector2(880, 20))
+	_pp_panel.set_size(Vector2(210, 580))
+	_pp_panel.set_position(Vector2(868, 15))
 	var ps = StyleBoxFlat.new()
 	ps.bg_color = Color(0.05, 0.05, 0.12, 0.92)
 	ps.set_border_width_all(1)
@@ -649,15 +593,22 @@ func _create_uc09_ui() -> void:
 	pp_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pp_title.add_theme_font_size_override("font_size", 14)
 	pp_title.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
-	pp_title.set_position(Vector2(0, 8))
-	pp_title.set_size(Vector2(195, 24))
+	pp_title.set_position(Vector2(0, 6))
+	pp_title.set_size(Vector2(210, 26))
 	_pp_panel.add_child(pp_title)
 
+	# ScrollContainer để không bị chồng chéo khi nhiều tài sản
+	var scroll = ScrollContainer.new()
+	scroll.set_position(Vector2(5, 36))
+	scroll.set_size(Vector2(200, 538))
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_pp_panel.add_child(scroll)
+
 	_pp_content = VBoxContainer.new()
-	_pp_content.set_position(Vector2(8, 38))
-	_pp_content.set_size(Vector2(179, 515))
-	_pp_content.add_theme_constant_override("separation", 10)
-	_pp_panel.add_child(_pp_content)
+	_pp_content.custom_minimum_size = Vector2(196, 0)
+	_pp_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_pp_content.add_theme_constant_override("separation", 8)
+	scroll.add_child(_pp_content)
 
 	get_node("UI").add_child(_pp_panel)
 
@@ -728,33 +679,35 @@ func refresh_player_panel(snapshot: Array) -> void:
 
 	for p in snapshot:
 		var card = Panel.new()
-		card.custom_minimum_size = Vector2(179, 0)
+		card.custom_minimum_size = Vector2(192, 0)
 		var pid: int = p["id"]
 		var pc: Color = player_colors[pid % player_colors.size()]
 		var cs = StyleBoxFlat.new()
-		cs.bg_color = Color(pc.r * 0.25, pc.g * 0.25, pc.b * 0.25, 0.9)
-		cs.border_width_left = 2
+		cs.bg_color = Color(pc.r * 0.22, pc.g * 0.22, pc.b * 0.22, 0.95)
+		cs.border_width_left = 3
 		cs.border_color = pc
 		cs.set_corner_radius_all(6)
+		cs.content_margin_left   = 8
+		cs.content_margin_right  = 6
+		cs.content_margin_top    = 7
+		cs.content_margin_bottom = 8
 		card.add_theme_stylebox_override("panel", cs)
 
 		var vb = VBoxContainer.new()
 		vb.set_anchors_preset(Control.PRESET_FULL_RECT)
-		vb.offset_left = 8; vb.offset_top = 6
-		vb.offset_right = -6; vb.offset_bottom = -6
-		vb.add_theme_constant_override("separation", 3)
+		vb.add_theme_constant_override("separation", 4)
 		card.add_child(vb)
 
 		var name_lbl = Label.new()
 		var jail_tag = " 🔒" if p["in_jail"] else ""
 		name_lbl.text = player_emojis[pid % player_emojis.size()] + " " + p["name"] + jail_tag
-		name_lbl.add_theme_font_size_override("font_size", 13)
+		name_lbl.add_theme_font_size_override("font_size", 14)
 		name_lbl.add_theme_color_override("font_color", pc)
 		vb.add_child(name_lbl)
 
 		var bal_lbl = Label.new()
 		bal_lbl.text = "💰 $" + str(p["balance"])
-		bal_lbl.add_theme_font_size_override("font_size", 12)
+		bal_lbl.add_theme_font_size_override("font_size", 13)
 		bal_lbl.add_theme_color_override(
 			"font_color",
 			Color.LIME_GREEN if p["balance"] >= 200 else Color.TOMATO
@@ -763,21 +716,21 @@ func refresh_player_panel(snapshot: Array) -> void:
 
 		if p["properties"].size() > 0:
 			var pt = Label.new()
-			pt.text = "🏠 Bất động sản:"
-			pt.add_theme_font_size_override("font_size", 10)
+			pt.text = "🏠 BĐS (%d):" % p["properties"].size()
+			pt.add_theme_font_size_override("font_size", 12)
 			pt.add_theme_color_override("font_color", Color(0.7, 0.85, 0.7))
 			vb.add_child(pt)
 			for pname in p["properties"]:
 				var pl = Label.new()
 				pl.text = "  • " + pname
-				pl.add_theme_font_size_override("font_size", 10)
+				pl.add_theme_font_size_override("font_size", 12)
 				pl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 				pl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 				vb.add_child(pl)
 		else:
 			var no_p = Label.new()
 			no_p.text = "  (chưa có đất)"
-			no_p.add_theme_font_size_override("font_size", 10)
+			no_p.add_theme_font_size_override("font_size", 12)
 			no_p.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 			vb.add_child(no_p)
 
