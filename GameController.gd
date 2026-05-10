@@ -329,7 +329,7 @@ func handle_landed_cell(player: Player, cell_index: int):
 		if prop.property_owner == null:
 			# Chưa có chủ → mua / đấu giá
 			if ui:
-				ui.prompt_buy_or_auction(player, prop, asset_manager)
+				ui.prompt_buy_or_pass(player, prop, asset_manager)
 				await ui.ui_action_done
 		elif prop.property_owner != player and not prop.is_mortgaged:
 			# Trả tiền thuê
@@ -412,10 +412,14 @@ func handle_insufficient_funds(payer: Player, receiver: Player, amount: int):
 		ui.request_mortgage(payer, amount - payer.state.balance)
 
 
-func handle_bankruptcy(debtor: Player, creditor: Player):
-	print(debtor.name, " PHÁ SẢN!")
-	debtor.transfer_all_assets_to(creditor)
+func handle_bankruptcy(debtor: Player, _creditor: Player = null):
+	print(debtor.name, " PHÁ SẢN! Giải phóng toàn bộ tài sản về Ngân hàng.")
+	if ui:
+		ui.show_message(debtor.name + " PHÁ SẢN! Tài sản giải phóng về Ngân hàng.")
+	debtor.release_all_assets()
 	board.remove_player_token(debtor)
+	if ui:
+		ui.refresh_player_panel(get_game_state_snapshot())
 	emit_signal("turn_action_completed")
 
 
@@ -438,18 +442,10 @@ func player_redeem(player: Player, cell: PropertyCell) -> bool:
 	if asset_manager == null: return false
 	return asset_manager.redeem_property(player, cell)
 
-func player_sell_property(seller: Player, buyer: Player, cell: PropertyCell, price: int) -> bool:
+func player_sell_house(player: Player, cell: PropertyCell) -> bool:
 	if asset_manager == null: return false
-	return asset_manager.sell_property(seller, buyer, cell, price)
+	return asset_manager.sell_house_to_bank(player, cell)
 
-func player_trade(
-	proposer: Player, receiver: Player,
-	offer_cells: Array, offer_money: int,
-	request_cells: Array, request_money: int
-) -> bool:
+func player_sell_property(player: Player, cell: PropertyCell) -> bool:
 	if asset_manager == null: return false
-	return asset_manager.trade_property(
-		proposer, receiver,
-		offer_cells, offer_money,
-		request_cells, request_money
-	)
+	return asset_manager.sell_property_to_bank(player, cell)
