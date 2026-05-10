@@ -73,14 +73,14 @@ script = ExtResource("5_r4gxj")
 script = ExtResource("6_6x5qw")
 
 [node name="Board" type="Node2D" parent="." unique_id=940783717]
-position = Vector2(302, 93.5)
+position = Vector2(-15, -181)
 script = ExtResource("9_idd0f")
 cell_scene = ExtResource("10_fg3u4")
 
 [node name="Cells" type="Node2D" parent="Board" unique_id=521322491]
 
 [node name="Tokens" type="Node2D" parent="Board" unique_id=812273034]
-z_index = 1
+z_index = 3
 
 [connection signal="timeout" from="GameUI/UI/DiceTimer" to="GameUI" method="_on_dice_timer_timeout"]
 [connection signal="pressed" from="GameUI/UI/Roll Dice" to="GameUI" method="_on_roll_dice_pressed"]

@@ -71,6 +71,24 @@ func _ready():
 	queue_redraw()
 
 
+func _refresh_labels():
+	if _name_label:
+		_name_label.text = cell_name
+	
+	if _price_label:
+		if price > 0 and cell_type == "property":
+			_price_label.text = "$" + str(price)
+		else:
+			_price_label.text = ""
+	
+	if _owner_label:
+		if cell_owner:
+			_owner_label.text = cell_owner.name
+			_owner_label.visible = true
+		else:
+			_owner_label.visible = false
+
+
 func setup(data: Dictionary):
 	cell_name = data.get("name", "Ô Đất")
 	cell_type = data.get("type", "property")
