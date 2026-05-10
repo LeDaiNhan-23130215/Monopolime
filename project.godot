@@ -18,11 +18,11 @@ config/icon="res://icon.svg"
 [autoload]
 
 StorageService="*uid://bxbynds22lo3b"
+TokenManage="*uid://chbjx6htmbaud"
 
 [global_group]
 
 "test group"=""
-TokenManage="*uid://chbjx6htmbaud"
 
 [physics]
 
