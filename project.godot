@@ -22,6 +22,7 @@ StorageService="*uid://bxbynds22lo3b"
 [global_group]
 
 "test group"=""
+TokenManage="*uid://chbjx6htmbaud"
 
 [physics]
 
@@ -30,3 +31,4 @@ StorageService="*uid://bxbynds22lo3b"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
+renderer/rendering_method="mobile"
