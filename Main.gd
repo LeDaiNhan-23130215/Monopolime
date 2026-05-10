@@ -28,7 +28,13 @@ func _ready() -> void:
 
 	# 4. Gán game_controller cho UI
 	ui.game_controller = game_controller
+	
+	# Show setup menu first
+	ui.show_setup_menu()
+	ui.setup_finished.connect(_on_setup_finished)
 
+
+func _on_setup_finished():
 	# 5. Tạo token cho từng người chơi
 	for player in game_state.players:
 		var token       = token_scene.instantiate()
