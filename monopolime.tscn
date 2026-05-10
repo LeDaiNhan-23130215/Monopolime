@@ -7,6 +7,9 @@
 [ext_resource type="AudioStream" uid="uid://bghhjbsv270nm" path="res://resources/audio/rollAudio/Dice_roll_sound.mp3" id="5_8j4tt"]
 [ext_resource type="Script" uid="uid://dhpcoe4d7fmxk" path="res://GameState.gd" id="5_r4gxj"]
 [ext_resource type="Texture2D" uid="uid://c20o0e1wt0f8v" path="res://resources/button_icon/RollButtonIcon.png" id="6_s088g"]
+[ext_resource type="Script" uid="uid://c76svja4gt2bo" path="res://scripts/Board.gd" id="9_idd0f"]
+[ext_resource type="PackedScene" uid="uid://da543anbagjij" path="res://Cell.tscn" id="10_fg3u4"]
+[ext_resource type="PackedScene" path="res://SaveLoadMenu.tscn" id="11_nyn1k"]
 [ext_resource type="Script" uid="uid://bodlhlq5ibv53" path="res://Dice.gd" id="8_fo70c"]
 [ext_resource type="Script" uid="uid://c76svja4gt2bo" path="res://scripts/Board.gd" id="8_s088g"]
 [ext_resource type="Script" uid="uid://cbxfq6n7terf8" path="res://Cells/Cell.gd" id="10_oeeh8"]
@@ -76,6 +79,8 @@ texture_normal = ExtResource("6_s088g")
 ignore_texture_size = true
 stretch_mode = 4
 
+[node name="SaveLoadMenu" parent="GameUI" unique_id=2110449978 instance=ExtResource("11_nyn1k")]
+[node name="AssetPanel" type="PanelContainer" parent="GameUI/UI" unique_id=2000000010]
 [node name="BtnOpenManage" type="Button" parent="GameUI/UI" unique_id=2000000070]
 visible = false
 offset_left = 10.0
