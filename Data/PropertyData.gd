@@ -6,6 +6,8 @@ class_name PropertyData
 
 @export var buy_price: int
 
+# Rent table (BR-09)
+@export var base_rent: int       # Không có nhà
 @export var house_1_rent: int
 @export var house_2_rent: int
 @export var house_3_rent: int
