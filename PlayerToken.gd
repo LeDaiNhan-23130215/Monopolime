@@ -25,3 +25,34 @@ func center_sprite():
 		return
 	
 	var size = token_sprite.texture.get_size() * token_sprite.scale
+	
+	# Tạo hiệu ứng số tiền bay lên rồi mờ dần
+func show_floating_money(amount: int):
+	var float_label = Label.new()
+	
+	# Nếu số tiền > 0 thì hiện màu xanh (cộng), ngược lại màu đỏ (trừ)
+	if amount > 0:
+		float_label.text = "+$" + str(amount)
+		float_label.add_theme_color_override("font_color", Color.GREEN)
+	else:
+		float_label.text = "-$" + str(abs(amount))
+		float_label.add_theme_color_override("font_color", Color.RED)
+		
+	float_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	float_label.add_theme_constant_override("outline_size", 4)
+	
+	float_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	
+	float_label.position = Vector2(-20, -40) 
+	
+	add_child(float_label)
+	
+	var tween = create_tween()
+	
+	tween.tween_property(float_label, "position", float_label.position + Vector2(0, -30), 2.0)
+	
+	# 2. Cùng lúc đó (parallel), làm cho chữ mờ dần đi (độ trong suốt alpha về 0)
+	tween.parallel().tween_property(float_label, "modulate:a", 0.0, 1.0)
+	
+	# 3. Khi bay xong và mờ hết thì xóa cái nhãn này đi cho nhẹ game
+	tween.tween_callback(float_label.queue_free)

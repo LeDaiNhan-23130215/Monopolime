@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://d1q2dxa3s47i4" path="res://GameController.gd" id="1_hth5n"]
 [ext_resource type="Script" uid="uid://duu0jlxm71k2f" path="res://Main.gd" id="1_wplms"]
 [ext_resource type="Texture2D" uid="uid://cwfa72ssep3sb" path="res://resources/dices/dice6.jpg" id="2_hb5le"]
+[ext_resource type="AudioStream" uid="uid://wtqb2jbiq6ld" path="res://resources/audio/rollAudio/ribhavagrawal-coin-recieved-230517.mp3" id="3_fo70c"]
 [ext_resource type="Script" uid="uid://cn550mdkqajxm" path="res://GameUI.gd" id="4_x4cqj"]
 [ext_resource type="AudioStream" uid="uid://bghhjbsv270nm" path="res://resources/audio/rollAudio/Dice_roll_sound.mp3" id="5_8j4tt"]
 [ext_resource type="Script" uid="uid://dhpcoe4d7fmxk" path="res://GameState.gd" id="5_r4gxj"]
@@ -22,6 +23,9 @@ script = ExtResource("1_wplms")
 
 [node name="GameController" type="Node" parent="." unique_id=1140172223]
 script = ExtResource("1_hth5n")
+
+[node name="MoneySound" type="AudioStreamPlayer" parent="GameController" unique_id=1968341242]
+stream = ExtResource("3_fo70c")
 
 [node name="GameUI" type="Node" parent="." unique_id=1776627427]
 script = ExtResource("4_x4cqj")
@@ -72,6 +76,50 @@ texture_normal = ExtResource("6_s088g")
 ignore_texture_size = true
 stretch_mode = 4
 
+[node name="PlayerInfoContainer" type="HBoxContainer" parent="GameUI/UI" unique_id=1316298901]
+anchors_preset = -1
+anchor_right = 0.113000005
+anchor_bottom = 0.031000001
+offset_left = 279.0
+offset_top = 43.0
+offset_right = 194.82399
+offset_bottom = 56.912
+
+[node name="GameOverPanel" type="ColorRect" parent="GameUI/UI" unique_id=542600580]
+visible = false
+anchors_preset = -1
+anchor_left = 0.33680555
+anchor_top = -0.11574074
+anchor_right = 1.3307291
+anchor_bottom = 0.9583333
+offset_left = -386.0
+offset_top = 31.0
+offset_right = -384.0
+offset_bottom = 31.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.014943849, 0.0009152739, 0.029254105, 0.7058824)
+metadata/_edit_use_anchors_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameUI/UI/GameOverPanel" unique_id=803367363]
+layout_mode = 0
+offset_left = 216.0
+offset_top = 211.0
+offset_right = 1007.0
+offset_bottom = 381.0
+
+[node name="TitleLabel" type="Label" parent="GameUI/UI/GameOverPanel/VBoxContainer" unique_id=1153112557]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "CÓ NGƯỜI PHÁ SẢN!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="GameUI/UI/GameOverPanel/VBoxContainer" unique_id=1898785823]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Người chơi đã rời cuộc chơi."
+
 [node name="GameState" type="Node" parent="." unique_id=510804286]
 script = ExtResource("5_r4gxj")
 
@@ -79,6 +127,9 @@ script = ExtResource("5_r4gxj")
 script = ExtResource("8_fo70c")
 
 [node name="Board" type="Node2D" parent="." unique_id=940783717]
+position = Vector2(302, -49.5)
+script = ExtResource("9_idd0f")
+cell_scene = ExtResource("10_fg3u4")
 position = Vector2(302, -60.5)
 script = ExtResource("8_s088g")
 property_scene = ExtResource("10_uwyxl")

@@ -12,6 +12,12 @@ class_name GameUI
 
 @onready var roll_button = get_node("UI/Roll Dice")
 
+# --- PHẦN THÊM MỚI: Các Node Giao diện Tài chính ---
+@onready var player_info_labels = get_node_or_null("UI/PlayerInfoContainer")
+@onready var message_log = get_node_or_null("UI/MessageLog")
+@onready var mortgage_dialog = get_node_or_null("UI/MortgageDialog")
+# ---------------------------------------------------
+
 var dice_textures = [
 	preload("res://resources/dices/dice1.jpg"),
 	preload("res://resources/dices/dice2.jpg"),
@@ -243,3 +249,72 @@ func auto_mortgage_for_test(
 	game_controller.emit_signal(
 		"turn_action_completed"
 	)
+
+# ==========================================
+# PHẦN THÊM MỚI: GIAO DIỆN TÀI CHÍNH
+# ==========================================
+
+# Cập nhật hiển thị số dư cho tất cả người chơi
+func update_all_balances(players: Array):
+	# 1. CẬP NHẬT TIỀN TRÊN ĐẦU QUÂN CỜ (Mới thêm vào)
+	for p in players:
+		if p.token != null:
+			# Tìm nhãn BalanceLabel gắn trên quân cờ
+			var token_label = p.token.find_child("BalanceLabel", true, false)
+			if token_label != null:
+				token_label.text = "$" + str(p.state.balance)
+
+# Hiển thị thông báo giao dịch nổi (Toast)
+func show_transaction_message(text: String):
+	if message_log:
+		message_log.text = text
+		message_log.visible = true
+		await get_tree().create_timer(2.0).timeout
+		message_log.visible = false
+	else:
+		print("[Transaction UI]: ", text)
+
+# Giao diện thế chấp (để dành sau này bạn tắt Auto Test thì gọi hàm này)
+func show_mortgage_dialog_ui(payer: Player, amount_needed: int):
+	if mortgage_dialog:
+		mortgage_dialog.title = "Thiếu tiền!"
+		mortgage_dialog.dialog_text = payer.name + " cần thêm $" + str(amount_needed) + ".\nBạn có muốn thế chấp tài sản không?"
+		mortgage_dialog.popup_centered()
+		
+		if not mortgage_dialog.confirmed.is_connected(_on_mortgage_confirmed):
+			mortgage_dialog.confirmed.connect(_on_mortgage_confirmed.bind(payer))
+
+func _on_mortgage_confirmed(payer: Player):
+	print("UI: Mở bảng chọn đất để thế chấp cho ", payer.name)
+
+# Hiển thị popup Game Over / Phá sản
+func show_bankruptcy_ui(player_name: String):
+	var panel = find_child("GameOverPanel", true, false)
+	if panel:
+		panel.show()
+		
+		var title = panel.find_child("TitleLabel", true, false)
+		var msg = panel.find_child("MessageLabel", true, false)
+		
+		if title:
+			title.text = "CÓ NGƯỜI PHÁ SẢN!"
+			title.add_theme_color_override("font_color", Color.RED)
+		if msg:
+			msg.text = player_name + " đã hết sạch tiền và bị tịch thu tài sản!"
+			
+		await get_tree().create_timer(3.0).timeout
+		panel.hide()
+
+func show_winner_ui(winner_name: String):
+	var panel = find_child("GameOverPanel", true, false)
+	if panel:
+		panel.show()
+		
+		var title = panel.find_child("TitleLabel", true, false)
+		var msg = panel.find_child("MessageLabel", true, false)
+		
+		if title:
+			title.text = "🏆 KẾT THÚC VÁN CỜ 🏆"
+			title.add_theme_color_override("font_color", Color.YELLOW)
+		if msg:
+			msg.text = "Chúc mừng " + winner_name + " đã trở thành TỶ PHÚ!"
