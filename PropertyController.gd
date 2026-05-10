@@ -7,6 +7,12 @@ class_name PropertyController
 # và lấy danh sách ô theo màu
 # =========================
 
+# Helper: mức xây của 1 ô (0–4 = số nhà, 5 = khách sạn)
+# Tránh bug: khi has_hotel=true thì house_count reset về 0 → phải dùng hàm này
+static func _build_level(cell: PropertyCell) -> int:
+	return 5 if cell.has_hotel else cell.house_count
+
+
 # Kiểm tra player sở hữu đủ bộ màu (BR-12)
 static func has_full_color_set(player: Player, color_name: String, all_cells: Array) -> bool:
 	var color_cells = get_cells_by_color(color_name, all_cells)
@@ -44,15 +50,15 @@ static func can_build_on(target_cell: PropertyCell, player: Player, all_cells: A
 		return false
 
 	# Điều kiện 4: xây đồng đều (BR-13)
-	# Số nhà ở ô target không được cao hơn các ô còn lại cùng bộ màu
+	# target phải có mức thấp nhất (hoặc bằng) trong bộ màu trước khi xây thêm
 	var color_cells = get_cells_by_color(color_name, all_cells)
-	var target_count = target_cell.house_count
+	var target_level = _build_level(target_cell)
 
 	for cell in color_cells:
 		if cell == target_cell:
 			continue
-		if not cell.has_hotel and cell.house_count < target_count:
-			return false  # Ô khác ít nhà hơn → phải xây ở đó trước
+		if _build_level(cell) < target_level:
+			return false  # Ô khác thấp hơn → phải xây ở đó trước
 
 	return true
 
@@ -75,12 +81,12 @@ static func can_sell_house_on(target_cell: PropertyCell, player: Player, all_cel
 
 	var color_name = (target_cell.data as PropertyData).color_name
 	var color_cells = get_cells_by_color(color_name, all_cells)
-	var target_count = target_cell.house_count
+	var target_level = _build_level(target_cell)
 
 	for cell in color_cells:
 		if cell == target_cell:
 			continue
-		if cell.house_count > target_count:
-			return false  # Ô khác vẫn còn nhiều nhà hơn → không thể bán ở target trước
+		if _build_level(cell) > target_level:
+			return false  # Ô khác cao hơn → không thể bán ở target trước
 
 	return true

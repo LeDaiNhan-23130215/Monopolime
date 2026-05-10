@@ -12,6 +12,15 @@ var asset_manager: AssetManager
 var final_result: DiceResult = null
 var is_rolling := false
 
+# Untyped để tránh circular dependency với EventHandler.gd
+var _event_handler = null
+
+func get_event_handler():
+	if _event_handler == null:
+		_event_handler = EventHandler.new(self)
+		add_child(_event_handler)
+	return _event_handler
+
 
 func _on_asset_action_completed(action: String, success: bool, message: String):
 	if ui:
@@ -25,6 +34,7 @@ func start_turn():
 		return
 	if ui:
 		ui.show_turn(player.player_id)
+		ui.refresh_player_panel(get_game_state_snapshot())
 
 
 func roll_dice():
@@ -319,7 +329,7 @@ func handle_landed_cell(player: Player, cell_index: int):
 		if prop.property_owner == null:
 			# Chưa có chủ → mua / đấu giá
 			if ui:
-				ui.prompt_buy_or_auction(player, prop, asset_manager)
+				ui.prompt_buy_or_pass(player, prop, asset_manager)
 				await ui.ui_action_done
 		elif prop.property_owner != player and not prop.is_mortgaged:
 			# Trả tiền thuê
@@ -339,13 +349,15 @@ func handle_landed_cell(player: Player, cell_index: int):
 		return
 
 	# ── Chance ────────────────────────────────────────────────────────
-	if cell.data is ChanceData:
-		print("Rút Chance")
+	if cell is ChanceCell:
+		if get_event_handler().handle_event(player, cell):
+			await get_event_handler().event_finished
 		return
 
 	# ── Chest ─────────────────────────────────────────────────────────
-	if cell.data is ChestData:
-		print("Rút Chest")
+	if cell is ChestCell:
+		if get_event_handler().handle_event(player, cell):
+			await get_event_handler().event_finished
 		return
 
 	# ── Go To Jail ────────────────────────────────────────────────────
@@ -361,6 +373,26 @@ func process_reward(player: Player, amount: int = 200):
 	player.add_money(amount)
 	if ui:
 		ui.show_message("Qua GO nhận $" + str(amount))
+	if ui:
+		ui.refresh_player_panel(get_game_state_snapshot())
+
+
+# Trả về snapshot trạng thái players để UI render bảng tài sản
+func get_game_state_snapshot() -> Array:
+	var snapshot = []
+	for p in game_state.players:
+		var prop_names: Array = []
+		for cell in p.properties:
+			if cell is PropertyCell:
+				prop_names.append(cell.data.cell_name)
+		snapshot.append({
+			"id": p.player_id,
+			"name": p.name,
+			"balance": p.state.balance,
+			"properties": prop_names,
+			"in_jail": p.state.in_jail
+		})
+	return snapshot
 
 
 func process_payment(payer: Player, receiver: Player, amount: int, _reason: String):
@@ -380,10 +412,14 @@ func handle_insufficient_funds(payer: Player, receiver: Player, amount: int):
 		ui.request_mortgage(payer, amount - payer.state.balance)
 
 
-func handle_bankruptcy(debtor: Player, creditor: Player):
-	print(debtor.name, " PHÁ SẢN!")
-	debtor.transfer_all_assets_to(creditor)
+func handle_bankruptcy(debtor: Player, _creditor: Player = null):
+	print(debtor.name, " PHÁ SẢN! Giải phóng toàn bộ tài sản về Ngân hàng.")
+	if ui:
+		ui.show_message(debtor.name + " PHÁ SẢN! Tài sản giải phóng về Ngân hàng.")
+	debtor.release_all_assets()
 	board.remove_player_token(debtor)
+	if ui:
+		ui.refresh_player_panel(get_game_state_snapshot())
 	emit_signal("turn_action_completed")
 
 
@@ -406,18 +442,10 @@ func player_redeem(player: Player, cell: PropertyCell) -> bool:
 	if asset_manager == null: return false
 	return asset_manager.redeem_property(player, cell)
 
-func player_sell_property(seller: Player, buyer: Player, cell: PropertyCell, price: int) -> bool:
+func player_sell_house(player: Player, cell: PropertyCell) -> bool:
 	if asset_manager == null: return false
-	return asset_manager.sell_property(seller, buyer, cell, price)
+	return asset_manager.sell_house_to_bank(player, cell)
 
-func player_trade(
-	proposer: Player, receiver: Player,
-	offer_cells: Array, offer_money: int,
-	request_cells: Array, request_money: int
-) -> bool:
+func player_sell_property(player: Player, cell: PropertyCell) -> bool:
 	if asset_manager == null: return false
-	return asset_manager.trade_property(
-		proposer, receiver,
-		offer_cells, offer_money,
-		request_cells, request_money
-	)
+	return asset_manager.sell_property_to_bank(player, cell)
