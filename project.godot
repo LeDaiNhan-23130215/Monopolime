@@ -22,7 +22,7 @@ StorageService="*uid://bxbynds22lo3b"
 [global_group]
 
 "test group"=""
-TokenManage="*res://scripts/TokenManager/TokenManager.gd"
+TokenManage="*uid://chbjx6htmbaud"
 
 [physics]
 
