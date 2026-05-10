@@ -31,6 +31,7 @@ func start_turn():
 
 	print("Player:", player.name)
 	ui.show_turn(player.player_id)
+	ui.refresh_player_panel(get_game_state_snapshot())
 
 	if player.state.in_jail:
 		print(player.name + " đang ở tù! Cần đổ Double để thoát.")
@@ -219,6 +220,23 @@ func process_current_cell(player: Player):
 		print("Player landed on:", cell.cell_name)
 
 
+# Trả về snapshot trạng thái players để UI render
+func get_game_state_snapshot() -> Array:
+	var snapshot = []
+	for p in game_state.players:
+		var prop_names = []
+		for cell in p.properties:
+			prop_names.append(cell.cell_name)
+		snapshot.append({
+			"id": p.player_id,
+			"name": p.name,
+			"balance": p.state.balance,
+			"properties": prop_names,
+			"in_jail": p.state.in_jail
+		})
+	return snapshot
+
+
 # =========================
 # Financial
 # =========================
@@ -235,9 +253,34 @@ func handle_landed_cell(player: Player, cell_index: int):
 		await get_event_handler().event_finished
 		return
 
-	# Ô đất trống
+	# Ô đất trống → hỏi mua
 	if cell.cell_owner == null and cell.price > 0:
-		print("Ô đất trống.")
+		ui.show_message(player.name + " dừng tại " + cell.cell_name)
+		
+		ui.show_buy_popup(
+			cell.cell_name,
+			cell.price,
+			cell.rent_price,
+			player.state.balance
+		)
+		
+		# Chờ người chơi bấm Mua hoặc Bỏ qua qua signal
+		var want_to_buy: bool = await ui.buy_decision_made
+		
+		if want_to_buy:
+			player.deduct_money(cell.price)
+			cell.cell_owner = player
+			if not player.properties.has(cell):
+				player.properties.append(cell)
+			cell.refresh_display()
+			cell.queue_redraw()
+			ui.show_message(player.name + " đã mua " + cell.cell_name + "!")
+			ui.refresh_player_panel(get_game_state_snapshot())
+			print(player.name + " mua ô: " + cell.cell_name)
+		else:
+			ui.show_message(player.name + " bỏ qua " + cell.cell_name)
+			print(player.name + " bỏ qua ô: " + cell.cell_name)
+		return
 
 	# Trả tiền thuê
 	elif (
@@ -247,6 +290,7 @@ func handle_landed_cell(player: Player, cell_index: int):
 	):
 
 		var rent_amount = cell.get_current_rent()
+		ui.show_message(player.name + " phải trả $" + str(rent_amount) + " thuê cho " + cell.cell_owner.name)
 
 		if player.state.balance >= rent_amount:
 			process_payment(

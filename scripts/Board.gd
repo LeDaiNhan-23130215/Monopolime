@@ -5,6 +5,13 @@ class_name Board
 var cell_positions: Array[Vector2] = []
 var cells = []
 
+var default_cell_names = [
+	"Bắt Đầu", "Ô Đất 1", "Khí Vận", "Ô Đất 2", "Thuế", 
+	"Nhà Tù", "Ô Đất 3", "Cơ Hội", "Ô Đất 4", "Ô Đất 5", 
+	"Bãi Đỗ Xe", "Ô Đất 6", "Khí Vận", "Ô Đất 7", "Ô Đất 8", 
+	"Vào Tù", "Ô Đất 9", "Cơ Hội", "Ô Đất 10", "Ô Đất 11"
+]
+
 @export var cell_scene: PackedScene
 @export var auto_center_in_editor := true
 @export var size := 100
@@ -68,9 +75,19 @@ func generate_board():
 
 		if cell.get_script() != null:
 			cell.set("index", i)
+			if i < default_cell_names.size():
+				cell.set("cell_name", default_cell_names[i])
+				
+				# Ô sự kiện hoặc đặc biệt không thể mua được (giá = 0)
+				if default_cell_names[i] in ["Bắt Đầu", "Khí Vận", "Thuế", "Nhà Tù", "Cơ Hội", "Bãi Đỗ Xe", "Vào Tù"]:
+					cell.set("price", 0)
 
 		cells_node.add_child(cell)
 		cells.append(cell)
+		
+		# _ready() đã được gọi khi add_child → refresh Labels ngay
+		if cell.has_method("refresh_display"):
+			cell.refresh_display()
 
 	center_board()
 
