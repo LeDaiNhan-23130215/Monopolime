@@ -7,10 +7,16 @@
 [ext_resource type="Script" uid="uid://cn550mdkqajxm" path="res://GameUI.gd" id="4_x4cqj"]
 [ext_resource type="AudioStream" uid="uid://bghhjbsv270nm" path="res://resources/audio/rollAudio/Dice_roll_sound.mp3" id="5_8j4tt"]
 [ext_resource type="Script" uid="uid://dhpcoe4d7fmxk" path="res://GameState.gd" id="5_r4gxj"]
-[ext_resource type="Script" uid="uid://bodlhlq5ibv53" path="res://Dice.gd" id="6_6x5qw"]
 [ext_resource type="Texture2D" uid="uid://c20o0e1wt0f8v" path="res://resources/button_icon/RollButtonIcon.png" id="6_s088g"]
-[ext_resource type="Script" uid="uid://c76svja4gt2bo" path="res://scripts/Board.gd" id="9_idd0f"]
-[ext_resource type="PackedScene" uid="uid://da543anbagjij" path="res://Cell.tscn" id="10_fg3u4"]
+[ext_resource type="Script" uid="uid://bodlhlq5ibv53" path="res://Dice.gd" id="8_fo70c"]
+[ext_resource type="Script" uid="uid://c76svja4gt2bo" path="res://scripts/Board.gd" id="8_s088g"]
+[ext_resource type="Script" uid="uid://cbxfq6n7terf8" path="res://Cells/Cell.gd" id="10_oeeh8"]
+[ext_resource type="PackedScene" uid="uid://dmior1yjgw8w1" path="res://CellScenes/PropertyCell.tscn" id="10_uwyxl"]
+[ext_resource type="PackedScene" uid="uid://r8ic24ahsfvu" path="res://CellScenes/TaxCell.tscn" id="11_hj1c4"]
+[ext_resource type="Script" uid="uid://chbjx6htmbaud" path="res://scripts/TokenManager/TokenManager.gd" id="11_y5t0d"]
+[ext_resource type="PackedScene" uid="uid://bebd74jpd2j4k" path="res://CellScenes/ChanceCell.tscn" id="12_tfrc1"]
+[ext_resource type="PackedScene" uid="uid://drvvf57bfb2xw" path="res://CellScenes/ChestCell.tscn" id="13_fhree"]
+[ext_resource type="PackedScene" uid="uid://d3krjl7alrwpm" path="res://CellScenes/SpecialCell.tscn" id="14_swiv5"]
 
 [node name="Main" type="Node2D" unique_id=1488605029]
 script = ExtResource("1_wplms")
@@ -118,17 +124,26 @@ text = "Người chơi đã rời cuộc chơi."
 script = ExtResource("5_r4gxj")
 
 [node name="Dice" type="Node" parent="." unique_id=1274710252]
-script = ExtResource("6_6x5qw")
+script = ExtResource("8_fo70c")
 
 [node name="Board" type="Node2D" parent="." unique_id=940783717]
 position = Vector2(302, -49.5)
 script = ExtResource("9_idd0f")
 cell_scene = ExtResource("10_fg3u4")
+position = Vector2(302, -60.5)
+script = ExtResource("8_s088g")
+property_scene = ExtResource("10_uwyxl")
+tax_scene = ExtResource("11_hj1c4")
+chance_scene = ExtResource("12_tfrc1")
+chest_scene = ExtResource("13_fhree")
+special_scene = ExtResource("14_swiv5")
 
 [node name="Cells" type="Node2D" parent="Board" unique_id=521322491]
+script = ExtResource("10_oeeh8")
 
 [node name="Tokens" type="Node2D" parent="Board" unique_id=812273034]
 z_index = 1
+script = ExtResource("11_y5t0d")
 
 [connection signal="timeout" from="GameUI/UI/DiceTimer" to="GameUI" method="_on_dice_timer_timeout"]
 [connection signal="pressed" from="GameUI/UI/Roll Dice" to="GameUI" method="_on_roll_dice_pressed"]

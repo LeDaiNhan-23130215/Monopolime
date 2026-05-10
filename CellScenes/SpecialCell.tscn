@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d3krjl7alrwpm"]
+
+[ext_resource type="Script" uid="uid://di1crowytebuv" path="res://Cells/SpecialCell.gd" id="1_x0108"]
+
+[node name="SpecialCell" type="Node2D" unique_id=615478838]
+script = ExtResource("1_x0108")
