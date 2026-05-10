@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Monopolime"
-run/main_scene="uid://dm4vwoqxigo8c"
+run/main_scene="res://monopolime.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -22,7 +22,7 @@ StorageService="*uid://bxbynds22lo3b"
 [global_group]
 
 "test group"=""
-TokenManage="*uid://chbjx6htmbaud"
+TokenManage="*res://scripts/TokenManager/TokenManager.gd"
 
 [physics]
 
