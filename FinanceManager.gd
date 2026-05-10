@@ -3,54 +3,49 @@ class_name FinanceManager
 
 # ==========================================
 # UC6: QUẢN LÝ TÀI CHÍNH (FINANCE MANAGER)
-# Nhiệm vụ: Xử lý tiền tệ, kiểm tra số dư, phá sản
 # ==========================================
 
-# Kiểm tra người chơi có đủ tiền không
 static func can_afford(player: Player, amount: int) -> bool:
 	return player.state.balance >= amount
 
-# Trừ tiền (deduct) – trả về true nếu thành công
+# [MỚI] Kiểm tra xem người chơi có THỰC SỰ phá sản không 
+# (Tổng tiền mặt + Giá trị thế chấp đất + Bán nhà có đủ trả nợ không)
+static func total_liquidity_check(player: Player, debt_amount: int) -> bool:
+	return player.get_total_capacity() >= debt_amount
+
 static func deduct(player: Player, amount: int) -> bool:
 	if not can_afford(player, amount):
 		return false
-		
+	
 	player.deduct_money(amount)
 	
-	# --- CẬP NHẬT GIAO DIỆN QUÂN CỜ ---
 	if player.token != null:
 		player.token.update_balance_display(player.state.balance)
 		player.token.show_floating_money(-amount)
-		
 	return true
 
-
-# Cộng tiền (add)
 static func add(player: Player, amount: int) -> void:
 	player.add_money(amount)
-	
-	# --- CẬP NHẬT GIAO DIỆN QUÂN CỜ ---
 	if player.token != null:
 		player.token.update_balance_display(player.state.balance)
 		player.token.show_floating_money(amount)
 
-
-# Chuyển tiền từ người này sang người kia
 static func transfer(from_player: Player, to_player: Player, amount: int) -> bool:
+	# Lưu ý: Trong phá sản, transfer có thể chuyển số tiền còn lại cuối cùng của debtor
+	# ngay cả khi không đủ amount (chuyển sạch túi trước khi xóa player)
+	var actual_amount = amount
 	if not can_afford(from_player, amount):
-		return false
+		actual_amount = from_player.state.balance
 		
-	# 1. Trừ tiền người gửi
-	from_player.deduct_money(amount)
+	from_player.deduct_money(actual_amount)
 	if from_player.token != null:
 		from_player.token.update_balance_display(from_player.state.balance)
-		from_player.token.show_floating_money(-amount)
+		from_player.token.show_floating_money(-actual_amount)
 		
-	# 2. Cộng tiền người nhận
 	if to_player != null:
-		to_player.add_money(amount)
+		to_player.add_money(actual_amount)
 		if to_player.token != null:
 			to_player.token.update_balance_display(to_player.state.balance)
-			to_player.token.show_floating_money(amount)
+			to_player.token.show_floating_money(actual_amount)
 			
 	return true

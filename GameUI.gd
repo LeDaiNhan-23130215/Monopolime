@@ -489,3 +489,61 @@ func request_mortgage(player: Player, amount_needed: int) -> void:
 	btn_mortgage.visible = true
 	btn_sell.visible     = true
 	action_popup.visible = true
+	
+	# =====================================================================
+# [MỚI] GIAO DIỆN PHÁ SẢN (Dành cho AF7.8)
+# =====================================================================
+func show_bankruptcy_alert(debtor: Player, creditor: Player):
+	# 1. Tạo lớp nền đen mờ bao phủ toàn màn hình
+	var overlay = ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.85) # Đen mờ 85% để tăng sự u ám
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.z_index = 5000 # Đảm bảo nằm trên cùng mọi popup khác
+	add_child(overlay)
+	
+	# 2. Tạo cái bảng (Panel) ở giữa
+	var panel = Panel.new()
+	panel.custom_minimum_size = Vector2(500, 300)
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	overlay.add_child(panel)
+	
+	# 3. Tiêu đề "PHÁ SẢN!"
+	var title = Label.new()
+	title.text = "⚠ PHÁ SẢN! ⚠"
+	title.add_theme_font_size_override("font_size", 40)
+	title.add_theme_color_override("font_color", Color.RED)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.position.y = 30
+	panel.add_child(title)
+	
+	# 4. Nội dung chi tiết
+	var msg = Label.new()
+	if creditor != null:
+		msg.text = "%s đã cạn kiệt tài chính!\n\nToàn bộ tài sản và tiền mặt\nđược bàn giao cho %s." % [debtor.name, creditor.name]
+	else:
+		msg.text = "%s đã phá sản do nợ Ngân hàng!\n\nToàn bộ tài sản đã bị thu hồi." % [debtor.name]
+		
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.add_theme_font_size_override("font_size", 20)
+	msg.set_anchors_preset(Control.PRESET_CENTER)
+	panel.add_child(msg)
+	
+	# 5. Nút Bấm Xác nhận
+	var btn = Button.new()
+	btn.text = "Chấp nhận thất bại"
+	btn.custom_minimum_size = Vector2(200, 50)
+	btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	btn.position.y = -40
+	panel.add_child(btn)
+	
+	# Hiệu ứng xuất hiện nhẹ nhàng (Tween)
+	panel.scale = Vector2.ZERO
+	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(panel, "scale", Vector2.ONE, 0.5)
+	
+	# 6. Khi bấm nút: Xóa bảng và báo GameController tiếp tục
+	btn.pressed.connect(func():
+		overlay.queue_free()
+		emit_signal("ui_action_done") 
+	)

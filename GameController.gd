@@ -172,7 +172,6 @@ func get_current_player() -> Player:
 
 
 func get_offset(player_id: int) -> Vector2:
-	# Đã dọn dẹp khoảng trắng rác ở đây
 	var offsets = [
 		Vector2(-10, -10), Vector2(10, -10),
 		Vector2(-10, 10), Vector2(10, 10)
@@ -262,11 +261,48 @@ func handle_insufficient_funds(payer: Player, receiver: Player, amount: int):
 		ui.request_mortgage(payer, amount - payer.state.balance)
 
 
+# ══════════════════════════════════════════════════════════════════════
+# [MỚI CẬP NHẬT] XỬ LÝ PHÁ SẢN VÀ KẾT THÚC GAME
+# ══════════════════════════════════════════════════════════════════════
 func handle_bankruptcy(debtor: Player, creditor: Player):
-	print(debtor.name, " PHÁ SẢN!")
-	debtor.transfer_all_assets_to(creditor)
+	print(debtor.name, " ĐÃ PHÁ SẢN!")
+	
+	# 1. Chuyển giao tài sản
+	if creditor != null:
+		debtor.transfer_all_assets_to(creditor)
+	else:
+		debtor.transfer_all_assets_to(null) # Xóa tài sản nếu nợ ngân hàng
+
+	# 2. Xóa quân cờ khỏi bàn
+	if debtor.token and debtor.token.has_method("play_bankrupt_animation"):
+		debtor.token.play_bankrupt_animation()
 	board.remove_player_token(debtor)
+	
+	# 3. Hiển thị Giao diện Phá sản thật ngầu và chờ bấm nút
+	if ui and ui.has_method("show_bankruptcy_alert"):
+		ui.show_bankruptcy_alert(debtor, creditor)
+		await ui.ui_action_done # Game sẽ TẠM DỪNG ở đây chờ người chơi bấm nút
+	elif ui:
+		ui.show_message(debtor.name + " đã phá sản!")
+		await get_tree().create_timer(2.0).timeout
+
+	# 4. Kiểm tra xem đã có người thắng cuộc chưa
+	check_game_over()
+	
 	emit_signal("turn_action_completed")
+
+func check_game_over():
+	var active_players = []
+	for p in game_state.players:
+		if not p.is_bankrupt():
+			active_players.append(p)
+			
+	if active_players.size() == 1:
+		var winner = active_players[0]
+		print("========== GAME OVER ==========")
+		print("NGƯỜI CHIẾN THẮNG LÀ: ", winner.name)
+		if ui and ui.has_method("show_message"):
+			ui.show_message("TRÒ CHƠI KẾT THÚC! " + winner.name + " CHIẾN THẮNG!")
 
 
 # ══════════════════════════════════════════════════════════════════════
