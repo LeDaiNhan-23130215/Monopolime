@@ -3,7 +3,8 @@ class_name EventHandler
 
 signal event_finished
 
-var game_controller: GameController
+# KHÔNG khai báo type GameController để tránh circular dependency
+var game_controller
 
 # ===========================
 # Bộ thẻ CƠ HỘI (Chance)
@@ -100,7 +101,7 @@ var community_chest_cards: Array = [
 var _current_player: Player
 var _current_card: Dictionary
 
-func _init(controller: GameController) -> void:
+func _init(controller) -> void:
 	game_controller = controller
 
 # Trả về true nếu ô là sự kiện và đã bắt đầu xử lý
