@@ -12,9 +12,10 @@ var asset_manager: AssetManager
 var final_result: DiceResult = null
 var is_rolling := false
 
-var _event_handler: EventHandler = null
+# Untyped để tránh circular dependency với EventHandler.gd
+var _event_handler = null
 
-func get_event_handler() -> EventHandler:
+func get_event_handler():
 	if _event_handler == null:
 		_event_handler = EventHandler.new(self)
 		add_child(_event_handler)
