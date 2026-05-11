@@ -2,6 +2,7 @@ extends Node
 class_name GameUI
 
 signal setup_finished
+signal card_dismissed
 
 @onready var label = get_node("UI/Result")
 @onready var timer = get_node("UI/DiceTimer")
@@ -241,41 +242,91 @@ func _create_card_panel():
 	var ui_layer = get_node("UI")
 	card_panel = PanelContainer.new()
 	card_panel.name = "CardPanel"
-	card_panel.position = Vector2(300, 180)
-	card_panel.size = Vector2(480, 180)
+	card_panel.position = Vector2(250, 140)
+	card_panel.size = Vector2(540, 260)
 	card_panel.visible = false
+	# Z-order đưa lên trước
+	card_panel.z_index = 100
 
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.05, 0.1, 0.95)
+	style.bg_color = Color(0.06, 0.06, 0.12, 0.98)
 	style.border_color = Color(1.0, 0.7, 0.2)
 	style.set_border_width_all(3)
-	style.set_corner_radius_all(16)
-	style.set_content_margin_all(20)
+	style.set_corner_radius_all(20)
+	style.set_content_margin_all(24)
+	style.shadow_color = Color(0, 0, 0, 0.7)
+	style.shadow_size = 20
 	card_panel.add_theme_stylebox_override("panel", style)
 
 	var vbox = VBoxContainer.new()
 	vbox.name = "VBox"
+	vbox.add_theme_constant_override("separation", 10)
+
+	# Thanh tiêu đề loại thẻ
+	var title_bg = PanelContainer.new()
+	var tbg_style = StyleBoxFlat.new()
+	tbg_style.bg_color = Color(1.0, 0.7, 0.2, 0.15)
+	tbg_style.set_corner_radius_all(10)
+	tbg_style.set_content_margin_all(6)
+	title_bg.add_theme_stylebox_override("panel", tbg_style)
 
 	var card_title = Label.new()
 	card_title.name = "CardTitle"
 	card_title.text = "CƠ HỘI"
 	card_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card_title.add_theme_font_size_override("font_size", 26)
+	card_title.add_theme_font_size_override("font_size", 24)
 	card_title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
-	vbox.add_child(card_title)
+	title_bg.add_child(card_title)
+	vbox.add_child(title_bg)
 
-	var spacer = Control.new()
-	spacer.custom_minimum_size = Vector2(0, 8)
-	vbox.add_child(spacer)
+	# Gạch phân cách
+	var sep = HSeparator.new()
+	sep.add_theme_color_override("color", Color(1.0, 0.7, 0.2, 0.4))
+	vbox.add_child(sep)
 
+	# Nội dung thẻ
 	var card_text = Label.new()
 	card_text.name = "CardText"
 	card_text.text = ""
 	card_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card_text.add_theme_font_size_override("font_size", 16)
-	card_text.add_theme_color_override("font_color", Color.WHITE)
+	card_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	card_text.add_theme_font_size_override("font_size", 18)
+	card_text.add_theme_color_override("font_color", Color(0.95, 0.95, 1.0))
 	card_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	card_text.custom_minimum_size = Vector2(0, 70)
 	vbox.add_child(card_text)
+
+	# Nhãn hiển thị số tiền
+	var amount_lbl = Label.new()
+	amount_lbl.name = "AmountLabel"
+	amount_lbl.text = ""
+	amount_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	amount_lbl.add_theme_font_size_override("font_size", 28)
+	amount_lbl.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+	vbox.add_child(amount_lbl)
+
+	# Nút OK
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 6)
+	vbox.add_child(spacer)
+
+	var ok_btn = Button.new()
+	ok_btn.name = "OkBtn"
+	ok_btn.text = "  ✔️  OK  "
+	ok_btn.custom_minimum_size = Vector2(160, 44)
+	ok_btn.add_theme_font_size_override("font_size", 18)
+	var ok_style = StyleBoxFlat.new()
+	ok_style.bg_color = Color(0.15, 0.55, 0.25)
+	ok_style.set_corner_radius_all(10)
+	ok_style.set_border_width_all(2)
+	ok_style.border_color = Color(0.3, 0.9, 0.5)
+	ok_btn.add_theme_stylebox_override("normal", ok_style)
+	ok_btn.pressed.connect(_on_card_ok_pressed)
+
+	var btn_hbox = HBoxContainer.new()
+	btn_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_hbox.add_child(ok_btn)
+	vbox.add_child(btn_hbox)
 
 	card_panel.add_child(vbox)
 	ui_layer.add_child(card_panel)
@@ -412,18 +463,64 @@ func show_build_prompt(player: Player, cell: Cell):
 	build_panel.get_node("VBox/BuildInfo").text = cell.cell_name + " | Chi phí: $" + str(cell.house_cost) + "\nHiện có: " + str(cell.house_count) + "/5 | Số dư: $" + str(player.state.balance)
 
 
-func show_card_popup(title: String, text: String, color: Color):
+func show_card_popup(title: String, text: String, color: Color, amount: int = 0):
 	if card_panel == null:
 		return
 	card_panel.visible = true
-	card_panel.get_node("VBox/CardTitle").text = title
-	card_panel.get_node("VBox/CardTitle").add_theme_color_override("font_color", color)
-	card_panel.get_node("VBox/CardText").text = text
+
+	var vbox = card_panel.get_node("VBox")
+	
+	# title_bg là child(0), CardTitle là con của nó
+	var title_bg = vbox.get_child(0)
+	if title_bg is PanelContainer:
+		var tbg_style = StyleBoxFlat.new()
+		tbg_style.bg_color = Color(color.r, color.g, color.b, 0.15)
+		tbg_style.set_corner_radius_all(10)
+		tbg_style.set_content_margin_all(6)
+		title_bg.add_theme_stylebox_override("panel", tbg_style)
+		
+		var title_node = title_bg.get_node("CardTitle")
+		if title_node:
+			title_node.text = title
+			title_node.add_theme_color_override("font_color", color)
+
+	# Nội dung thẻ
+	var card_text = vbox.get_node("CardText")
+	if card_text:
+		card_text.text = text
+
+	# Số tiền (nếu có)
+	var amt_lbl = vbox.get_node("AmountLabel")
+	if amt_lbl:
+		if amount > 0:
+			amt_lbl.text = "+$" + str(amount)
+			amt_lbl.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+			amt_lbl.visible = true
+		elif amount < 0:
+			amt_lbl.text = "-$" + str(abs(amount))
+			amt_lbl.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+			amt_lbl.visible = true
+		else:
+			amt_lbl.visible = false
+
+	# Hiệu ứng scale-in
+	card_panel.scale = Vector2(0.5, 0.5)
+	card_panel.modulate.a = 0.0
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(card_panel, "scale", Vector2(1.0, 1.0), 0.25).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(card_panel, "modulate:a", 1.0, 0.2)
 
 
-func hide_card_popup():
-	if card_panel:
-		card_panel.visible = false
+# Đợi người chơi nhấn OK rồi trả về
+func show_card_and_wait(title: String, text: String, color: Color, amount: int = 0):
+	show_card_popup(title, text, color, amount)
+	await card_dismissed
+
+
+func _on_card_ok_pressed():
+	card_panel.visible = false
+	emit_signal("card_dismissed")
 
 
 func show_game_over(winner: Player):

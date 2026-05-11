@@ -22,6 +22,10 @@ var house_cost: int = 50
 # Các bậc thuê nhà: [đất trống, 1 nhà, 2 nhà, 3 nhà, 4 nhà, khách sạn]
 var rent_levels: Array = []
 
+# Hiệu ứng
+var effect_alpha: float = 0.0
+var effect_color: Color = Color.WHITE
+
 # =========================
 # INIT
 # =========================
@@ -274,6 +278,25 @@ func _check_even_selling() -> bool:
 
 
 # =========================
+# HIỆU ỨNG (Effects)
+# =========================
+
+func play_buy_effect():
+	effect_color = _get_owner_color()
+	if effect_color == Color.TRANSPARENT:
+		effect_color = Color.WHITE
+		
+	var tween = get_tree().create_tween()
+	# Nhấp nháy 3 lần màu của người chơi
+	tween.tween_method(_update_effect_alpha, 0.8, 0.0, 0.3)
+	tween.tween_method(_update_effect_alpha, 0.8, 0.0, 0.3)
+	tween.tween_method(_update_effect_alpha, 0.8, 0.0, 0.6)
+
+func _update_effect_alpha(alpha: float):
+	effect_alpha = alpha
+	queue_redraw()
+
+# =========================
 # VẼ GIAO DIỆN Ô ĐẤT
 # =========================
 
@@ -310,12 +333,30 @@ func _draw():
 			Color(1.0, 0.2, 0.2)
 		)
 
-	# --- Chỉ báo chủ sở hữu (thanh dưới) ---
+	# --- Tô sáng ô đã có chủ sở hữu ---
 	if cell_owner != null and not is_mortgaged:
 		var owner_color = _get_owner_color()
-		draw_rect(Rect2(0, cell_size.y - 12, cell_size.x, 12), owner_color)
-		# Hiệu ứng phát sáng
-		draw_rect(Rect2(0, cell_size.y - 14, cell_size.x, 2), Color(owner_color.r, owner_color.g, owner_color.b, 0.6))
+		
+		# Overlay màu nhẹ bên trong ô để tô sáng
+		draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), Color(owner_color.r, owner_color.g, owner_color.b, 0.08))
+		
+		# Viền dày màu chủ sở hữu (bên trong border thường)
+		draw_rect(Rect2(2, 2, cell_size.x - 4, cell_size.y - 4), owner_color, false, 3.0)
+		
+		# Thanh màu dưới cùng (thể hiện người sở hữu)
+		draw_rect(Rect2(0, cell_size.y - 14, cell_size.x, 14), owner_color)
+		
+		# Hiển thị tên chủ sở hữu trong thanh dưới
+		var short_name = cell_owner.name.left(6)
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(50, cell_size.y - 3),
+			short_name,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			cell_size.x,
+			10,
+			Color(0.05, 0.05, 0.05, 1.0)
+		)
 
 	# --- Vẽ nhà ---
 	if house_count > 0 and house_count < 5:
@@ -356,6 +397,10 @@ func _draw():
 			40,
 			28
 		)
+
+	# --- Hiệu ứng nhấp nháy khi có sự kiện (như mua đất) ---
+	if effect_alpha > 0.0:
+		draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), Color(effect_color.r, effect_color.g, effect_color.b, effect_alpha))
 
 
 func _get_cell_bg_color() -> Color:

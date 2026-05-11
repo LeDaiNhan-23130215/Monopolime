@@ -89,18 +89,18 @@ func handle_event(player: Player, cell: Cell) -> bool:
 		"chance":
 			var card = _draw_chance()
 			print("--- CƠ HỘI: ", card.text, " ---")
-			game_controller.ui.show_card_popup("CƠ HỘI", card.text, Color(1.0, 0.6, 0.2))
-			await get_tree().create_timer(2.0).timeout
-			game_controller.ui.hide_card_popup()
+			var amt_chance = card.get("amount", 0)
+			var display_amt_chance = amt_chance if card.get("action", "") != "lose" else -amt_chance
+			await game_controller.ui.show_card_and_wait("❓ CƠ HỘI", card.text, Color(1.0, 0.6, 0.2), display_amt_chance)
 			await _process_card(player, card)
 			return true
 
 		"community":
 			var card = _draw_community()
 			print("--- KHÍ VẬN: ", card.text, " ---")
-			game_controller.ui.show_card_popup("KHÍ VẬN", card.text, Color(0.4, 0.6, 1.0))
-			await get_tree().create_timer(2.0).timeout
-			game_controller.ui.hide_card_popup()
+			var amt_comm = card.get("amount", 0)
+			var display_amt_comm = amt_comm if card.get("action", "") != "lose" else -amt_comm
+			await game_controller.ui.show_card_and_wait("📦 KHÍ VẬN", card.text, Color(0.4, 0.7, 1.0), display_amt_comm)
 			await _process_card(player, card)
 			return true
 

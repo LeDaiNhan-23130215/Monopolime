@@ -337,7 +337,7 @@ func buy_property(player: Player, cell: Cell):
 	ui.show_message(player.name + " mua " + cell.cell_name + " ($" + str(cell.price) + ")")
 	print(player.name, " đã mua: ", cell.cell_name)
 
-	cell.queue_redraw()
+	cell.play_buy_effect()
 	ui.update_player_info(game_state.players)
 
 
@@ -368,7 +368,7 @@ func run_auction(cell: Cell):
 		highest_bidder.deduct_money(highest_bid)
 		cell.cell_owner = highest_bidder
 		highest_bidder.add_property(cell)
-		cell.queue_redraw()
+		cell.play_buy_effect()
 
 		ui.show_message(highest_bidder.name + " thắng đấu giá " + cell.cell_name + " với $" + str(highest_bid))
 		print(highest_bidder.name, " thắng đấu giá: ", cell.cell_name, " - $", highest_bid)
