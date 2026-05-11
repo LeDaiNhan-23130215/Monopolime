@@ -16,7 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://bebd74jpd2j4k" path="res://CellScenes/ChanceCell.tscn" id="12_tfrc1"]
 [ext_resource type="PackedScene" uid="uid://drvvf57bfb2xw" path="res://CellScenes/ChestCell.tscn" id="13_fhree"]
 [ext_resource type="PackedScene" uid="uid://d3krjl7alrwpm" path="res://CellScenes/SpecialCell.tscn" id="14_swiv5"]
-[ext_resource type="Script" path="res://scripts/AssetManager.gd" id="20_uc7am"]
+[ext_resource type="Script" uid="uid://blbexkkbfy25o" path="res://scripts/AssetManager.gd" id="20_uc7am"]
 
 [node name="Main" type="Node2D" unique_id=1488605029]
 script = ExtResource("1_wplms")
@@ -235,7 +235,7 @@ script = ExtResource("5_r4gxj")
 script = ExtResource("8_fo70c")
 
 [node name="Board" type="Node2D" parent="." unique_id=940783717]
-position = Vector2(302, 93.5)
+position = Vector2(202, 93.5)
 script = ExtResource("8_s088g")
 property_scene = ExtResource("10_uwyxl")
 tax_scene = ExtResource("11_hj1c4")
