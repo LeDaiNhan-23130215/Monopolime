@@ -359,7 +359,11 @@ func play_buy_effect():
 	effect_color = _get_owner_color()
 	if effect_color == Color.TRANSPARENT:
 		effect_color = Color.WHITE
-		
+
+	if not is_inside_tree():
+		_update_effect_alpha(0.0)
+		return
+
 	var tween = get_tree().create_tween()
 	# Nhấp nháy 3 lần màu của người chơi
 	tween.tween_method(_update_effect_alpha, 0.8, 0.0, 0.3)
@@ -369,6 +373,9 @@ func play_buy_effect():
 
 func play_land_effect():
 	effect_color = Color(1.0, 1.0, 0.4)
+	if not is_inside_tree():
+		_update_effect_alpha(0.0)
+		return
 	var tween = get_tree().create_tween()
 	tween.tween_method(_update_effect_alpha, 0.55, 0.0, 0.5)
 
@@ -378,6 +385,10 @@ func play_upgrade_effect():
 	upgrade_flash = 1.0
 	upgrade_scale = 1.45
 	queue_redraw()
+
+	if not is_inside_tree():
+		_set_upgrade_flash(0.0)
+		return
 
 	var tween = get_tree().create_tween()
 	tween.set_parallel(true)
