@@ -2,191 +2,104 @@
 extends RefCounted
 class_name BoardData
 
-# =====================================================================
-# Dữ liệu cấu hình cho 20 ô trên bàn cờ Monopolime
-# Dựa trên luật Monopoly chuẩn quốc tế, tùy chỉnh cho phiên bản VN
-# =====================================================================
-# Loại ô:
-#   "go"          - Ô xuất phát, nhận $200 khi đi qua
-#   "property"    - Ô đất, có thể mua/xây nhà/thu thuê
-#   "railroad"    - Nhà ga, thuê tùy theo số ga sở hữu
-#   "utility"     - Tiện ích (Điện/Nước), thuê tùy theo xúc xắc
-#   "chance"      - Thẻ Cơ Hội
-#   "community"   - Thẻ Khí Vận
-#   "tax"         - Thuế, nộp tiền cho ngân hàng
-#   "jail"        - Nhà Tù (chỉ đi ngang qua)
-#   "go_to_jail"  - Vào Tù ngay lập tức
-#   "parking"     - Bãi đỗ xe miễn phí (không xảy ra gì)
-# =====================================================================
+# Board configuration for a 40-cell Monopolime board.
+# Cell types:
+# go, property, railroad, utility, chance, community, tax, jail,
+# go_to_jail, parking, teleport.
 
 static func get_cell_configs() -> Array:
 	return [
-		# ===== TOP ROW (0-5) =====
-		{
-			"name": "GO",
-			"type": "go",
-			"price": 0, "rent": 0,
-			"icon": "🏁",
-			"description": "Nhận $200 khi đi qua"
-		},
-		{
-			"name": "Phú Mỹ Hưng",
-			"type": "property",
-			"price": 120, "rent": 12,
-			"color": "brown",
-			"house_cost": 50,
-			"rent_levels": [12, 60, 180, 500, 700, 900],
-			"icon": "🏘️"
-		},
-		{
-			"name": "Cơ Hội",
-			"type": "chance",
-			"price": 0, "rent": 0,
-			"icon": "❓"
-		},
-		{
-			"name": "Thủ Đức",
-			"type": "property",
-			"price": 140, "rent": 14,
-			"color": "brown",
-			"house_cost": 50,
-			"rent_levels": [14, 70, 200, 550, 750, 950],
-			"icon": "🏘️"
-		},
-		{
-			"name": "Thuế Thu Nhập",
-			"type": "tax",
-			"price": 0, "rent": 200,
-			"icon": "💸",
-			"description": "Nộp $200 cho ngân hàng"
-		},
-		{
-			"name": "Ga Sài Gòn",
-			"type": "railroad",
-			"price": 200, "rent": 25,
-			"icon": "🚂",
-			"description": "Thuê tùy số ga sở hữu"
-		},
-
-		# ===== RIGHT COLUMN (6-9) =====
-		{
-			"name": "Quận 1",
-			"type": "property",
-			"price": 220, "rent": 22,
-			"color": "green",
-			"house_cost": 100,
-			"rent_levels": [22, 110, 330, 800, 975, 1150],
-			"icon": "🏙️"
-		},
-		{
-			"name": "Khí Vận",
-			"type": "community",
-			"price": 0, "rent": 0,
-			"icon": "📦"
-		},
-		{
-			"name": "Quận 3",
-			"type": "property",
-			"price": 240, "rent": 24,
-			"color": "green",
-			"house_cost": 100,
-			"rent_levels": [24, 120, 360, 850, 1025, 1200],
-			"icon": "🏙️"
-		},
-		{
-			"name": "Quận 7",
-			"type": "property",
-			"price": 260, "rent": 26,
-			"color": "green",
-			"house_cost": 100,
-			"rent_levels": [26, 130, 390, 900, 1100, 1275],
-			"icon": "🏙️"
-		},
-
-		# ===== BOTTOM ROW (10-15) =====
-		{
-			"name": "Nhà Tù",
-			"type": "jail",
-			"price": 0, "rent": 0,
-			"icon": "🔒",
-			"description": "Chỉ đi ngang qua"
-		},
-		{
-			"name": "Bình Thạnh",
-			"type": "property",
-			"price": 300, "rent": 30,
-			"color": "yellow",
-			"house_cost": 150,
-			"rent_levels": [30, 150, 450, 1000, 1200, 1400],
-			"icon": "🏢"
-		},
-		{
-			"name": "Điện Lực",
-			"type": "utility",
-			"price": 150, "rent": 0,
-			"icon": "⚡",
-			"description": "Thuê = xúc xắc × 4 (hoặc ×10)"
-		},
-		{
-			"name": "Tân Bình",
-			"type": "property",
-			"price": 320, "rent": 32,
-			"color": "yellow",
-			"house_cost": 150,
-			"rent_levels": [32, 160, 480, 1050, 1250, 1450],
-			"icon": "🏢"
-		},
-		{
-			"name": "Ga Hà Nội",
-			"type": "railroad",
-			"price": 200, "rent": 25,
-			"icon": "🚂",
-			"description": "Thuê tùy số ga sở hữu"
-		},
-		{
-			"name": "Phú Nhuận",
-			"type": "property",
-			"price": 350, "rent": 35,
-			"color": "red",
-			"house_cost": 200,
-			"rent_levels": [35, 175, 500, 1100, 1300, 1500],
-			"icon": "🏗️"
-		},
-
-		# ===== LEFT COLUMN (16-19) =====
-		{
-			"name": "Cơ Hội",
-			"type": "chance",
-			"price": 0, "rent": 0,
-			"icon": "❓"
-		},
-		{
-			"name": "Đà Nẵng",
-			"type": "property",
-			"price": 400, "rent": 50,
-			"color": "blue",
-			"house_cost": 200,
-			"rent_levels": [50, 200, 600, 1400, 1700, 2000],
-			"icon": "🌆"
-		},
-		{
-			"name": "Thuế Xa Xỉ",
-			"type": "tax",
-			"price": 0, "rent": 100,
-			"icon": "💎",
-			"description": "Nộp $100 cho ngân hàng"
-		},
-		{
-			"name": "Vào Tù",
-			"type": "go_to_jail",
-			"price": 0, "rent": 0,
-			"icon": "👮",
-			"description": "Đi thẳng vào Nhà Tù!"
-		},
+		_cell("GO", "go", 0, 0, "", 0, [], "Receive $200 when passing GO"),
+		_cell("Ben Thanh", "property", 60, 2, "brown", 50, [2, 10, 30, 90, 160, 250]),
+		_cell("Community", "community", 0, 0),
+		_cell("Cho Lon", "property", 60, 4, "brown", 50, [4, 20, 60, 180, 320, 450]),
+		_cell("Income Tax", "tax", 0, 200, "", 0, [], "Pay $200"),
+		_cell("Ga Sai Gon", "railroad", 200, 25, "", 0, [], "Rent scales by owned stations"),
+		_cell("Da Lat", "property", 100, 6, "light_blue", 50, [6, 30, 90, 270, 400, 550]),
+		_cell("Chance", "chance", 0, 0),
+		_cell("Nha Trang", "property", 100, 6, "light_blue", 50, [6, 30, 90, 270, 400, 550]),
+		_cell("Vung Tau", "property", 120, 8, "light_blue", 50, [8, 40, 100, 300, 450, 600]),
+		_cell("Jail", "jail", 0, 0, "", 0, [], "Just visiting"),
+		_cell("Hue", "property", 140, 10, "pink", 100, [10, 50, 150, 450, 625, 750]),
+		_cell("Electric Co", "utility", 150, 0, "", 0, [], "Rent = dice x 4 or x 10"),
+		_cell("Hoi An", "property", 140, 10, "pink", 100, [10, 50, 150, 450, 625, 750]),
+		_cell("Da Nang", "property", 160, 12, "pink", 100, [12, 60, 180, 500, 700, 900]),
+		_cell("Ga Ha Noi", "railroad", 200, 25, "", 0, [], "Rent scales by owned stations"),
+		_cell("Can Tho", "property", 180, 14, "orange", 100, [14, 70, 200, 550, 750, 950]),
+		_cell("Community", "community", 0, 0),
+		_cell("My Tho", "property", 180, 14, "orange", 100, [14, 70, 200, 550, 750, 950]),
+		_cell("Phu Quoc", "property", 200, 16, "orange", 100, [16, 80, 220, 600, 800, 1000]),
+		_cell("Free Parking", "parking", 0, 0),
+		_cell("Thu Duc", "property", 220, 18, "red", 150, [18, 90, 250, 700, 875, 1050]),
+		_cell("Chance", "chance", 0, 0),
+		_cell("Binh Thanh", "property", 220, 18, "red", 150, [18, 90, 250, 700, 875, 1050]),
+		_cell("Quan 1", "property", 240, 20, "red", 150, [20, 100, 300, 750, 925, 1100]),
+		_cell("Ga Da Nang", "railroad", 200, 25, "", 0, [], "Rent scales by owned stations"),
+		_cell("Quan 3", "property", 260, 22, "yellow", 150, [22, 110, 330, 800, 975, 1150]),
+		_cell("Quan 7", "property", 260, 22, "yellow", 150, [22, 110, 330, 800, 975, 1150]),
+		_cell("Water Works", "utility", 150, 0, "", 0, [], "Rent = dice x 4 or x 10"),
+		_cell("Phu My Hung", "property", 280, 24, "yellow", 150, [24, 120, 360, 850, 1025, 1200]),
+		_cell("Go To Jail", "go_to_jail", 0, 0, "", 0, [], "Move directly to Jail"),
+		_cell("Ha Long", "property", 300, 26, "green", 200, [26, 130, 390, 900, 1100, 1275]),
+		_cell("Sapa", "property", 300, 26, "green", 200, [26, 130, 390, 900, 1100, 1275]),
+		_cell("Community", "community", 0, 0),
+		_cell("Ha Noi", "property", 320, 28, "green", 200, [28, 150, 450, 1000, 1200, 1400]),
+		_cell("Ga Can Tho", "railroad", 200, 25, "", 0, [], "Rent scales by owned stations"),
+		_cell("Chance", "chance", 0, 0),
+		_cell("Sai Gon", "property", 350, 35, "blue", 200, [35, 175, 500, 1100, 1300, 1500]),
+		_cell("Luxury Tax", "tax", 0, 100, "", 0, [], "Pay $100"),
+		_cell("Travel", "teleport", 0, 0, "", 0, [], "Choose a destination cell"),
 	]
 
 
-# Trả về danh sách các ô cùng nhóm màu
+static func _cell(
+	cell_name: String,
+	cell_type: String,
+	price: int,
+	rent: int,
+	color := "",
+	house_cost := 0,
+	rent_levels := [],
+	description := ""
+) -> Dictionary:
+	return {
+		"name": cell_name,
+		"type": cell_type,
+		"price": price,
+		"rent": rent,
+		"color": color,
+		"house_cost": house_cost,
+		"rent_levels": rent_levels,
+		"icon": _icon_for_type(cell_type),
+		"description": description,
+	}
+
+
+static func _icon_for_type(cell_type: String) -> String:
+	match cell_type:
+		"go":
+			return "GO"
+		"chance":
+			return "?"
+		"community":
+			return "BOX"
+		"tax":
+			return "$"
+		"jail":
+			return "JAIL"
+		"go_to_jail":
+			return "POLICE"
+		"parking":
+			return "P"
+		"railroad":
+			return "TRAIN"
+		"utility":
+			return "UTIL"
+		"teleport":
+			return "FLY"
+	return ""
+
+
 static func get_cells_in_group(color: String) -> Array:
 	var result = []
 	var configs = get_cell_configs()
@@ -196,6 +109,5 @@ static func get_cells_in_group(color: String) -> Array:
 	return result
 
 
-# Trả về số ô đất trong mỗi nhóm màu
 static func get_group_size(color: String) -> int:
 	return get_cells_in_group(color).size()
