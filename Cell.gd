@@ -15,6 +15,10 @@ var index: int
 var is_mortgaged: bool = false
 var cell_owner: Player = null
 var house_count: int = 0
+var has_protection_tower: bool = false
+var protection_cost: int = 150
+var price_modifier: int = 0
+var rent_modifier: int = 0
 
 # Giá xây nhà
 var house_cost: int = 50
@@ -25,6 +29,8 @@ var rent_levels: Array = []
 # Hiệu ứng
 var effect_alpha: float = 0.0
 var effect_color: Color = Color.WHITE
+var upgrade_flash: float = 0.0
+var upgrade_scale: float = 1.0
 
 # =========================
 # INIT
@@ -56,6 +62,16 @@ func can_be_purchased() -> bool:
 	return cell_owner == null and price > 0 and cell_type in ["property", "railroad", "utility"]
 
 
+func get_modified_price() -> int:
+	if price <= 0:
+		return 0
+	return max(1, price + price_modifier)
+
+
+func get_modified_rent(base_rent: int) -> int:
+	return max(0, base_rent + rent_modifier)
+
+
 # =========================
 # TIỀN THUÊ (Rent)
 # =========================
@@ -66,13 +82,13 @@ func get_current_rent(dice_total: int = 0) -> int:
 
 	match cell_type:
 		"railroad":
-			return _get_railroad_rent()
+			return get_modified_rent(_get_railroad_rent())
 		"utility":
-			return _get_utility_rent(dice_total)
+			return get_modified_rent(_get_utility_rent(dice_total))
 		"property":
-			return _get_property_rent()
+			return get_modified_rent(_get_property_rent())
 
-	return rent_price
+	return get_modified_rent(rent_price)
 
 
 # Thuê nhà ga: tùy theo số ga sở hữu
@@ -129,6 +145,26 @@ func _get_property_rent() -> int:
 	return rent_price
 
 
+func get_rent_preview_for_level(level: int, dice_total: int = 7) -> int:
+	if cell_type == "railroad":
+		return get_modified_rent(_get_railroad_rent())
+	if cell_type == "utility":
+		return get_modified_rent(_get_utility_rent(dice_total))
+	if rent_levels.size() > 0:
+		var safe_level = clamp(level, 0, rent_levels.size() - 1)
+		return get_modified_rent(rent_levels[safe_level])
+	return get_modified_rent(rent_price)
+
+
+func get_build_level_name(level: int = -1) -> String:
+	var target_level = house_count if level < 0 else level
+	if target_level <= 0:
+		return "Dat trong"
+	if target_level < 5:
+		return "Nha cap " + str(target_level)
+	return "Khach san"
+
+
 # =========================
 # XÂY NHÀ
 # =========================
@@ -157,6 +193,24 @@ func can_build_house() -> bool:
 		return false
 
 	return true
+
+
+func get_build_block_reason() -> String:
+	if cell_type != "property":
+		return "Chi dat moi xay duoc."
+	if house_count >= 5:
+		return "Da dat khach san."
+	if cell_owner == null:
+		return "O chua co chu."
+	if is_mortgaged:
+		return "O dang the chap."
+	if not _owner_has_full_color_set():
+		return "Chua so huu du bo mau."
+	if not _check_even_building():
+		return "Can xay deu cac o cung mau."
+	if cell_owner.state.balance < house_cost:
+		return "Khong du tien."
+	return ""
 
 
 func build_house() -> bool:
@@ -241,6 +295,26 @@ func unmortgage_property() -> bool:
 	return false
 
 
+func can_build_protection_tower(player: Player) -> bool:
+	return (
+		cell_owner == player
+		and cell_type == "property"
+		and not has_protection_tower
+		and not is_mortgaged
+		and player.state.balance >= protection_cost
+	)
+
+
+func build_protection_tower(player: Player) -> bool:
+	if not can_build_protection_tower(player):
+		return false
+	player.deduct_money(protection_cost)
+	has_protection_tower = true
+	queue_redraw()
+	play_upgrade_effect()
+	return true
+
+
 # =========================
 # KIỂM TRA BỘ MÀU
 # =========================
@@ -291,6 +365,30 @@ func play_buy_effect():
 	tween.tween_method(_update_effect_alpha, 0.8, 0.0, 0.3)
 	tween.tween_method(_update_effect_alpha, 0.8, 0.0, 0.3)
 	tween.tween_method(_update_effect_alpha, 0.8, 0.0, 0.6)
+
+
+func play_land_effect():
+	effect_color = Color(1.0, 1.0, 0.4)
+	var tween = get_tree().create_tween()
+	tween.tween_method(_update_effect_alpha, 0.55, 0.0, 0.5)
+
+
+func play_upgrade_effect():
+	effect_color = Color(1.0, 0.85, 0.2)
+	upgrade_flash = 1.0
+	upgrade_scale = 1.45
+	queue_redraw()
+
+	var tween = get_tree().create_tween()
+	tween.set_parallel(true)
+	tween.tween_method(_update_effect_alpha, 0.7, 0.0, 0.55)
+	tween.tween_method(_set_upgrade_flash, 1.0, 0.0, 0.75)
+	tween.tween_property(self, "upgrade_scale", 1.0, 0.75).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _set_upgrade_flash(value: float):
+	upgrade_flash = value
+	queue_redraw()
 
 func _update_effect_alpha(alpha: float):
 	effect_alpha = alpha
@@ -387,6 +485,24 @@ func _draw():
 		])
 		draw_colored_polygon(flag_points, Color(1.0, 0.8, 0.0))
 
+	if upgrade_flash > 0.0:
+		draw_circle(Vector2(50, 24), 24 * upgrade_scale, Color(1.0, 0.9, 0.25, upgrade_flash * 0.4))
+
+	if has_protection_tower:
+		draw_rect(Rect2(68, 18, 16, 28), Color(0.25, 0.45, 1.0))
+		draw_circle(Vector2(76, 16), 8, Color(0.6, 0.85, 1.0))
+		draw_string(ThemeDB.fallback_font, Vector2(62, 58), "SHIELD", HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color.WHITE)
+
+	if price_modifier != 0 or rent_modifier != 0:
+		var modifier_text = ""
+		if price_modifier != 0:
+			modifier_text += ("P+" if price_modifier > 0 else "P") + str(price_modifier)
+		if rent_modifier != 0:
+			if modifier_text != "":
+				modifier_text += " "
+			modifier_text += ("R+" if rent_modifier > 0 else "R") + str(rent_modifier)
+		draw_string(ThemeDB.fallback_font, Vector2(6, 50), modifier_text, HORIZONTAL_ALIGNMENT_LEFT, 90, 8, Color(1.0, 0.9, 0.25))
+
 	# --- Vẽ icon đặc biệt ---
 	if cell_type != "property" and icon != "":
 		draw_string(
@@ -423,6 +539,8 @@ func _get_cell_bg_color() -> Color:
 			return Color(0.2, 0.2, 0.25)
 		"utility":
 			return Color(0.25, 0.25, 0.3)
+		"teleport":
+			return Color(0.12, 0.28, 0.36)
 		"property":
 			return Color(0.15, 0.18, 0.22)
 	return Color(0.15, 0.15, 0.15)

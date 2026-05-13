@@ -42,6 +42,7 @@ func start_turn():
 
 	print("Người chơi: ", player.name, " | Vị trí: ", player.state.position, " | Tiền: $", player.state.balance)
 	ui.show_turn(player.player_id)
+	ui.show_message("Den luot " + player.name + " | Turn " + str(game_state.turn_number))
 	ui.update_player_info(game_state.players)
 
 	if player.state.in_jail:
@@ -61,6 +62,7 @@ func roll_dice():
 
 	final_result = dice.roll()
 	last_dice_total = final_result.total()
+	ui.show_message(get_current_player().name + " dang tung xuc xac...")
 	ui.start_dice_animation()
 
 
@@ -203,11 +205,46 @@ func move_player_to_position(player: Player, pos: int) -> void:
 		await player.token.move_to(world_pos + offset)
 
 
+func move_player_to_position_with_teleport_effect(player: Player, pos: int) -> void:
+	if player.token:
+		var fade_out = create_tween()
+		fade_out.tween_property(player.token, "modulate:a", 0.0, 0.18)
+		await fade_out.finished
+
+	await move_player_to_position(player, pos)
+
+	if player.token:
+		var fade_in = create_tween()
+		fade_in.tween_property(player.token, "modulate:a", 1.0, 0.22)
+		await fade_in.finished
+
+
+func handle_teleport(player: Player):
+	ui.show_message(player.name + " duoc chon diem du lich!")
+	ui.show_teleport_chooser(player, board)
+	var selected_index = await ui.teleport_cell_selected
+	var target_index = int(selected_index) % game_state.board_size
+	var target_cell = board.get_cell(target_index)
+	var target_name = target_cell.cell_name if target_cell else str(target_index)
+
+	await ui.show_toast_and_wait(
+		"Du lich",
+		player.name + " dich chuyen den " + target_name,
+		Color(0.4, 0.85, 1.0),
+		0,
+		0.8
+	)
+	ui.play_sfx(GameUI.SFX_TELEPORT)
+	await move_player_to_position_with_teleport_effect(player, target_index)
+	await handle_landed_cell(player, target_index)
+
+
 func go_to_jail(player: Player):
 	print("🔒 ", player.name, " VÀO TÙ!")
 	player.state.set_in_jail(true)
 	player.state.jail_turns = 0
 
+	ui.play_sfx(GameUI.SFX_JAIL)
 	ui.show_jail()
 
 	var jail_pos = board.get_jail_position()
@@ -229,6 +266,7 @@ func end_turn():
 		if alive_players.size() == 1:
 			var winner = alive_players[0]
 			print("🎉 GAME OVER! Người thắng: ", winner.name)
+			ui.play_sfx(GameUI.SFX_GAME_OVER)
 			ui.show_game_over(winner)
 		else:
 			print("GAME OVER! Hòa!")
@@ -239,7 +277,16 @@ func end_turn():
 	var safety_counter = 0
 
 	while not next_player_found and safety_counter < game_state.players.size():
+		var old_player = game_state.current_player
 		game_state.current_player = (game_state.current_player + 1) % game_state.players.size()
+		if game_state.current_player <= old_player:
+			game_state.turn_number += 1
+
+		if game_state.victory_mode == "turn_limit" and game_state.max_turns > 0 and game_state.turn_number > game_state.max_turns:
+			var net_worth_winner = get_winner_by_net_worth()
+			ui.play_sfx(GameUI.SFX_GAME_OVER)
+			ui.show_game_over_with_rankings(net_worth_winner, build_rankings())
+			return
 
 		if not get_current_player().is_bankrupt():
 			next_player_found = true
@@ -277,6 +324,7 @@ func handle_landed_cell(player: Player, cell_index: int):
 		return
 
 	print(player.name, " đáp xuống: ", cell.cell_name, " (", cell.cell_type, ")")
+	cell.play_land_effect()
 
 	# --- Ô sự kiện ---
 	var is_event = await get_event_handler().handle_event(player, cell)
@@ -286,7 +334,7 @@ func handle_landed_cell(player: Player, cell_index: int):
 
 	# --- Ô có thể mua ---
 	if cell.can_be_purchased():
-		if player.state.balance >= cell.price:
+		if player.state.balance >= cell.get_modified_price():
 			# Hiện popup mua đất
 			ui.show_buy_prompt(player, cell)
 			var accepted = await buy_decision_made
@@ -305,7 +353,7 @@ func handle_landed_cell(player: Player, cell_index: int):
 	elif cell.cell_owner != null and cell.cell_owner != player and not cell.is_mortgaged:
 		var rent_amount = cell.get_current_rent(last_dice_total)
 
-		ui.show_message(player.name + " trả $" + str(rent_amount) + " tiền thuê cho " + cell.cell_owner.name)
+		await ui.show_transaction_popup(player, cell.cell_owner, rent_amount, "Tien thue: " + cell.cell_name)
 
 		if player.state.balance >= rent_amount:
 			process_payment(player, cell.cell_owner, rent_amount, cell.cell_name)
@@ -321,6 +369,10 @@ func handle_landed_cell(player: Player, cell_index: int):
 		if cell.can_build_house():
 			ui.show_build_prompt(player, cell)
 			await build_decision_made
+		else:
+			var reason = cell.get_build_block_reason()
+			if reason != "":
+				ui.show_message(cell.cell_name + " chua the xay: " + reason)
 
 	ui.update_player_info(game_state.players)
 
@@ -330,15 +382,155 @@ func handle_landed_cell(player: Player, cell_index: int):
 # =========================
 
 func buy_property(player: Player, cell: Cell):
-	player.deduct_money(cell.price)
+	var purchase_price = cell.get_modified_price()
+	player.deduct_money(purchase_price)
 	cell.cell_owner = player
 	player.add_property(cell)
 
-	ui.show_message(player.name + " mua " + cell.cell_name + " ($" + str(cell.price) + ")")
+	ui.play_sfx(GameUI.SFX_BUY)
+	ui.show_message(player.name + " mua " + cell.cell_name + " ($" + str(purchase_price) + ")")
 	print(player.name, " đã mua: ", cell.cell_name)
 
 	cell.play_buy_effect()
 	ui.update_player_info(game_state.players)
+
+
+func build_on_property(player: Player, cell: Cell) -> bool:
+	if cell.cell_owner != player:
+		ui.show_message("Ban khong so huu " + cell.cell_name)
+		return false
+	if not cell.can_build_house():
+		ui.show_message("Chua the xay tren " + cell.cell_name + ": " + cell.get_build_block_reason())
+		return false
+
+	var ok = cell.build_house()
+	if ok:
+		ui.play_sfx(GameUI.SFX_BUILD)
+		cell.play_upgrade_effect()
+		ui.show_message("Nang cap thanh cong: " + cell.cell_name + " -> " + cell.get_build_level_name())
+		ui.update_player_info(game_state.players)
+	return ok
+
+
+func sell_house_on_property(player: Player, cell: Cell) -> bool:
+	if cell.cell_owner != player:
+		ui.show_message("Ban khong so huu " + cell.cell_name)
+		return false
+
+	var ok = cell.sell_house()
+	if ok:
+		ui.show_message("Da ban bot cong trinh tren " + cell.cell_name)
+	else:
+		ui.show_message("Chua the ban cong trinh tren " + cell.cell_name)
+	ui.update_player_info(game_state.players)
+	return ok
+
+
+func mortgage_property(player: Player, cell: Cell) -> bool:
+	if cell.cell_owner != player:
+		ui.show_message("Ban khong so huu " + cell.cell_name)
+		return false
+
+	var amount = cell.mortgage_property()
+	if amount > 0:
+		ui.show_message("The chap " + cell.cell_name + " nhan $" + str(amount))
+	else:
+		ui.show_message("Chua the the chap " + cell.cell_name)
+	ui.update_player_info(game_state.players)
+	return amount > 0
+
+
+func unmortgage_property(player: Player, cell: Cell) -> bool:
+	if cell.cell_owner != player:
+		ui.show_message("Ban khong so huu " + cell.cell_name)
+		return false
+
+	var ok = cell.unmortgage_property()
+	if ok:
+		ui.show_message("Da giai chap " + cell.cell_name)
+	else:
+		ui.show_message("Chua the giai chap " + cell.cell_name)
+	ui.update_player_info(game_state.players)
+	return ok
+
+
+func build_protection_tower_for_current_player(cell: Cell) -> bool:
+	var player = get_current_player()
+	if cell.cell_owner != player:
+		ui.show_message("Ban khong so huu " + cell.cell_name)
+		return false
+	var ok = cell.build_protection_tower(player)
+	if ok:
+		ui.play_sfx(GameUI.SFX_BUILD)
+		ui.show_message("Da xay thap bao ve tren " + cell.cell_name)
+	else:
+		ui.show_message("Chua the xay thap bao ve tren " + cell.cell_name)
+	ui.update_player_info(game_state.players)
+	return ok
+
+
+func calculate_net_worth(player: Player) -> int:
+	var total = player.state.balance
+	for cell in player.properties:
+		total += cell.get_mortgage_value() * 2
+		total += cell.house_count * int(cell.house_cost * 0.5)
+		if cell.has_protection_tower:
+			total += int(cell.protection_cost * 0.5)
+	return total
+
+
+func count_player_houses(player: Player) -> int:
+	var total = 0
+	for cell in player.properties:
+		if cell.house_count > 0 and cell.house_count < 5:
+			total += cell.house_count
+	return total
+
+
+func count_player_hotels(player: Player) -> int:
+	var total = 0
+	for cell in player.properties:
+		if cell.house_count == 5:
+			total += 1
+	return total
+
+
+func count_player_mortgaged_properties(player: Player) -> int:
+	var total = 0
+	for cell in player.properties:
+		if cell.is_mortgaged:
+			total += 1
+	return total
+
+
+func get_player_rank(player: Player) -> int:
+	var rankings = build_rankings()
+	for i in range(rankings.size()):
+		if rankings[i]["player"] == player:
+			return i + 1
+	return rankings.size()
+
+
+func build_rankings() -> Array:
+	var rankings = []
+	for p in game_state.players:
+		rankings.append({
+			"player": p,
+			"cash": p.state.balance,
+			"properties": p.properties.size(),
+			"net_worth": calculate_net_worth(p),
+		})
+	rankings.sort_custom(func(a, b): return a["net_worth"] > b["net_worth"])
+	return rankings
+
+
+func get_winner_by_net_worth() -> Player:
+	var rankings = build_rankings()
+	for row in rankings:
+		var p = row["player"]
+		if not p.is_bankrupt():
+			return p
+	return null
 
 
 # =========================
@@ -357,7 +549,7 @@ func run_auction(cell: Cell):
 			continue
 
 		# Logic đấu giá đơn giản: trả giá nếu có tiền và giá hợp lý
-		var max_willing = int(cell.price * 0.8) # Tối đa 80% giá niêm yết
+		var max_willing = int(cell.get_modified_price() * 0.8) # Toi da 80% gia niem yet
 		var bid = min(max_willing, player.state.balance - 100) # Giữ lại ít nhất $100
 
 		if bid > highest_bid and bid > 0:
@@ -385,6 +577,7 @@ func run_auction(cell: Cell):
 
 func process_reward(player: Player, amount: int = 200):
 	player.add_money(amount)
+	ui.play_sfx(GameUI.SFX_REWARD)
 	ui.show_message(player.name + " nhận $" + str(amount))
 
 
@@ -397,6 +590,7 @@ func process_payment(payer: Player, beneficiary: Player, amount: int, reason: St
 
 func execute_transaction(payer: Player, beneficiary: Player, amount: int):
 	payer.deduct_money(amount)
+	ui.play_sfx(GameUI.SFX_PAY)
 
 	if beneficiary:
 		beneficiary.add_money(amount)
@@ -429,3 +623,16 @@ func handle_bankruptcy(debtor: Player, creditor: Player):
 		cell.queue_redraw()
 
 	emit_signal("turn_action_completed")
+
+
+func restart_game():
+	if board:
+		board.reset_board()
+	if game_state:
+		game_state.players.clear()
+		game_state.current_player = 0
+		game_state.double_count = 0
+		game_state.turn_number = 1
+		game_state.max_turns = 0
+		game_state.victory_mode = "bankruptcy"
+	get_tree().reload_current_scene()
