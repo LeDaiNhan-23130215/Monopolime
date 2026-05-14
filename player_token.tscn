@@ -7,6 +7,6 @@ script = ExtResource("1_tnvn1")
 
 [node name="TokenSprite" type="Sprite2D" parent="." unique_id=1536674717]
 position = Vector2(29.5, 26.5)
-scale = Vector2(0.45833334, 0.45833334)
+scale = Vector2(0.68, 0.68)
 
 [node name="Node2D" type="Node2D" parent="." unique_id=619730790]

@@ -1,13 +1,15 @@
 extends Node2D
 class_name PlayerToken
 
+const TOKEN_SCALE := Vector2(0.68, 0.68)
+
 var player_id: int
 
 @onready var token_sprite = $TokenSprite
 
 func _ready():
 	token_sprite.centered = true
-	token_sprite.scale = Vector2(0.458, 0.458)
+	token_sprite.scale = TOKEN_SCALE
 	
 func move_to(target_pos: Vector2) -> void:
 	var tween = create_tween()

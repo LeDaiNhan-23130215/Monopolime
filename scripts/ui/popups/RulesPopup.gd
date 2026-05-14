@@ -25,8 +25,8 @@ func _build() -> void:
 	panel_style.shadow_size = 20
 	var panel := PanelContainer.new()
 	panel.name = "Panel"
-	panel.position = Vector2(260, 92)
-	panel.size = Vector2(760, 520)
+	panel.position = Vector2(170, 58)
+	panel.size = Vector2(940, 600)
 	panel.add_theme_stylebox_override("panel", panel_style)
 	add_child(panel)
 
@@ -59,7 +59,7 @@ func _build() -> void:
 	header.add_child(close)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 330)
+	scroll.custom_minimum_size = Vector2(0, 410)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 
@@ -78,6 +78,11 @@ func _build() -> void:
 		["7", "Mục tiêu", "Trở thành người còn lại cuối cùng hoặc có tổng tài sản cao nhất."]
 	]:
 		rule_list.add_child(_rule_row(rule[0], rule[1], rule[2]))
+
+	var event_handler := EventHandler.new()
+	rule_list.add_child(_deck_reference_section("Bộ thẻ Cơ hội", "40 thẻ dùng khi người chơi vào ô Cơ hội", event_handler.chance_cards, Color("#0759A8"), Color("#FFC533")))
+	rule_list.add_child(_deck_reference_section("Bộ thẻ Khí vận", "40 thẻ dùng khi người chơi vào ô Khí vận", event_handler.community_cards, Color("#0B6B38"), Color("#FFD95A")))
+	event_handler.free()
 
 	var close_bottom := _styled_button("Đã hiểu", CoTyPhuTheme.BLUE, Vector2(220, 58))
 	close_bottom.pressed.connect(func(): visible = false; emit_signal("closed"))
@@ -127,6 +132,120 @@ func _rule_row(number: String, heading: String, description: String) -> Control:
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_box.add_child(desc)
 	return panel
+
+
+func _deck_reference_section(title: String, subtitle: String, cards: Array, base_color: Color, accent_color: Color) -> Control:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#FFFDF4")
+	style.border_color = accent_color
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(14)
+	style.set_content_margin_all(12)
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", style)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	panel.add_child(box)
+
+	var header_style := StyleBoxFlat.new()
+	header_style.bg_color = base_color
+	header_style.border_color = accent_color
+	header_style.set_border_width_all(2)
+	header_style.set_corner_radius_all(12)
+	header_style.set_content_margin_all(8)
+	var header := PanelContainer.new()
+	header.add_theme_stylebox_override("panel", header_style)
+	box.add_child(header)
+
+	var header_col := VBoxContainer.new()
+	header_col.add_theme_constant_override("separation", 2)
+	header.add_child(header_col)
+	var title_lbl := UIFactory.label(title.to_upper(), 26, accent_color, HORIZONTAL_ALIGNMENT_CENTER)
+	title_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
+	title_lbl.add_theme_constant_override("outline_size", 4)
+	header_col.add_child(title_lbl)
+	var subtitle_lbl := UIFactory.label(subtitle, 16, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	subtitle_lbl.add_theme_constant_override("outline_size", 2)
+	header_col.add_child(subtitle_lbl)
+
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 6)
+	box.add_child(grid)
+
+	for i in range(cards.size()):
+		grid.add_child(_deck_card_row(i + 1, cards[i], base_color))
+
+	return panel
+
+
+func _deck_card_row(index: int, card: Dictionary, base_color: Color) -> Control:
+	var row_style := StyleBoxFlat.new()
+	row_style.bg_color = Color("#FFFAEC")
+	row_style.border_color = Color("#E8D8A8")
+	row_style.set_border_width_all(1)
+	row_style.set_corner_radius_all(8)
+	row_style.set_content_margin_all(6)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(430, 58)
+	panel.add_theme_stylebox_override("panel", row_style)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 7)
+	panel.add_child(row)
+
+	var badge_style := StyleBoxFlat.new()
+	badge_style.bg_color = base_color
+	badge_style.set_corner_radius_all(8)
+	badge_style.set_content_margin_all(4)
+	var badge := PanelContainer.new()
+	badge.custom_minimum_size = Vector2(34, 34)
+	badge.add_theme_stylebox_override("panel", badge_style)
+	badge.add_child(UIFactory.label(str(index), 15, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
+	row.add_child(badge)
+
+	var icon := UIFactory.icon(_icon_for_card(str(card.get("icon", "gift"))), base_color, Vector2(34, 34))
+	row.add_child(icon)
+
+	var text_box := VBoxContainer.new()
+	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_box.add_theme_constant_override("separation", 1)
+	row.add_child(text_box)
+
+	var title_lbl := UIFactory.label(str(card.get("title", "")), 14, CoTyPhuTheme.TEXT_DARK)
+	title_lbl.add_theme_constant_override("outline_size", 0)
+	text_box.add_child(title_lbl)
+
+	var desc := UIFactory.label(str(card.get("text", "")), 12, Color("#4E4638"))
+	desc.add_theme_constant_override("outline_size", 0)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text_box.add_child(desc)
+	return panel
+
+
+func _icon_for_card(icon_id: String) -> String:
+	match icon_id:
+		"money": return "money"
+		"jail": return "jail"
+		"tax": return "money"
+		"go": return "city"
+		"arrow": return "hourglass"
+		"car": return "city"
+		"chance": return "dice"
+		"wind": return "hourglass"
+		"shield": return "trophy"
+		"heart": return "gift"
+		"storm": return "hourglass"
+		"mountain": return "pagoda"
+		"palm": return "palm"
+		"bridge": return "bridge"
+		"dice": return "dice"
+		"token": return "token"
+		"home": return "home"
+		"trophy": return "trophy"
+	return "gift"
 
 func _close_button() -> Button:
 	var style := StyleBoxFlat.new()
