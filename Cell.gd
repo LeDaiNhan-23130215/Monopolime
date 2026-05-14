@@ -160,9 +160,9 @@ func get_build_level_name(level: int = -1) -> String:
 	var target_level = house_count if level < 0 else level
 	if target_level <= 0:
 		return "Dat trong"
-	if target_level < 5:
+	if target_level < 4:
 		return "Nha cap " + str(target_level)
-	return "Khach san"
+	return "Cong trinh lon"
 
 
 # =========================
@@ -173,7 +173,7 @@ func get_build_level_name(level: int = -1) -> String:
 func can_build_house() -> bool:
 	if cell_type != "property":
 		return false
-	if house_count >= 5:
+	if house_count >= 4:
 		return false
 	if cell_owner == null:
 		return false
@@ -198,8 +198,8 @@ func can_build_house() -> bool:
 func get_build_block_reason() -> String:
 	if cell_type != "property":
 		return "Chi dat moi xay duoc."
-	if house_count >= 5:
-		return "Da dat khach san."
+	if house_count >= 4:
+		return "Da dat cap cong trinh lon nhat."
 	if cell_owner == null:
 		return "O chua co chu."
 	if is_mortgaged:
@@ -221,8 +221,8 @@ func build_house() -> bool:
 	house_count += 1
 	queue_redraw()
 
-	var type_name = "Khách sạn" if house_count == 5 else "Nhà"
-	print(cell_owner.name, " xây ", type_name, " trên ", cell_name, " (", house_count, "/5)")
+	var type_name = "Công trình lớn" if house_count == 4 else "Nhà"
+	print(cell_owner.name, " xây ", type_name, " trên ", cell_name, " (", house_count, "/4)")
 	return true
 
 
@@ -409,28 +409,43 @@ func _update_effect_alpha(alpha: float):
 # VẼ GIAO DIỆN Ô ĐẤT
 # =========================
 
-func _draw():
-	var cell_size = Vector2(100, 100)
+var cell_rect_size := Vector2(100, 100)
+var cell_side := "corner"
 
+func _draw():
 	# --- Nền ô ---
 	var bg_color = _get_cell_bg_color()
-	draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), bg_color)
+	draw_rect(Rect2(0, 0, cell_rect_size.x, cell_rect_size.y), bg_color)
 
 	# --- Viền ô ---
-	var border_color = Color(0.5, 0.55, 0.6, 0.9)
-	draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), border_color, false, 2.0)
+	var border_color = Color("#D4BCA0") # Lighter brown/gray border instead of dark
+	draw_rect(Rect2(0, 0, cell_rect_size.x, cell_rect_size.y), border_color, false, 3.0)
 
-	# --- Thanh màu nhóm (trên cùng) ---
+	# --- Thanh màu nhóm (hướng vào tâm bàn cờ) ---
 	if color_group != "":
 		var group_color = _get_group_color()
-		draw_rect(Rect2(0, 0, cell_size.x, 22), group_color)
+		var bar_rect := Rect2()
+		var bar_w = 20
+		match cell_side:
+			"top":
+				bar_rect = Rect2(0, cell_rect_size.y - bar_w, cell_rect_size.x, bar_w)
+			"bottom":
+				bar_rect = Rect2(0, 0, cell_rect_size.x, bar_w)
+			"left":
+				bar_rect = Rect2(cell_rect_size.x - bar_w, 0, bar_w, cell_rect_size.y)
+			"right":
+				bar_rect = Rect2(0, 0, bar_w, cell_rect_size.y)
+			_:
+				bar_rect = Rect2(0, 0, cell_rect_size.x, bar_w)
+				
+		draw_rect(bar_rect, group_color)
 		# Viền thanh màu
-		draw_rect(Rect2(0, 0, cell_size.x, 22), Color(0, 0, 0, 0.5), false, 1.5)
+		draw_rect(bar_rect, Color(0, 0, 0, 0.5), false, 1.5)
 
 	# --- Chỉ báo thế chấp ---
 	if is_mortgaged:
 		# Lớp phủ mờ
-		draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), Color(0.1, 0.1, 0.1, 0.85))
+		draw_rect(Rect2(0, 0, cell_rect_size.x, cell_rect_size.y), Color(0.1, 0.1, 0.1, 0.85))
 		# Chữ "CẦM CỐ"
 		draw_string(
 			ThemeDB.fallback_font,
@@ -447,62 +462,70 @@ func _draw():
 		var owner_color = _get_owner_color()
 		
 		# Overlay màu nhẹ bên trong ô để tô sáng
-		draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), Color(owner_color.r, owner_color.g, owner_color.b, 0.08))
+		draw_rect(Rect2(0, 0, cell_rect_size.x, cell_rect_size.y), Color(owner_color.r, owner_color.g, owner_color.b, 0.08))
 		
 		# Viền dày màu chủ sở hữu (bên trong border thường)
-		draw_rect(Rect2(2, 2, cell_size.x - 4, cell_size.y - 4), owner_color, false, 3.0)
+		draw_rect(Rect2(2, 2, cell_rect_size.x - 4, cell_rect_size.y - 4), owner_color, false, 3.0)
 		
 		# Thanh màu dưới cùng (thể hiện người sở hữu)
-		draw_rect(Rect2(0, cell_size.y - 14, cell_size.x, 14), owner_color)
+		draw_rect(Rect2(0, cell_rect_size.y - 14, cell_rect_size.x, 14), owner_color)
 		
 		# Hiển thị tên chủ sở hữu trong thanh dưới
 		var short_name = cell_owner.name.left(6)
 		draw_string(
 			ThemeDB.fallback_font,
-			Vector2(50, cell_size.y - 3),
+			Vector2(cell_rect_size.x / 2 - 25, cell_rect_size.y - 3),
 			short_name,
 			HORIZONTAL_ALIGNMENT_CENTER,
-			cell_size.x,
+			50,
 			10,
 			Color(0.05, 0.05, 0.05, 1.0)
 		)
 
 	# --- Vẽ nhà ---
-	if house_count > 0 and house_count < 5:
+	var house_base_y = 26
+	if cell_side == "bottom": house_base_y = 12
+	elif cell_side == "top": house_base_y = cell_rect_size.y - 20
+	
+	if house_count > 0 and house_count < 4:
+		var spacing = cell_rect_size.x / 4.0
+		var h_w = spacing * 0.72
 		for i in range(house_count):
-			var house_x = 8 + i * 22
-			# Bóng
-			draw_rect(Rect2(house_x + 1, 24, 18, 12), Color(0, 0, 0, 0.5))
-			# Nhà
-			draw_rect(Rect2(house_x, 23, 18, 12), Color(0.2, 0.8, 0.3))
-			# Mái
-			var points = PackedVector2Array([
-				Vector2(house_x, 23),
-				Vector2(house_x + 9, 14),
-				Vector2(house_x + 18, 23)
+			var house_x = (i + 0.5) * spacing
+			var h_h = 8 + i * 2
+			draw_rect(Rect2(house_x + 1, house_base_y + 1, h_w, h_h), Color(0, 0, 0, 0.45))
+			draw_rect(Rect2(house_x, house_base_y, h_w, h_h), Color(0.2, 0.8, 0.3).lightened(i * 0.08))
+			var roof = PackedVector2Array([
+				Vector2(house_x, house_base_y),
+				Vector2(house_x + h_w / 2, house_base_y - 5 - i),
+				Vector2(house_x + h_w, house_base_y)
 			])
-			draw_colored_polygon(points, Color(0.1, 0.6, 0.2))
+			draw_colored_polygon(roof, Color(0.1, 0.55, 0.2))
 
-	elif house_count == 5:
-		# Khách sạn
-		draw_rect(Rect2(25, 22, 50, 18), Color(0.9, 0.15, 0.15))
-		draw_rect(Rect2(25, 22, 50, 18), Color(0.4, 0.0, 0.0), false, 2.0)
-		# Cờ
-		draw_line(Vector2(50, 10), Vector2(50, 22), Color.YELLOW, 2.0)
-		var flag_points = PackedVector2Array([
-			Vector2(50, 10),
-			Vector2(60, 14),
-			Vector2(50, 18)
-		])
-		draw_colored_polygon(flag_points, Color(1.0, 0.8, 0.0))
+	elif house_count >= 4:
+		var big_w = cell_rect_size.x * 0.64
+		var big_x = (cell_rect_size.x - big_w) / 2
+		var big_h = 18
+		draw_rect(Rect2(big_x + 2, house_base_y + 1, big_w, big_h), Color(0, 0, 0, 0.42))
+		draw_rect(Rect2(big_x, house_base_y - 4, big_w, big_h + 4), Color(0.9, 0.16, 0.12))
+		draw_rect(Rect2(big_x, house_base_y - 4, big_w, big_h + 4), Color(0.45, 0.02, 0.0), false, 2.0)
+		for i in range(3):
+			draw_rect(Rect2(big_x + 8 + i * (big_w / 3.4), house_base_y + 1, 5, 5), Color(1.0, 0.9, 0.45))
+		var flag_x = big_x + big_w * 0.5
+		draw_line(Vector2(flag_x, house_base_y - 17), Vector2(flag_x, house_base_y - 4), Color.YELLOW, 2.0)
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(flag_x, house_base_y - 17),
+			Vector2(flag_x + 9, house_base_y - 13),
+			Vector2(flag_x, house_base_y - 9)
+		]), Color(1.0, 0.82, 0.0))
 
 	if upgrade_flash > 0.0:
-		draw_circle(Vector2(50, 24), 24 * upgrade_scale, Color(1.0, 0.9, 0.25, upgrade_flash * 0.4))
+		draw_circle(Vector2(cell_rect_size.x / 2.0, 24), 24 * upgrade_scale, Color(1.0, 0.9, 0.25, upgrade_flash * 0.4))
 
 	if has_protection_tower:
-		draw_rect(Rect2(68, 18, 16, 28), Color(0.25, 0.45, 1.0))
-		draw_circle(Vector2(76, 16), 8, Color(0.6, 0.85, 1.0))
-		draw_string(ThemeDB.fallback_font, Vector2(62, 58), "SHIELD", HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color.WHITE)
+		draw_rect(Rect2(cell_rect_size.x - 32, 18, 16, 28), Color(0.25, 0.45, 1.0))
+		draw_circle(Vector2(cell_rect_size.x - 24, 16), 8, Color(0.6, 0.85, 1.0))
+		draw_string(ThemeDB.fallback_font, Vector2(cell_rect_size.x - 38, 58), "SHIELD", HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color.WHITE)
 
 	if price_modifier != 0 or rent_modifier != 0:
 		var modifier_text = ""
@@ -518,55 +541,55 @@ func _draw():
 	if cell_type != "property" and icon != "":
 		draw_string(
 			ThemeDB.fallback_font,
-			Vector2(35, 75),
+			Vector2(cell_rect_size.x / 2 - 40, cell_rect_size.y / 2 + 25),
 			icon,
 			HORIZONTAL_ALIGNMENT_CENTER,
-			40,
-			28
+			80,
+			70
 		)
 
 	# --- Hiệu ứng nhấp nháy khi có sự kiện (như mua đất) ---
 	if effect_alpha > 0.0:
-		draw_rect(Rect2(0, 0, cell_size.x, cell_size.y), Color(effect_color.r, effect_color.g, effect_color.b, effect_alpha))
+		draw_rect(Rect2(0, 0, cell_rect_size.x, cell_rect_size.y), Color(effect_color.r, effect_color.g, effect_color.b, effect_alpha))
 
 
 func _get_cell_bg_color() -> Color:
 	match cell_type:
 		"go":
-			return Color(0.15, 0.35, 0.2)
+			return Color("#E2F0D9") # Light green
 		"chance":
-			return Color(0.4, 0.25, 0.1)
+			return Color("#FFF2CC") # Light yellow/orange
 		"community":
-			return Color(0.1, 0.25, 0.4)
+			return Color("#DDEBF7") # Light blue
 		"tax":
-			return Color(0.35, 0.15, 0.15)
+			return Color("#FCE4D6") # Light red/peach
 		"jail":
-			return Color(0.3, 0.2, 0.15)
+			return Color("#F8CBAD") # Light orange/red
 		"go_to_jail":
-			return Color(0.5, 0.15, 0.15)
+			return Color("#F4B084")
 		"parking":
-			return Color(0.15, 0.3, 0.15)
+			return Color("#E2EFDA")
 		"railroad":
-			return Color(0.2, 0.2, 0.25)
+			return Color("#EDEDED")
 		"utility":
-			return Color(0.25, 0.25, 0.3)
+			return Color("#F2F2F2")
 		"teleport":
-			return Color(0.12, 0.28, 0.36)
+			return Color("#D9E1F2")
 		"property":
-			return Color(0.15, 0.18, 0.22)
-	return Color(0.15, 0.15, 0.15)
+			return Color("#FFF9EB") # Cream/light yellow for default property
+	return Color("#FFF9EB")
 
 
 func _get_group_color() -> Color:
 	match color_group:
-		"brown": return Color(0.55, 0.27, 0.07)
-		"light_blue": return Color(0.53, 0.81, 0.92)
-		"pink": return Color(0.85, 0.44, 0.84)
-		"orange": return Color(1.0, 0.55, 0.0)
-		"red": return Color(0.9, 0.15, 0.15)
-		"yellow": return Color(1.0, 0.85, 0.0)
-		"green": return Color(0.0, 0.65, 0.3)
-		"blue": return Color(0.15, 0.25, 0.85)
+		"brown": return Color("#8B4513")
+		"light_blue": return Color("#87CEEB")
+		"pink": return Color("#FF69B4")
+		"orange": return Color("#FFA500")
+		"red": return Color("#FF0000")
+		"yellow": return Color("#FFD700")
+		"green": return Color("#008000")
+		"blue": return Color("#0000FF")
 	return Color.GRAY
 
 
