@@ -25,6 +25,8 @@ var build_button: Button
 var trade_button: Button
 var end_turn_button: Button
 var player_list: VBoxContainer
+var history_list: VBoxContainer
+var history_scroll: ScrollContainer
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -214,6 +216,7 @@ func _build_main_area() -> Control:
 	mega.add_theme_constant_override("outline_size", 2)
 	alert_row.add_child(mega)
 	left.add_child(_build_dice_panel())
+	left.add_child(_build_history_panel())
 	# BOARD SAFE SPACE
 	var board_space := Control.new()
 	board_space.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -280,6 +283,44 @@ func _build_dice_panel() -> Control:
 	result_label.add_theme_constant_override("outline_size", 5)
 	box.add_child(result_label)
 	return dice_panel
+
+func _build_history_panel() -> Control:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#FFF8EC")
+	style.border_color = Color("#57C6FF")
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(14)
+	style.set_content_margin_all(8)
+	style.shadow_color = Color(0, 0, 0, 0.22)
+	style.shadow_size = 5
+
+	var panel := PanelContainer.new()
+	panel.name = "TurnHistoryPanel"
+	panel.custom_minimum_size = Vector2(0, 220)
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", style)
+
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 6)
+	panel.add_child(root)
+
+	var title := UIFactory.label("Lịch sử", 17, Color("#06336F"), HORIZONTAL_ALIGNMENT_CENTER)
+	title.add_theme_color_override("font_outline_color", Color("#FFFDF4"))
+	title.add_theme_constant_override("outline_size", 3)
+	root.add_child(title)
+
+	history_scroll = ScrollContainer.new()
+	history_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	history_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	root.add_child(history_scroll)
+
+	history_list = VBoxContainer.new()
+	history_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	history_list.add_theme_constant_override("separation", 4)
+	history_scroll.add_child(history_list)
+	add_history_entry("Bắt đầu ván chơi.")
+
+	return panel
 
 func _build_action_bar() -> Control:
 	var shell := MarginContainer.new()
@@ -405,6 +446,41 @@ func update_players(players: Array, active_index: int, rankings := {}) -> void:
 			color_idx = int(p.get_meta("color_index"))
 		var color := CoTyPhuTheme.player_color(color_idx)
 		player_list.add_child(_build_player_card(p, i, active, color))
+
+func add_history_entry(text: String, color: Color = Color("#2E2A22")) -> void:
+	if history_list == null:
+		return
+	var row_style := StyleBoxFlat.new()
+	row_style.bg_color = Color("#FFFAF0")
+	row_style.border_color = Color("#E8D8A8")
+	row_style.set_border_width_all(1)
+	row_style.set_corner_radius_all(8)
+	row_style.set_content_margin_all(5)
+	var row := PanelContainer.new()
+	row.add_theme_stylebox_override("panel", row_style)
+
+	var label := Label.new()
+	label.text = "• " + text
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color.TRANSPARENT)
+	label.add_theme_constant_override("outline_size", 0)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(label)
+
+	history_list.add_child(row)
+	while history_list.get_child_count() > 8:
+		history_list.get_child(0).queue_free()
+	call_deferred("_scroll_history_to_bottom")
+
+func _scroll_history_to_bottom() -> void:
+	if history_scroll == null:
+		return
+	await get_tree().process_frame
+	var bar := history_scroll.get_v_scroll_bar()
+	if bar:
+		history_scroll.scroll_vertical = int(bar.max_value)
 
 func _build_player_card(p: Player, index: int, active: bool, color: Color) -> Control:
 	var card_style := StyleBoxFlat.new()

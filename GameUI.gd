@@ -151,6 +151,10 @@ func show_message(text: String) -> void:
 	var cleaned = _clean_text(text)
 	hud.set_message(cleaned)
 
+func add_history(text: String, color: Color = Color("#2E2A22")) -> void:
+	if hud and hud.has_method("add_history_entry"):
+		hud.add_history_entry(_clean_text(text), color)
+
 func update_player_info(players: Array) -> void:
 	var active: int = game_controller.game_state.current_player if game_controller else 0
 	hud.update_players(players, active)
@@ -229,6 +233,13 @@ func show_card_and_wait(title: String, text: String, color: Color, amount: int =
 	show_card_popup(title, text, color, amount)
 	await card_dismissed
 
+func show_event_card_and_wait(deck_title: String, card: Dictionary, color: Color, amount: int = 0, deck_counts := {}):
+	if event_popup.has_method("show_deck_card"):
+		event_popup.show_deck_card(_clean_text(deck_title), card, color, amount, deck_counts)
+	else:
+		show_card_popup(deck_title, str(card.get("text", "")), color, amount)
+	await card_dismissed
+
 func show_toast_and_wait(title: String, text: String, color: Color, amount: int = 0, duration: float = 0.9):
 	show_card_popup(title, text, color, amount)
 	if duration > 0:
@@ -293,6 +304,41 @@ func show_teleport_chooser(player: Player, board: Board) -> void:
 
 func play_sfx(_key: String) -> void:
 	pass
+
+func show_money_float(amount: int, from_node: Node = null, to_node: Node = null) -> void:
+	var label := Label.new()
+	var positive := amount >= 0
+	label.text = ("+$" if positive else "-$") + str(abs(amount))
+	label.add_theme_font_size_override("font_size", 30)
+	label.add_theme_color_override("font_color", CoTyPhuTheme.TEXT_GREEN if positive else CoTyPhuTheme.RED)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
+	label.add_theme_constant_override("outline_size", 5)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.size = Vector2(150, 44)
+	ui_layer.add_child(label)
+
+	var start := _screen_position_for(from_node, Vector2(640, 360))
+	var end := _screen_position_for(to_node, start + Vector2(0, -76))
+	if to_node == null:
+		end = start + Vector2(0, -86)
+	label.position = start - label.size * 0.5
+	label.scale = Vector2(0.75, 0.75)
+	label.modulate.a = 0.0
+
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(label, "modulate:a", 1.0, 0.12)
+	tween.tween_property(label, "scale", Vector2(1.12, 1.12), 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, "position", end - label.size * 0.5, 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_property(label, "modulate:a", 0.0, 0.22)
+	tween.chain().tween_callback(label.queue_free)
+
+
+func _screen_position_for(node: Node, fallback: Vector2) -> Vector2:
+	if node and node is CanvasItem and is_instance_valid(node):
+		var item := node as CanvasItem
+		return item.get_global_transform_with_canvas().origin
+	return fallback
 
 func show_insufficient_funds_options(player: Player, amount_needed: int):
 	show_message(player.name + " thiếu $" + str(amount_needed) + ". Hãy quản lý tài sản để có thêm tiền.")

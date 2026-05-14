@@ -6,45 +6,89 @@ signal event_finished
 var game_controller: GameController
 
 var chance_cards = [
-	{"text": "Bank dividend! Receive $50", "action": "gain", "amount": 50},
-	{"text": "Beauty contest prize! Receive $100", "action": "gain", "amount": 100},
-	{"text": "Stocks rise! Receive $150", "action": "gain", "amount": 150},
-	{"text": "Insurance payout! Receive $100", "action": "gain", "amount": 100},
-	{"text": "Traffic fine! Pay $50", "action": "lose", "amount": 50},
-	{"text": "House repairs! Pay $100", "action": "lose", "amount": 100},
-	{"text": "Hospital bill! Pay $75", "action": "lose", "amount": 75},
-	{"text": "Advance to GO and receive $200", "action": "move_to_go"},
-	{"text": "Go directly to Jail. Do not pass GO.", "action": "go_jail"},
-	{"text": "Move back 3 spaces", "action": "move_back", "steps": 3},
-	{"text": "Go to the nearest station", "action": "move_nearest_railroad"},
-	{"text": "Get out of Jail free", "action": "get_card"},
-	{"text": "Birthday! Every player pays you $25", "action": "birthday", "amount": 25},
-	{"text": "Rental bonus! Receive $25", "action": "gain", "amount": 25},
-	{"text": "School fee! Pay $150", "action": "lose", "amount": 150},
-	{"text": "Lottery win! Receive $200", "action": "gain", "amount": 200},
-	{"text": "Market boom! Current property price increases by $50", "action": "modify_current_price", "amount": 50},
-	{"text": "Rent demand rises! Current property rent increases by $20", "action": "modify_current_rent", "amount": 20},
+	{"title": "Nhận thưởng dự án", "text": "Dự án mới sinh lời. Nhận $200.", "action": "gain", "amount": 200, "icon": "money"},
+	{"title": "Trúng vé số", "text": "Bạn trúng giải may mắn. Nhận $300.", "action": "gain", "amount": 300, "icon": "gift"},
+	{"title": "Phí bảo trì", "text": "Đóng phí bảo trì bất ngờ $100.", "action": "lose", "amount": 100, "icon": "tax"},
+	{"title": "Về Khởi Hành", "text": "Đi đến ô Bắt đầu và nhận $200.", "action": "move_to_go", "icon": "go"},
+	{"title": "Tiến 3 bước", "text": "Tiến lên 3 bước theo chiều đi.", "action": "move_forward", "steps": 3, "icon": "arrow"},
+	{"title": "Lùi 2 bước", "text": "Lùi lại 2 bước.", "action": "move_back", "steps": 2, "icon": "arrow"},
+	{"title": "Thưởng thành phố", "text": "Chiến dịch quảng bá thắng lớn. Nhận $120.", "action": "gain", "amount": 120, "icon": "city"},
+	{"title": "Du lịch biển", "text": "Tour nghỉ dưỡng được tài trợ. Nhận $80.", "action": "gain", "amount": 80, "icon": "palm"},
+	{"title": "Đi thẳng đến Nhà tù", "text": "Bạn bị yêu cầu vào Nhà tù ngay.", "action": "go_jail", "icon": "jail"},
+	{"title": "Thoát tù miễn phí", "text": "Giữ thẻ này để thoát tù một lần.", "action": "get_card", "icon": "shield"},
+	{"title": "Thu từ mỗi người chơi", "text": "Mỗi người chơi trả bạn $50.", "action": "birthday", "amount": 50, "icon": "token"},
+	{"title": "Trả cho mỗi người chơi", "text": "Bạn trả $50 cho mỗi người chơi.", "action": "lose", "amount": 50, "icon": "money"},
+	{"title": "Nâng cấp miễn phí", "text": "Giá khu đất hiện tại tăng $60.", "action": "modify_current_price", "amount": 60, "icon": "home"},
+	{"title": "Cải tạo tài sản", "text": "Tiền thuê khu đất hiện tại tăng $40.", "action": "modify_current_rent", "amount": 40, "icon": "home"},
+	{"title": "Tư vấn tài chính", "text": "Hợp đồng tư vấn thành công. Nhận $120.", "action": "gain", "amount": 120, "icon": "money"},
+	{"title": "Mất ví", "text": "Bạn làm rơi ví trên đường. Trả $80.", "action": "lose", "amount": 80, "icon": "tax"},
+	{"title": "Bán cổ phần", "text": "Bán cổ phần sinh lời. Nhận $180.", "action": "gain", "amount": 180, "icon": "money"},
+	{"title": "Đóng thuế thu nhập", "text": "Nộp thuế thu nhập $150.", "action": "lose", "amount": 150, "icon": "tax"},
+	{"title": "Quà đối tác", "text": "Đối tác gửi quà tri ân. Nhận $100.", "action": "gain", "amount": 100, "icon": "gift"},
+	{"title": "Chi phí đi lại", "text": "Thanh toán chi phí đi lại $60.", "action": "lose", "amount": 60, "icon": "car"},
+	{"title": "Ô Cơ hội gần nhất", "text": "Một cơ hội mới mở ra. Nhận $90.", "action": "gain", "amount": 90, "icon": "chance"},
+	{"title": "Ô Khí vận gần nhất", "text": "Gió đổi chiều, bạn nhận $70.", "action": "gain", "amount": 70, "icon": "wind"},
+	{"title": "Đất trống gần nhất", "text": "Tin môi giới tốt. Giá khu đất hiện tại tăng $50.", "action": "modify_current_price", "amount": 50, "icon": "home"},
+	{"title": "Khu đất đắt giá", "text": "Tiền thuê khu đất hiện tại tăng $30.", "action": "modify_current_rent", "amount": 30, "icon": "home"},
+	{"title": "Thuê gấp đôi", "text": "Nhu cầu tăng mạnh. Tiền thuê khu đất hiện tại tăng $50.", "action": "modify_current_rent", "amount": 50, "icon": "money"},
+	{"title": "Miễn trả tiền thuê", "text": "Nhận một thẻ thoát tù miễn phí.", "action": "get_card", "icon": "shield"},
+	{"title": "Tung xúc xắc lại", "text": "May mắn mỉm cười. Nhận $60.", "action": "gain", "amount": 60, "icon": "dice"},
+	{"title": "Kiểm tra sổ sách", "text": "Bị kiểm tra sổ sách. Trả $110.", "action": "lose", "amount": 110, "icon": "tax"},
+	{"title": "Sửa chữa nhà cửa", "text": "Bảo trì tài sản. Trả $90.", "action": "lose", "amount": 90, "icon": "home"},
+	{"title": "Hoàn thuế", "text": "Được hoàn thuế $150.", "action": "gain", "amount": 150, "icon": "tax"},
+	{"title": "Hợp đồng lớn", "text": "Ký hợp đồng lớn. Nhận $250.", "action": "gain", "amount": 250, "icon": "money"},
+	{"title": "Từ thiện cộng đồng", "text": "Ủng hộ cộng đồng $120.", "action": "lose", "amount": 120, "icon": "gift"},
+	{"title": "Thưởng sinh nhật", "text": "Bạn nhận quà sinh nhật $80.", "action": "gain", "amount": 80, "icon": "gift"},
+	{"title": "Mua sắm xa xỉ", "text": "Mua sắm quá tay. Trả $90.", "action": "lose", "amount": 90, "icon": "tax"},
+	{"title": "Cầu vàng", "text": "Chuyến đi truyền cảm hứng. Nhận $140.", "action": "gain", "amount": 140, "icon": "bridge"},
+	{"title": "Sapa gọi mời", "text": "Đầu tư du lịch vùng cao. Nhận $130.", "action": "gain", "amount": 130, "icon": "mountain"},
+	{"title": "Hoán đổi vận may", "text": "Lùi 3 bước để đổi vận.", "action": "move_back", "steps": 3, "icon": "arrow"},
+	{"title": "Lá chắn may mắn", "text": "Nhận thẻ thoát tù miễn phí.", "action": "get_card", "icon": "shield"},
+	{"title": "Thuê xe riêng", "text": "Tiến đến ga gần nhất.", "action": "move_nearest_railroad", "icon": "car"},
+	{"title": "Cơ hội vàng", "text": "Chọn một người chơi trả bạn $200.", "action": "birthday", "amount": 200, "icon": "trophy"},
 ]
 
 var community_cards = [
-	{"text": "Inheritance! Receive $200", "action": "gain", "amount": 200},
-	{"text": "Tax refund! Receive $75", "action": "gain", "amount": 75},
-	{"text": "Sold shares! Receive $45", "action": "gain", "amount": 45},
-	{"text": "Hospital expenses! Pay $100", "action": "lose", "amount": 100},
-	{"text": "Legal fees! Pay $50", "action": "lose", "amount": 50},
-	{"text": "Scholarship fund! Receive $50", "action": "gain", "amount": 50},
-	{"text": "Bank error! Receive $75", "action": "gain", "amount": 75},
-	{"text": "Go directly to Jail", "action": "go_jail"},
-	{"text": "Get out of Jail free", "action": "get_card"},
-	{"text": "Prize draw! Receive $100", "action": "gain", "amount": 100},
-	{"text": "Medicine bill! Pay $50", "action": "lose", "amount": 50},
-	{"text": "Holiday gift! Receive $100", "action": "gain", "amount": 100},
-	{"text": "Street repairs! Pay $40", "action": "lose", "amount": 40},
-	{"text": "Sales bonus! Receive $50", "action": "gain", "amount": 50},
-	{"text": "Advance to GO", "action": "move_to_go"},
-	{"text": "Your birthday! Every player pays you $10", "action": "birthday", "amount": 10},
-	{"text": "Local prices fall! Current property price decreases by $50", "action": "modify_current_price", "amount": -50},
-	{"text": "Quiet season! Current property rent decreases by $20", "action": "modify_current_rent", "amount": -20},
+	{"title": "Lộc đầu năm", "text": "May mắn đầu năm. Nhận $100.", "action": "gain", "amount": 100, "icon": "trophy"},
+	{"title": "Mùa du lịch", "text": "Kinh doanh mùa du lịch thắng lợi. Nhận $180.", "action": "gain", "amount": 180, "icon": "palm"},
+	{"title": "Người thân hỗ trợ", "text": "Gia đình hỗ trợ bạn $120.", "action": "gain", "amount": 120, "icon": "token"},
+	{"title": "Gặp quý nhân", "text": "Quý nhân chỉ đường. Nhận $200.", "action": "gain", "amount": 200, "icon": "gift"},
+	{"title": "Xui xẻo nhỏ", "text": "Một chuyện không may. Trả $50.", "action": "lose", "amount": 50, "icon": "storm"},
+	{"title": "Hao tài", "text": "Chi tiêu phát sinh. Trả $100.", "action": "lose", "amount": 100, "icon": "money"},
+	{"title": "Ốm nhẹ", "text": "Nghỉ dưỡng và thanh toán $70.", "action": "lose", "amount": 70, "icon": "heart"},
+	{"title": "Sức khỏe dồi dào", "text": "Tinh thần tốt. Nhận $80.", "action": "gain", "amount": 80, "icon": "heart"},
+	{"title": "Vía tốt", "text": "Tung lại vận may. Nhận $90.", "action": "gain", "amount": 90, "icon": "dice"},
+	{"title": "Bình an", "text": "Nhận thẻ thoát tù miễn phí.", "action": "get_card", "icon": "shield"},
+	{"title": "Hồng phát", "text": "Làm ăn hồng phát. Nhận $300.", "action": "gain", "amount": 300, "icon": "gift"},
+	{"title": "Mất khách", "text": "Mùa thấp điểm. Tiền thuê khu đất hiện tại giảm $30.", "action": "modify_current_rent", "amount": -30, "icon": "home"},
+	{"title": "Khuyến mãi lớn", "text": "Giá khu đất hiện tại tăng $40.", "action": "modify_current_price", "amount": 40, "icon": "money"},
+	{"title": "Đón lễ hội", "text": "Mỗi người chơi trả bạn $30.", "action": "birthday", "amount": 30, "icon": "gift"},
+	{"title": "Làm từ thiện", "text": "Bạn quyên góp $90.", "action": "lose", "amount": 90, "icon": "heart"},
+	{"title": "Cơ hội đầu tư", "text": "Giá khu đất hiện tại giảm $30.", "action": "modify_current_price", "amount": -30, "icon": "money"},
+	{"title": "Vận đen", "text": "Lùi 3 bước.", "action": "move_back", "steps": 3, "icon": "storm"},
+	{"title": "Vận đỏ", "text": "Tiến 4 bước.", "action": "move_forward", "steps": 4, "icon": "arrow"},
+	{"title": "Cầu may thành công", "text": "Nhận thêm $110.", "action": "gain", "amount": 110, "icon": "chance"},
+	{"title": "Kẹt xe", "text": "Bỏ lỡ cơ hội, trả $40.", "action": "lose", "amount": 40, "icon": "car"},
+	{"title": "Quý nhân dẫn đường", "text": "Đi đến ga gần nhất.", "action": "move_nearest_railroad", "icon": "token"},
+	{"title": "Mưa bão", "text": "Sửa chữa sau mưa bão. Trả $80.", "action": "lose", "amount": 80, "icon": "storm"},
+	{"title": "Giải ẩm thực", "text": "Thắng giải địa phương. Nhận $140.", "action": "gain", "amount": 140, "icon": "trophy"},
+	{"title": "Bảo hiểm", "text": "Đền bù bảo hiểm. Nhận $160.", "action": "gain", "amount": 160, "icon": "shield"},
+	{"title": "Mất hành lý", "text": "Mất hành lý khi đi xa. Trả $70.", "action": "lose", "amount": 70, "icon": "gift"},
+	{"title": "Quà online", "text": "Trúng quà online. Nhận $90.", "action": "gain", "amount": 90, "icon": "gift"},
+	{"title": "Bị phạt", "text": "Bị phạt vi phạm. Trả $110.", "action": "lose", "amount": 110, "icon": "tax"},
+	{"title": "Phúc bất tận", "text": "Nhận thẻ thoát tù miễn phí.", "action": "get_card", "icon": "shield"},
+	{"title": "Vượng khí", "text": "Tiền thuê khu đất hiện tại tăng $50.", "action": "modify_current_rent", "amount": 50, "icon": "money"},
+	{"title": "Bình ổn giá", "text": "Được miễn một khoản phí. Nhận $75.", "action": "gain", "amount": 75, "icon": "tax"},
+	{"title": "Đêm không may", "text": "Vào Nhà tù ngay.", "action": "go_jail", "icon": "jail"},
+	{"title": "Ánh sao dẫn lối", "text": "Đi đến ô Bắt đầu và nhận $200.", "action": "move_to_go", "icon": "trophy"},
+	{"title": "Tài lộc sum vầy", "text": "Nhận $50 cho mỗi khu đất đang sở hữu.", "action": "gain", "amount": 150, "icon": "money"},
+	{"title": "Khó khăn tài chính", "text": "Thế chấp tạm thời. Trả $150.", "action": "lose", "amount": 150, "icon": "tax"},
+	{"title": "Thu hoạch lớn", "text": "Mùa vụ thắng lợi. Nhận $220.", "action": "gain", "amount": 220, "icon": "gift"},
+	{"title": "Bạn bè giúp sức", "text": "Bạn bè hỗ trợ thoát tù miễn phí.", "action": "get_card", "icon": "token"},
+	{"title": "May mắn bất ngờ", "text": "Nhận $150.", "action": "gain", "amount": 150, "icon": "chance"},
+	{"title": "Sao quả tạ", "text": "Trả $150 hoặc lùi bước, bạn trả $150.", "action": "lose", "amount": 150, "icon": "storm"},
+	{"title": "Vận quý nhân", "text": "Giảm rủi ro. Tiền thuê khu đất hiện tại tăng $20.", "action": "modify_current_rent", "amount": 20, "icon": "shield"},
+	{"title": "Đại cát đại lợi", "text": "Nhận ngay $500.", "action": "gain", "amount": 500, "icon": "trophy"},
 ]
 
 var _chance_deck: Array = []
@@ -61,20 +105,43 @@ func _shuffle_decks():
 	_chance_deck.shuffle()
 	_community_deck = community_cards.duplicate()
 	_community_deck.shuffle()
+	_notify_deck_counts()
+
+
+func get_deck_counts() -> Dictionary:
+	return {
+		"chance": _chance_deck.size(),
+		"chance_total": chance_cards.size(),
+		"community": _community_deck.size(),
+		"community_total": community_cards.size(),
+	}
+
+
+func refresh_board_deck_counts() -> void:
+	_notify_deck_counts()
 
 
 func _draw_chance() -> Dictionary:
 	if _chance_deck.is_empty():
 		_chance_deck = chance_cards.duplicate()
 		_chance_deck.shuffle()
-	return _chance_deck.pop_front()
+	var card = _chance_deck.pop_front()
+	_notify_deck_counts()
+	return card
 
 
 func _draw_community() -> Dictionary:
 	if _community_deck.is_empty():
 		_community_deck = community_cards.duplicate()
 		_community_deck.shuffle()
-	return _community_deck.pop_front()
+	var card = _community_deck.pop_front()
+	_notify_deck_counts()
+	return card
+
+
+func _notify_deck_counts() -> void:
+	if game_controller and game_controller.board and game_controller.board.has_method("update_event_deck_counts"):
+		game_controller.board.update_event_deck_counts(get_deck_counts())
 
 
 func handle_event(player: Player, cell: Cell) -> bool:
@@ -82,18 +149,20 @@ func handle_event(player: Player, cell: Cell) -> bool:
 		"chance":
 			var card = _draw_chance()
 			game_controller.ui.play_sfx(GameUI.SFX_CARD)
+			game_controller.ui.add_history(player.name + " rút Cơ hội: " + str(card.get("title", "")), Color("#E65100"))
 			var amount = card.get("amount", 0)
 			var display_amount = amount if card.get("action", "") != "lose" else -amount
-			await game_controller.ui.show_card_and_wait("CHANCE", card.text, Color(1.0, 0.6, 0.2), display_amount)
+			await game_controller.ui.show_event_card_and_wait("CƠ HỘI", card, Color("#F4A000"), display_amount, get_deck_counts())
 			await _process_card(player, card)
 			return true
 
 		"community":
 			var card = _draw_community()
 			game_controller.ui.play_sfx(GameUI.SFX_CARD)
+			game_controller.ui.add_history(player.name + " rút Khí vận: " + str(card.get("title", "")), Color("#0B6B38"))
 			var amount = card.get("amount", 0)
 			var display_amount = amount if card.get("action", "") != "lose" else -amount
-			await game_controller.ui.show_card_and_wait("COMMUNITY", card.text, Color(0.4, 0.7, 1.0), display_amount)
+			await game_controller.ui.show_event_card_and_wait("KHÍ VẬN", card, Color("#159947"), display_amount, get_deck_counts())
 			await _process_card(player, card)
 			return true
 
@@ -160,6 +229,14 @@ func _process_card(player: Player, card: Dictionary):
 			await _show_arrival(player, new_pos)
 			call_deferred("_handle_cell_after_move", player, new_pos)
 
+		"move_forward":
+			var steps = card.get("steps", 3)
+			var new_pos = (player.state.position + steps) % game_controller.game_state.board_size
+			game_controller.ui.show_message(player.name + " di chuyen do su kien: " + card.text)
+			await game_controller.move_player_to_position(player, new_pos)
+			await _show_arrival(player, new_pos)
+			call_deferred("_handle_cell_after_move", player, new_pos)
+
 		"move_nearest_railroad":
 			var nearest = _find_nearest_railroad(player.state.position)
 			if player.state.position > nearest:
@@ -188,6 +265,8 @@ func _process_card(player: Player, card: Dictionary):
 						player.add_money(gift)
 						total_received += gift
 			game_controller.ui.show_message(player.name + " nhan $" + str(total_received) + " qua sinh nhat!")
+			game_controller.ui.add_history(player.name + " nhận $" + str(total_received) + " từ người chơi khác", Color("#1B5E20"))
+			game_controller.ui.show_money_float(total_received, player.token)
 			call_deferred("emit_signal", "event_finished")
 
 		"modify_current_price":
@@ -221,6 +300,8 @@ func _apply_modifier_card(player: Player, card: Dictionary, target: String):
 		game_controller.ui.show_message(cell.cell_name + " thay doi tien thue: " + _format_signed(amount))
 	cell.play_land_effect()
 	cell.queue_redraw()
+	if game_controller and game_controller.board:
+		game_controller.board.update_cell_tooltips()
 
 
 func _format_signed(amount: int) -> String:

@@ -24,6 +24,7 @@ func get_event_handler() -> EventHandler:
 	if event_handler == null:
 		event_handler = EventHandler.new(self)
 		add_child(event_handler)
+		event_handler.refresh_board_deck_counts()
 	return event_handler
 
 
@@ -43,6 +44,7 @@ func start_turn():
 	print("Người chơi: ", player.name, " | Vị trí: ", player.state.position, " | Tiền: $", player.state.balance)
 	ui.show_turn(player.player_id)
 	ui.show_message("Den luot " + player.name + " | Turn " + str(game_state.turn_number))
+	ui.add_history("Lượt " + str(game_state.turn_number) + ": đến lượt " + player.name, Color("#06336F"))
 	ui.update_player_info(game_state.players)
 
 	if player.state.in_jail:
@@ -324,6 +326,7 @@ func handle_landed_cell(player: Player, cell_index: int):
 		return
 
 	print(player.name, " đáp xuống: ", cell.cell_name, " (", cell.cell_type, ")")
+	ui.add_history(player.name + " đến ô " + cell.cell_name, Color("#2E2A22"))
 	cell.play_land_effect()
 
 	# --- Ô sự kiện ---
@@ -389,9 +392,12 @@ func buy_property(player: Player, cell: Cell):
 
 	ui.play_sfx(GameUI.SFX_BUY)
 	ui.show_message(player.name + " mua " + cell.cell_name + " ($" + str(purchase_price) + ")")
+	ui.add_history(player.name + " mua " + cell.cell_name + " (-$" + str(purchase_price) + ")", Color("#0D47A1"))
+	ui.show_money_float(-purchase_price, player.token)
 	print(player.name, " đã mua: ", cell.cell_name)
 
 	cell.play_buy_effect()
+	board.update_cell_tooltips()
 	ui.update_player_info(game_state.players)
 
 
@@ -408,6 +414,8 @@ func build_on_property(player: Player, cell: Cell) -> bool:
 		ui.play_sfx(GameUI.SFX_BUILD)
 		cell.play_upgrade_effect()
 		ui.show_message("Nang cap thanh cong: " + cell.cell_name + " -> " + cell.get_build_level_name())
+		ui.add_history(player.name + " nâng cấp " + cell.cell_name + " -> " + cell.get_build_level_name(), Color("#1B5E20"))
+		board.update_cell_tooltips()
 		ui.update_player_info(game_state.players)
 	return ok
 
@@ -420,6 +428,8 @@ func sell_house_on_property(player: Player, cell: Cell) -> bool:
 	var ok = cell.sell_house()
 	if ok:
 		ui.show_message("Da ban bot cong trinh tren " + cell.cell_name)
+		ui.add_history(player.name + " bán bớt công trình trên " + cell.cell_name, Color("#6D4C41"))
+		board.update_cell_tooltips()
 	else:
 		ui.show_message("Chua the ban cong trinh tren " + cell.cell_name)
 	ui.update_player_info(game_state.players)
@@ -434,6 +444,9 @@ func mortgage_property(player: Player, cell: Cell) -> bool:
 	var amount = cell.mortgage_property()
 	if amount > 0:
 		ui.show_message("The chap " + cell.cell_name + " nhan $" + str(amount))
+		ui.add_history(player.name + " thế chấp " + cell.cell_name + " (+$" + str(amount) + ")", Color("#6D4C41"))
+		ui.show_money_float(amount, player.token)
+		board.update_cell_tooltips()
 	else:
 		ui.show_message("Chua the the chap " + cell.cell_name)
 	ui.update_player_info(game_state.players)
@@ -448,6 +461,8 @@ func unmortgage_property(player: Player, cell: Cell) -> bool:
 	var ok = cell.unmortgage_property()
 	if ok:
 		ui.show_message("Da giai chap " + cell.cell_name)
+		ui.add_history(player.name + " giải chấp " + cell.cell_name, Color("#6D4C41"))
+		board.update_cell_tooltips()
 	else:
 		ui.show_message("Chua the giai chap " + cell.cell_name)
 	ui.update_player_info(game_state.players)
@@ -463,6 +478,8 @@ func build_protection_tower_for_current_player(cell: Cell) -> bool:
 	if ok:
 		ui.play_sfx(GameUI.SFX_BUILD)
 		ui.show_message("Da xay thap bao ve tren " + cell.cell_name)
+		ui.add_history(player.name + " xây tháp bảo vệ trên " + cell.cell_name, Color("#1B5E20"))
+		board.update_cell_tooltips()
 	else:
 		ui.show_message("Chua the xay thap bao ve tren " + cell.cell_name)
 	ui.update_player_info(game_state.players)
@@ -561,6 +578,9 @@ func run_auction(cell: Cell):
 		cell.cell_owner = highest_bidder
 		highest_bidder.add_property(cell)
 		cell.play_buy_effect()
+		ui.show_money_float(-highest_bid, highest_bidder.token)
+		ui.add_history(highest_bidder.name + " thắng đấu giá " + cell.cell_name + " (-$" + str(highest_bid) + ")", Color("#0D47A1"))
+		board.update_cell_tooltips()
 
 		ui.show_message(highest_bidder.name + " thắng đấu giá " + cell.cell_name + " với $" + str(highest_bid))
 		print(highest_bidder.name, " thắng đấu giá: ", cell.cell_name, " - $", highest_bid)
@@ -579,6 +599,8 @@ func process_reward(player: Player, amount: int = 200):
 	player.add_money(amount)
 	ui.play_sfx(GameUI.SFX_REWARD)
 	ui.show_message(player.name + " nhận $" + str(amount))
+	ui.add_history(player.name + " nhận $" + str(amount), Color("#1B5E20"))
+	ui.show_money_float(amount, player.token)
 
 
 func process_payment(payer: Player, beneficiary: Player, amount: int, reason: String):
@@ -591,9 +613,14 @@ func process_payment(payer: Player, beneficiary: Player, amount: int, reason: St
 func execute_transaction(payer: Player, beneficiary: Player, amount: int):
 	payer.deduct_money(amount)
 	ui.play_sfx(GameUI.SFX_PAY)
+	ui.show_money_float(-amount, payer.token, beneficiary.token if beneficiary else null)
 
 	if beneficiary:
 		beneficiary.add_money(amount)
+		ui.show_money_float(amount, beneficiary.token)
+		ui.add_history(payer.name + " trả $" + str(amount) + " cho " + beneficiary.name, Color("#B71C1C"))
+	else:
+		ui.add_history(payer.name + " trả $" + str(amount), Color("#B71C1C"))
 
 	emit_signal("turn_action_completed")
 
