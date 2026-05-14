@@ -15,6 +15,9 @@ var is_rolling := false
 # Untyped để tránh circular dependency với EventHandler.gd
 var _event_handler = null
 
+func get_players() -> Array:
+	return game_state.players
+
 func get_event_handler():
 	if _event_handler == null:
 		_event_handler = EventHandler.new(self)
@@ -395,13 +398,13 @@ func get_game_state_snapshot() -> Array:
 	return snapshot
 
 
-func process_payment(payer: Player, receiver: Player, amount: int, _reason: String):
-	if payer.state.balance >= amount:
-		payer.deduct_money(amount)
+func process_payment(player: Player, receiver: Player, amount: int, _reason: String):
+	if player.state.balance >= amount:
+		player.deduct_money(amount)
 		if receiver:
 			receiver.add_money(amount)
 	else:
-		handle_insufficient_funds(payer, receiver, amount)
+		handle_insufficient_funds(player, receiver, amount)
 	emit_signal("turn_action_completed")
 
 

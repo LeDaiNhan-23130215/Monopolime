@@ -2,7 +2,7 @@ extends Cell
 class_name SpecialCell
 
 
-func on_land(player: Player):
+func on_land(player):
 
 	match data.cell_type:
 
