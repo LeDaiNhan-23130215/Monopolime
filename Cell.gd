@@ -418,7 +418,7 @@ func _draw():
 	draw_rect(Rect2(0, 0, cell_rect_size.x, cell_rect_size.y), bg_color)
 
 	# --- Viền ô ---
-	var border_color = Color("#D4BCA0") # Lighter brown/gray border instead of dark
+	var border_color = Color("#1F1F1F")
 	draw_rect(Rect2(0, 0, cell_rect_size.x, cell_rect_size.y), border_color, false, 3.0)
 
 	# --- Thanh màu nhóm (hướng vào tâm bàn cờ) ---
@@ -483,6 +483,8 @@ func _draw():
 		)
 
 	# --- Vẽ nhà ---
+	_draw_cell_illustration()
+
 	var house_base_y = 26
 	if cell_side == "bottom": house_base_y = 12
 	elif cell_side == "top": house_base_y = cell_rect_size.y - 20
@@ -538,46 +540,255 @@ func _draw():
 		draw_string(ThemeDB.fallback_font, Vector2(6, 50), modifier_text, HORIZONTAL_ALIGNMENT_LEFT, 90, 8, Color(1.0, 0.9, 0.25))
 
 	# --- Vẽ icon đặc biệt ---
-	if cell_type != "property" and icon != "":
-		draw_string(
-			ThemeDB.fallback_font,
-			Vector2(cell_rect_size.x / 2 - 40, cell_rect_size.y / 2 + 25),
-			icon,
-			HORIZONTAL_ALIGNMENT_CENTER,
-			80,
-			70
-		)
 
 	# --- Hiệu ứng nhấp nháy khi có sự kiện (như mua đất) ---
 	if effect_alpha > 0.0:
 		draw_rect(Rect2(0, 0, cell_rect_size.x, cell_rect_size.y), Color(effect_color.r, effect_color.g, effect_color.b, effect_alpha))
 
 
+func _draw_cell_illustration() -> void:
+	var center := _illustration_center()
+	var radius: float = min(cell_rect_size.x, cell_rect_size.y) * (0.32 if cell_side == "corner" else 0.27)
+	var kind := cell_type
+	var accent := _illustration_color(kind)
+
+	draw_circle(center + Vector2(2, 3), radius + 6, Color(0, 0, 0, 0.18))
+	draw_circle(center, radius + 6, Color("#FFFDF4"))
+	draw_arc(center, radius + 6, 0.0, TAU, 36, Color("#252525"), 2.2, true)
+
+	match kind:
+		"go":
+			_draw_go_icon(center, radius, accent)
+		"railroad":
+			_draw_train_icon(center, radius, accent)
+		"utility":
+			_draw_utility_icon(center, radius, accent)
+		"tax":
+			_draw_tax_icon(center, radius, accent)
+		"chance":
+			_draw_question_icon(center, radius, accent)
+		"community":
+			_draw_chest_icon(center, radius, accent)
+		"jail":
+			_draw_jail_icon(center, radius, accent)
+		"go_to_jail":
+			_draw_go_to_jail_icon(center, radius, accent)
+		"parking":
+			_draw_parking_icon(center, radius, accent)
+		"teleport":
+			_draw_teleport_icon(center, radius, accent)
+		_:
+			_draw_property_icon(center, radius, accent)
+
+
+func _illustration_center() -> Vector2:
+	match cell_side:
+		"top":
+			return Vector2(cell_rect_size.x * 0.5, cell_rect_size.y * 0.56)
+		"bottom":
+			return Vector2(cell_rect_size.x * 0.5, cell_rect_size.y * 0.39)
+		"left":
+			return Vector2(cell_rect_size.x * 0.57, cell_rect_size.y * 0.50)
+		"right":
+			return Vector2(cell_rect_size.x * 0.43, cell_rect_size.y * 0.50)
+		_:
+			return Vector2(cell_rect_size.x * 0.5, cell_rect_size.y * 0.54)
+
+
+func _illustration_color(kind: String) -> Color:
+	match kind:
+		"go":
+			return Color("#4CAF50")
+		"railroad":
+			return Color("#74B9D6")
+		"utility":
+			return Color("#FFD23F")
+		"tax", "chance":
+			return Color("#F05B4F")
+		"community":
+			return Color("#59B6E8")
+		"jail":
+			return Color("#F4A142")
+		"go_to_jail":
+			return Color("#7E57C2")
+		"parking":
+			return Color("#35B779")
+		"teleport":
+			return Color("#35CFE0")
+		"property":
+			return _get_group_color()
+	return _get_group_color() if color_group != "" else Color("#7DB7E8")
+
+
+func _stroke_polygon(points: PackedVector2Array, color: Color = Color("#252525"), width: float = 2.0) -> void:
+	if points.size() < 2:
+		return
+	for i in range(points.size()):
+		draw_line(points[i], points[(i + 1) % points.size()], color, width)
+
+
+func _draw_property_icon(center: Vector2, radius: float, color: Color) -> void:
+	var w := radius * 1.45
+	var h := radius * 0.78
+	var base := Rect2(center.x - w * 0.5, center.y - h * 0.05, w, h)
+	draw_rect(Rect2(base.position + Vector2(2, 2), base.size), Color(0, 0, 0, 0.20))
+	draw_rect(base, color.lightened(0.18))
+	draw_rect(base, Color("#252525"), false, 2.0)
+	var roof := PackedVector2Array([
+		Vector2(center.x - w * 0.62, center.y),
+		Vector2(center.x, center.y - radius * 0.70),
+		Vector2(center.x + w * 0.62, center.y),
+	])
+	draw_colored_polygon(roof, color.darkened(0.18))
+	_stroke_polygon(roof)
+	draw_rect(Rect2(center.x - radius * 0.14, center.y + radius * 0.22, radius * 0.28, radius * 0.46), Color("#FFF3C4"))
+	draw_rect(Rect2(center.x - radius * 0.14, center.y + radius * 0.22, radius * 0.28, radius * 0.46), Color("#252525"), false, 1.6)
+	draw_rect(Rect2(center.x - radius * 0.42, center.y + radius * 0.18, radius * 0.20, radius * 0.20), Color("#E8F6FF"))
+	draw_rect(Rect2(center.x + radius * 0.22, center.y + radius * 0.18, radius * 0.20, radius * 0.20), Color("#E8F6FF"))
+
+
+func _draw_train_icon(center: Vector2, radius: float, color: Color) -> void:
+	var body := Rect2(center.x - radius * 0.66, center.y - radius * 0.35, radius * 1.32, radius * 0.75)
+	draw_rect(Rect2(body.position + Vector2(2, 2), body.size), Color(0, 0, 0, 0.18))
+	draw_rect(body, color)
+	draw_rect(body, Color("#252525"), false, 2.0)
+	draw_rect(Rect2(center.x - radius * 0.46, center.y - radius * 0.22, radius * 0.32, radius * 0.28), Color("#E8F6FF"))
+	draw_rect(Rect2(center.x + radius * 0.10, center.y - radius * 0.22, radius * 0.32, radius * 0.28), Color("#E8F6FF"))
+	draw_circle(center + Vector2(-radius * 0.38, radius * 0.46), radius * 0.16, Color("#252525"))
+	draw_circle(center + Vector2(radius * 0.38, radius * 0.46), radius * 0.16, Color("#252525"))
+	draw_line(center + Vector2(-radius * 0.76, radius * 0.66), center + Vector2(radius * 0.76, radius * 0.66), Color("#252525"), 2.0)
+
+
+func _draw_utility_icon(center: Vector2, radius: float, color: Color) -> void:
+	if cell_name.to_lower().find("water") >= 0:
+		var drop := PackedVector2Array([
+			Vector2(center.x, center.y - radius * 0.68),
+			Vector2(center.x - radius * 0.48, center.y + radius * 0.08),
+			Vector2(center.x - radius * 0.25, center.y + radius * 0.58),
+			Vector2(center.x, center.y + radius * 0.72),
+			Vector2(center.x + radius * 0.25, center.y + radius * 0.58),
+			Vector2(center.x + radius * 0.48, center.y + radius * 0.08),
+		])
+		draw_colored_polygon(drop, Color("#4FC3F7"))
+		_stroke_polygon(drop)
+		draw_circle(center + Vector2(radius * 0.15, radius * 0.15), radius * 0.10, Color("#E8F6FF"))
+	else:
+		draw_circle(center + Vector2(0, -radius * 0.16), radius * 0.42, color)
+		draw_arc(center + Vector2(0, -radius * 0.16), radius * 0.42, 0.0, TAU, 28, Color("#252525"), 2.0, true)
+		draw_rect(Rect2(center.x - radius * 0.20, center.y + radius * 0.22, radius * 0.40, radius * 0.32), Color("#6D4C41"))
+		draw_rect(Rect2(center.x - radius * 0.20, center.y + radius * 0.22, radius * 0.40, radius * 0.32), Color("#252525"), false, 2.0)
+		for i in range(3):
+			draw_line(center + Vector2(-radius * 0.18 + i * radius * 0.18, radius * 0.35), center + Vector2(-radius * 0.10 + i * radius * 0.18, radius * 0.35), Color("#FFF3C4"), 2.0)
+
+
+func _draw_tax_icon(center: Vector2, radius: float, color: Color) -> void:
+	var note := Rect2(center.x - radius * 0.55, center.y - radius * 0.58, radius * 1.10, radius * 1.16)
+	draw_rect(Rect2(note.position + Vector2(2, 2), note.size), Color(0, 0, 0, 0.18))
+	draw_rect(note, Color("#FFF3C4"))
+	draw_rect(note, Color("#252525"), false, 2.0)
+	draw_string(ThemeDB.fallback_font, center + Vector2(-radius * 0.33, radius * 0.20), "$", HORIZONTAL_ALIGNMENT_CENTER, radius * 0.66, int(radius * 0.95), color)
+	draw_line(center + Vector2(-radius * 0.35, -radius * 0.35), center + Vector2(radius * 0.35, -radius * 0.35), color, 2.0)
+	draw_line(center + Vector2(-radius * 0.35, radius * 0.42), center + Vector2(radius * 0.35, radius * 0.42), color, 2.0)
+
+
+func _draw_question_icon(center: Vector2, radius: float, color: Color) -> void:
+	draw_string(ThemeDB.fallback_font, center + Vector2(-radius * 0.62, radius * 0.48), "?", HORIZONTAL_ALIGNMENT_CENTER, radius * 1.25, int(radius * 1.75), color)
+	draw_circle(center + Vector2(radius * 0.34, -radius * 0.42), radius * 0.13, Color("#FFF176"))
+	draw_circle(center + Vector2(-radius * 0.42, radius * 0.35), radius * 0.10, Color("#64B5F6"))
+
+
+func _draw_chest_icon(center: Vector2, radius: float, color: Color) -> void:
+	var box := Rect2(center.x - radius * 0.62, center.y - radius * 0.12, radius * 1.24, radius * 0.68)
+	var lid := Rect2(center.x - radius * 0.58, center.y - radius * 0.48, radius * 1.16, radius * 0.44)
+	draw_rect(Rect2(box.position + Vector2(2, 2), box.size), Color(0, 0, 0, 0.18))
+	draw_rect(box, color)
+	draw_rect(lid, color.lightened(0.20))
+	draw_rect(box, Color("#252525"), false, 2.0)
+	draw_rect(lid, Color("#252525"), false, 2.0)
+	draw_rect(Rect2(center.x - radius * 0.12, center.y - radius * 0.15, radius * 0.24, radius * 0.32), Color("#FFD54F"))
+
+
+func _draw_jail_icon(center: Vector2, radius: float, color: Color) -> void:
+	var jail := Rect2(center.x - radius * 0.58, center.y - radius * 0.58, radius * 1.16, radius * 1.16)
+	draw_rect(Rect2(jail.position + Vector2(2, 2), jail.size), Color(0, 0, 0, 0.18))
+	draw_rect(jail, Color("#FFF3C4"))
+	draw_rect(jail, Color("#252525"), false, 2.0)
+	for x in [-0.36, 0.0, 0.36]:
+		draw_line(center + Vector2(radius * x, -radius * 0.54), center + Vector2(radius * x, radius * 0.54), Color("#252525"), 3.0)
+	draw_circle(center + Vector2(0, -radius * 0.16), radius * 0.16, color)
+	draw_rect(Rect2(center.x - radius * 0.22, center.y + radius * 0.05, radius * 0.44, radius * 0.36), color)
+
+
+func _draw_go_to_jail_icon(center: Vector2, radius: float, color: Color) -> void:
+	_draw_jail_icon(center + Vector2(radius * 0.22, 0), radius * 0.72, color)
+	var arrow := PackedVector2Array([
+		center + Vector2(-radius * 0.80, -radius * 0.15),
+		center + Vector2(-radius * 0.18, -radius * 0.15),
+		center + Vector2(-radius * 0.18, -radius * 0.38),
+		center + Vector2(radius * 0.22, 0),
+		center + Vector2(-radius * 0.18, radius * 0.38),
+		center + Vector2(-radius * 0.18, radius * 0.15),
+		center + Vector2(-radius * 0.80, radius * 0.15),
+	])
+	draw_colored_polygon(arrow, Color("#F44336"))
+	_stroke_polygon(arrow)
+
+
+func _draw_parking_icon(center: Vector2, radius: float, color: Color) -> void:
+	var sign := Rect2(center.x - radius * 0.55, center.y - radius * 0.60, radius * 1.10, radius * 1.08)
+	draw_rect(Rect2(sign.position + Vector2(2, 2), sign.size), Color(0, 0, 0, 0.18))
+	draw_rect(sign, color)
+	draw_rect(sign, Color("#252525"), false, 2.0)
+	draw_string(ThemeDB.fallback_font, center + Vector2(-radius * 0.36, radius * 0.28), "P", HORIZONTAL_ALIGNMENT_CENTER, radius * 0.72, int(radius * 1.2), Color.WHITE)
+	draw_line(center + Vector2(0, radius * 0.48), center + Vector2(0, radius * 0.76), Color("#252525"), 3.0)
+
+
+func _draw_go_icon(center: Vector2, radius: float, color: Color) -> void:
+	var arrow := PackedVector2Array([
+		center + Vector2(-radius * 0.70, -radius * 0.22),
+		center + Vector2(radius * 0.08, -radius * 0.22),
+		center + Vector2(radius * 0.08, -radius * 0.50),
+		center + Vector2(radius * 0.78, 0),
+		center + Vector2(radius * 0.08, radius * 0.50),
+		center + Vector2(radius * 0.08, radius * 0.22),
+		center + Vector2(-radius * 0.70, radius * 0.22),
+	])
+	draw_colored_polygon(arrow, color)
+	_stroke_polygon(arrow)
+	draw_string(ThemeDB.fallback_font, center + Vector2(-radius * 0.42, radius * 0.14), "GO", HORIZONTAL_ALIGNMENT_CENTER, radius * 0.68, int(radius * 0.42), Color.WHITE)
+
+
+func _draw_teleport_icon(center: Vector2, radius: float, color: Color) -> void:
+	draw_arc(center, radius * 0.58, 0.20, TAU * 0.82, 32, color, 5.0, true)
+	draw_arc(center, radius * 0.36, TAU * 0.10, TAU * 0.92, 32, Color("#7E57C2"), 4.0, true)
+	draw_circle(center, radius * 0.16, Color("#FFF176"))
+
+
 func _get_cell_bg_color() -> Color:
 	match cell_type:
 		"go":
-			return Color("#E2F0D9") # Light green
+			return Color("#F7FFF2")
 		"chance":
-			return Color("#FFF2CC") # Light yellow/orange
+			return Color("#FFF8E6")
 		"community":
-			return Color("#DDEBF7") # Light blue
+			return Color("#F0F8FF")
 		"tax":
-			return Color("#FCE4D6") # Light red/peach
+			return Color("#FFF0EA")
 		"jail":
-			return Color("#F8CBAD") # Light orange/red
+			return Color("#FFF1E0")
 		"go_to_jail":
-			return Color("#F4B084")
+			return Color("#FFE8D2")
 		"parking":
-			return Color("#E2EFDA")
+			return Color("#F0FFF4")
 		"railroad":
-			return Color("#EDEDED")
+			return Color("#F8FBFD")
 		"utility":
-			return Color("#F2F2F2")
+			return Color("#FFFDF2")
 		"teleport":
-			return Color("#D9E1F2")
+			return Color("#EEF6FF")
 		"property":
-			return Color("#FFF9EB") # Cream/light yellow for default property
-	return Color("#FFF9EB")
+			return Color("#FFFDF4")
+	return Color("#FFFDF4")
 
 
 func _get_group_color() -> Color:

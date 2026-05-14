@@ -18,6 +18,8 @@ extends Node2D
 
 
 func _ready():
+	RenderingServer.set_default_clear_color(Color("#BFEFFF"))
+	_add_ocean_background()
 	game_controller.game_state = game_state
 	game_controller.dice = dice
 	game_controller.ui = ui
@@ -41,3 +43,17 @@ func _on_setup_finished():
 		token.position = base_pos + offset
 
 	game_controller.start_turn()
+
+
+func _add_ocean_background() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "OceanBackground"
+	layer.layer = -100
+	add_child(layer)
+
+	var bg := ColorRect.new()
+	bg.name = "LightOceanBlue"
+	bg.color = Color("#BFEFFF")
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(bg)
