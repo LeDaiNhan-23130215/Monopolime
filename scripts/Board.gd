@@ -9,8 +9,9 @@ var cells = []
 @export var auto_center_in_editor := true
 @export var size := 58
 
-var cell_w := 100.0
-var cell_h := 160.0
+var cell_w := 176.0
+var cell_step_y := 112.0
+var cell_h := 210.0
 
 func _ready() -> void:
 	generate_board()
@@ -45,20 +46,20 @@ func _calc_pos(i: int) -> Vector2:
 	if i == 0: return Vector2(0, 0)
 	elif i > 0 and i < 10: return Vector2(cell_h + (i-1)*cell_w, 0)
 	elif i == 10: return Vector2(cell_h + 9*cell_w, 0)
-	elif i > 10 and i < 20: return Vector2(cell_h + 9*cell_w, cell_h + (i-11)*cell_w)
-	elif i == 20: return Vector2(cell_h + 9*cell_w, cell_h + 9*cell_w)
-	elif i > 20 and i < 30: return Vector2(cell_h + (29-i)*cell_w, cell_h + 9*cell_w)
-	elif i == 30: return Vector2(0, cell_h + 9*cell_w)
-	elif i > 30 and i < 40: return Vector2(0, cell_h + (39-i)*cell_w)
+	elif i > 10 and i < 20: return Vector2(cell_h + 9*cell_w, cell_h + (i-11)*cell_step_y)
+	elif i == 20: return Vector2(cell_h + 9*cell_w, cell_h + 9*cell_step_y)
+	elif i > 20 and i < 30: return Vector2(cell_h + (29-i)*cell_w, cell_h + 9*cell_step_y)
+	elif i == 30: return Vector2(0, cell_h + 9*cell_step_y)
+	elif i > 30 and i < 40: return Vector2(0, cell_h + (39-i)*cell_step_y)
 	return Vector2.ZERO
 
 
 func _get_cell_size(i: int) -> Vector2:
 	if i % 10 == 0: return Vector2(cell_h, cell_h)
 	if i > 0 and i < 10: return Vector2(cell_w, cell_h)
-	if i > 10 and i < 20: return Vector2(cell_h, cell_w)
+	if i > 10 and i < 20: return Vector2(cell_h, cell_step_y)
 	if i > 20 and i < 30: return Vector2(cell_w, cell_h)
-	if i > 30 and i < 40: return Vector2(cell_h, cell_w)
+	if i > 30 and i < 40: return Vector2(cell_h, cell_step_y)
 	return Vector2(cell_h, cell_h)
 
 
@@ -110,11 +111,13 @@ func _create_cell_labels():
 		# Name label
 		var name_label = Label.new()
 		name_label.text = cell.cell_name
-		name_label.add_theme_font_size_override("font_size", 18)
+		name_label.add_theme_font_size_override("font_size", 21)
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		name_label.add_theme_color_override("font_color", _font_color_for_cell(cell))
+		name_label.add_theme_color_override("font_outline_color", Color("#FFFDF4"))
+		name_label.add_theme_constant_override("outline_size", 5)
 		
 		# Price label
 		var price_label = null
@@ -122,7 +125,9 @@ func _create_cell_labels():
 			price_label = Label.new()
 			price_label.text = "$" + str(cell.price)
 			price_label.add_theme_font_size_override("font_size", 18)
-			price_label.add_theme_color_override("font_color", Color("#1B5E20"))
+			price_label.add_theme_color_override("font_color", Color("#005E22"))
+			price_label.add_theme_color_override("font_outline_color", Color("#FFFDF4"))
+			price_label.add_theme_constant_override("outline_size", 4)
 			price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			price_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
@@ -130,33 +135,33 @@ func _create_cell_labels():
 		match side:
 			"top":
 				name_label.position = cell_positions[i] + Vector2(2, 5)
-				name_label.size = Vector2(c_size.x - 4, 60)
+				name_label.size = Vector2(c_size.x - 4, 74)
 				name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 				if price_label:
-					price_label.position = cell_positions[i] + Vector2(2, c_size.y - 50)
+					price_label.position = cell_positions[i] + Vector2(2, c_size.y - 34)
 					price_label.size = Vector2(c_size.x - 4, 25)
 			"bottom":
-				name_label.position = cell_positions[i] + Vector2(2, 30)
-				name_label.size = Vector2(c_size.x - 4, 60)
+				name_label.position = cell_positions[i] + Vector2(2, c_size.y - 92)
+				name_label.size = Vector2(c_size.x - 4, 66)
 				name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 				if price_label:
-					price_label.position = cell_positions[i] + Vector2(2, c_size.y - 30)
+					price_label.position = cell_positions[i] + Vector2(2, c_size.y - 26)
 					price_label.size = Vector2(c_size.x - 4, 25)
 			"left":
 				name_label.position = cell_positions[i] + Vector2(5, 5)
-				name_label.size = Vector2(95, c_size.y - 10)
+				name_label.size = Vector2(82, c_size.y - 10)
 				if price_label:
-					price_label.position = cell_positions[i] + Vector2(100, 5)
-					price_label.size = Vector2(35, c_size.y - 10)
+					price_label.position = cell_positions[i] + Vector2(c_size.x - 45, 5)
+					price_label.size = Vector2(40, c_size.y - 10)
 			"right":
-				name_label.position = cell_positions[i] + Vector2(65, 5)
-				name_label.size = Vector2(90, c_size.y - 10)
+				name_label.position = cell_positions[i] + Vector2(c_size.x - 87, 5)
+				name_label.size = Vector2(82, c_size.y - 10)
 				if price_label:
 					price_label.position = cell_positions[i] + Vector2(25, 5)
-					price_label.size = Vector2(35, c_size.y - 10)
+					price_label.size = Vector2(40, c_size.y - 10)
 			"corner":
-				name_label.position = cell_positions[i] + Vector2(10, 10)
-				name_label.size = Vector2(c_size.x - 20, c_size.y - 20)
+				name_label.position = cell_positions[i] + Vector2(10, 8)
+				name_label.size = Vector2(c_size.x - 20, 72)
 
 		labels_node.add_child(name_label)
 		if price_label:
@@ -201,7 +206,7 @@ func _create_center_decoration():
 	var center_x = cell_h
 	var center_y = cell_h
 	var center_w = 9 * cell_w
-	var center_h_inner = 9 * cell_w
+	var center_h_inner = 9 * cell_step_y
 
 	var bg := TextureRect.new()
 	bg.position = Vector2(center_x, center_y)
@@ -243,26 +248,26 @@ func center_board():
 
 	var board_size_vec = Vector2(
 		2 * cell_h + 9 * cell_w,
-		2 * cell_h + 9 * cell_w
+		2 * cell_h + 9 * cell_step_y
 	)
 	var viewport_size = get_viewport_rect().size
 	
 	# Calculate UI scale based on 1280x720 design size used by ResponsiveCanvas
 	var ui_scale = min(viewport_size.x / 1280.0, viewport_size.y / 720.0)
 	
-	# Safe area margins in absolute viewport coordinates
-	var top_margin = 60 * ui_scale
-	var bottom_margin = 60 * ui_scale
-	var left_margin = 270 * ui_scale
-	var right_margin = 320 * ui_scale
+	# Safe area margins mirror the HUD columns while giving the board more room.
+	var top_margin = 88 * ui_scale
+	var bottom_margin = 72 * ui_scale
+	var left_margin = 156 * ui_scale
+	var right_margin = 190 * ui_scale
 	
 	var safe_w = viewport_size.x - left_margin - right_margin
 	var safe_h = viewport_size.y - top_margin - bottom_margin
 	
-	# Scale board to fit safe area with 98% padding
+	# Scale board to fit the safe area tightly without going under the HUD.
 	var scale_x = safe_w / board_size_vec.x
 	var scale_y = safe_h / board_size_vec.y
-	var board_scale = min(scale_x, scale_y) * 0.98
+	var board_scale = min(scale_x, scale_y) * 1.0
 	
 	scale = Vector2(board_scale, board_scale)
 	

@@ -46,15 +46,15 @@ func _build() -> void:
 	var body := MarginContainer.new()
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("margin_left", 16)
-	body.add_theme_constant_override("margin_top", 12)
-	body.add_theme_constant_override("margin_right", 16)
-	body.add_theme_constant_override("margin_bottom", 12)
+	body.add_theme_constant_override("margin_left", 10)
+	body.add_theme_constant_override("margin_top", 8)
+	body.add_theme_constant_override("margin_right", 10)
+	body.add_theme_constant_override("margin_bottom", 8)
 	page.add_child(body)
 
 	var vbody := VBoxContainer.new()
 	vbody.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbody.add_theme_constant_override("separation", 12)
+	vbody.add_theme_constant_override("separation", 8)
 	body.add_child(vbody)
 
 	vbody.add_child(_build_main_area())
@@ -169,13 +169,13 @@ func _build_main_area() -> Control:
 	var main := HBoxContainer.new()
 	main.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	main.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	main.add_theme_constant_override("separation", 16)
+	main.add_theme_constant_override("separation", 10)
 
 	# LEFT PANEL
 	var left := VBoxContainer.new()
 	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	left.custom_minimum_size = Vector2(260, 0)
-	left.add_theme_constant_override("separation", 16)
+	left.custom_minimum_size = Vector2(190, 0)
+	left.add_theme_constant_override("separation", 10)
 	main.add_child(left)
 
 	# Notification panel
@@ -184,11 +184,11 @@ func _build_main_area() -> Control:
 	alert_style.border_color = Color("#F3C94E")
 	alert_style.set_border_width_all(3)
 	alert_style.set_corner_radius_all(16)
-	alert_style.set_content_margin_all(10)
+	alert_style.set_content_margin_all(8)
 	alert_style.shadow_color = Color(0, 0, 0, 0.2)
 	alert_style.shadow_size = 6
 	var alert := PanelContainer.new()
-	alert.custom_minimum_size = Vector2(0, 80)
+	alert.custom_minimum_size = Vector2(0, 62)
 	alert.add_theme_stylebox_override("panel", alert_style)
 	left.add_child(alert)
 	
@@ -205,7 +205,7 @@ func _build_main_area() -> Control:
 	message_label.text = "[center]Sẵn sàng [color=#2D8CFF]Bắt đầu[/color]![/center]"
 	message_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	message_label.fit_content = true
-	message_label.add_theme_font_size_override("normal_font_size", 16)
+	message_label.add_theme_font_size_override("normal_font_size", 14)
 	message_label.add_theme_color_override("default_color", Color("#4A3000"))
 	alert_row.add_child(message_label)
 	
@@ -223,13 +223,13 @@ func _build_main_area() -> Control:
 
 	# RIGHT PANEL (Player Roster)
 	var right_scroll := ScrollContainer.new()
-	right_scroll.custom_minimum_size = Vector2(310, 0)
+	right_scroll.custom_minimum_size = Vector2(220, 0)
 	right_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	main.add_child(right_scroll)
 
 	player_list = VBoxContainer.new()
 	player_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	player_list.add_theme_constant_override("separation", 12)
+	player_list.add_theme_constant_override("separation", 8)
 	right_scroll.add_child(player_list)
 	
 	return main
@@ -240,16 +240,16 @@ func _build_dice_panel() -> Control:
 	dice_style.border_color = Color("#42A5F5")
 	dice_style.set_border_width_all(3)
 	dice_style.set_corner_radius_all(20)
-	dice_style.set_content_margin_all(14)
+	dice_style.set_content_margin_all(10)
 	dice_style.shadow_color = Color(0, 0, 0, 0.4)
 	dice_style.shadow_size = 8
 	var dice_panel := PanelContainer.new()
 	dice_panel.name = "DicePanel"
-	dice_panel.custom_minimum_size = Vector2(0, 220)
+	dice_panel.custom_minimum_size = Vector2(0, 184)
 	dice_panel.add_theme_stylebox_override("panel", dice_style)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
+	box.add_theme_constant_override("separation", 8)
 	dice_panel.add_child(box)
 	
 	var xuc_label := UIFactory.label("XÚC XẮC", 18, Color("#BBDEFB"), HORIZONTAL_ALIGNMENT_CENTER)
@@ -259,7 +259,7 @@ func _build_dice_panel() -> Control:
 	var bg_style := StyleBoxFlat.new()
 	bg_style.bg_color = Color("#082B6B")
 	bg_style.set_corner_radius_all(12)
-	bg_style.set_content_margin_all(14)
+	bg_style.set_content_margin_all(10)
 	dice_bg.add_theme_stylebox_override("panel", bg_style)
 	box.add_child(dice_bg)
 
@@ -275,7 +275,7 @@ func _build_dice_panel() -> Control:
 
 	var result_title := UIFactory.label("★ KẾT QUẢ ★", 15, Color("#BBDEFB"), HORIZONTAL_ALIGNMENT_CENTER)
 	box.add_child(result_title)
-	result_label = UIFactory.label("7", 46, Color("#FFCA28"), HORIZONTAL_ALIGNMENT_CENTER)
+	result_label = UIFactory.label("7", 36, Color("#FFCA28"), HORIZONTAL_ALIGNMENT_CENTER)
 	result_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.5))
 	result_label.add_theme_constant_override("outline_size", 5)
 	box.add_child(result_label)
@@ -290,26 +290,26 @@ func _build_action_bar() -> Control:
 	bar_style.border_color = Color("#1E88E5")
 	bar_style.set_border_width_all(3)
 	bar_style.set_corner_radius_all(20)
-	bar_style.set_content_margin_all(8)
+	bar_style.set_content_margin_all(6)
 	bar_style.shadow_color = Color(0, 0, 0, 0.4)
 	bar_style.shadow_size = 8
 	
 	var panel := PanelContainer.new()
 	panel.name = "ActionBar"
-	panel.custom_minimum_size = Vector2(0, 76)
+	panel.custom_minimum_size = Vector2(0, 62)
 	panel.add_theme_stylebox_override("panel", bar_style)
 	shell.add_child(panel)
 
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 12)
+	row.add_theme_constant_override("separation", 8)
 	panel.add_child(row)
 
-	roll_button = _action_button("🎲 Tung xúc xắc", Color("#4CAF50"), Vector2(180, 56))
-	assets_button = _action_button("📁 Tài sản", Color("#1E88E5"), Vector2(140, 56))
-	build_button = _action_button("🏠 Xây nhà", Color("#FFA000"), Vector2(140, 56))
-	trade_button = _action_button("🔄 Trao đổi", Color("#8E24AA"), Vector2(140, 56))
-	end_turn_button = _action_button("🚩 Kết thúc lượt", Color("#E53935"), Vector2(160, 56))
+	roll_button = _action_button("🎲 Tung", Color("#4CAF50"), Vector2(132, 46))
+	assets_button = _action_button("📁 Tài sản", Color("#1E88E5"), Vector2(120, 46))
+	build_button = _action_button("🏠 Xây", Color("#FFA000"), Vector2(112, 46))
+	trade_button = _action_button("🔄 Đổi", Color("#8E24AA"), Vector2(112, 46))
+	end_turn_button = _action_button("🚩 Hết lượt", Color("#E53935"), Vector2(132, 46))
 
 	for button in [roll_button, assets_button, build_button, trade_button, end_turn_button]:
 		row.add_child(button)
@@ -325,7 +325,7 @@ func _action_button(text: String, color: Color, min_size: Vector2) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.custom_minimum_size = min_size
-	btn.add_theme_font_size_override("font_size", 18)
+	btn.add_theme_font_size_override("font_size", 15)
 	btn.add_theme_color_override("font_color", Color.WHITE)
 	btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.4))
 	btn.add_theme_constant_override("outline_size", 3)
@@ -336,8 +336,8 @@ func _action_button(text: String, color: Color, min_size: Vector2) -> Button:
 	normal_style.set_border_width_all(2)
 	normal_style.set_corner_radius_all(14)
 	normal_style.shadow_color = Color(0, 0, 0, 0.4)
-	normal_style.shadow_size = 6
-	normal_style.shadow_offset = Vector2(0, 3)
+	normal_style.shadow_size = 4
+	normal_style.shadow_offset = Vector2(0, 2)
 
 	var hover_style := normal_style.duplicate()
 	hover_style.bg_color = color.lightened(0.12)
@@ -412,37 +412,37 @@ func _build_player_card(p: Player, index: int, active: bool, color: Color) -> Co
 	card_style.border_color = color
 	card_style.set_border_width_all(3)
 	card_style.set_corner_radius_all(16)
-	card_style.set_content_margin_all(8)
+	card_style.set_content_margin_all(6)
 	card_style.shadow_color = Color(0, 0, 0, 0.25)
-	card_style.shadow_size = 6
-	card_style.shadow_offset = Vector2(0, 3)
+	card_style.shadow_size = 4
+	card_style.shadow_offset = Vector2(0, 2)
 	var card := PanelContainer.new()
 	card.name = "PlayerCard" + str(index + 1)
-	card.custom_minimum_size = Vector2(290, 96)
+	card.custom_minimum_size = Vector2(235, 82)
 	card.add_theme_stylebox_override("panel", card_style)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", 6)
 	card.add_child(row)
 
 	# Left colored Pawn icon
-	var token_icon := UIFactory.icon("token", color, Vector2(40, 50))
+	var token_icon := UIFactory.icon("token", color, Vector2(30, 38))
 	var icon_box := VBoxContainer.new()
 	icon_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	icon_box.custom_minimum_size = Vector2(50, 0)
+	icon_box.custom_minimum_size = Vector2(34, 0)
 	icon_box.add_child(token_icon)
 	row.add_child(icon_box)
 
 	# Info column
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_theme_constant_override("separation", 4)
+	info.add_theme_constant_override("separation", 2)
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(info)
 
 	# Title row (Number + Name + Badge)
 	var title_row := HBoxContainer.new()
-	title_row.add_theme_constant_override("separation", 6)
+	title_row.add_theme_constant_override("separation", 4)
 	info.add_child(title_row)
 	
 	var num_panel_style := StyleBoxFlat.new()
@@ -453,10 +453,10 @@ func _build_player_card(p: Player, index: int, active: bool, color: Color) -> Co
 	num_panel_style.shadow_size = 2
 	var num_panel := PanelContainer.new()
 	num_panel.add_theme_stylebox_override("panel", num_panel_style)
-	num_panel.custom_minimum_size = Vector2(28, 28)
+	num_panel.custom_minimum_size = Vector2(24, 24)
 	var num_lbl := Label.new()
 	num_lbl.text = str(index + 1)
-	num_lbl.add_theme_font_size_override("font_size", 16)
+	num_lbl.add_theme_font_size_override("font_size", 13)
 	num_lbl.add_theme_color_override("font_color", Color.WHITE)
 	num_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.4))
 	num_lbl.add_theme_constant_override("outline_size", 2)
@@ -465,7 +465,7 @@ func _build_player_card(p: Player, index: int, active: bool, color: Color) -> Co
 	num_panel.add_child(num_lbl)
 	title_row.add_child(num_panel)
 	
-	var name_label := UIFactory.label(p.name, 17, Color("#0D47A1"))
+	var name_label := UIFactory.label(p.name, 14, Color("#0D47A1"))
 	name_label.add_theme_color_override("font_outline_color", Color.TRANSPARENT)
 	name_label.add_theme_constant_override("outline_size", 0)
 	title_row.add_child(name_label)
@@ -480,12 +480,12 @@ func _build_player_card(p: Player, index: int, active: bool, color: Color) -> Co
 		badge_style.border_color = Color("#E0A810")
 		badge_style.set_border_width_all(1)
 		badge_style.set_corner_radius_all(8)
-		badge_style.set_content_margin_all(6)
+		badge_style.set_content_margin_all(4)
 		var badge_panel := PanelContainer.new()
 		badge_panel.add_theme_stylebox_override("panel", badge_style)
 		var badge := Label.new()
 		badge.text = "Đang lượt"
-		badge.add_theme_font_size_override("font_size", 12)
+		badge.add_theme_font_size_override("font_size", 10)
 		badge.add_theme_color_override("font_color", Color("#3D2A00"))
 		badge.add_theme_color_override("font_outline_color", Color.TRANSPARENT)
 		badge.add_theme_constant_override("outline_size", 0)
@@ -497,20 +497,20 @@ func _build_player_card(p: Player, index: int, active: bool, color: Color) -> Co
 	var money_row := HBoxContainer.new()
 	money_row.add_theme_constant_override("separation", 6)
 	info.add_child(money_row)
-	money_row.add_child(UIFactory.icon("money", Color("#4CAF50"), Vector2(18, 18)))
-	var money_lbl := UIFactory.label("Tiền:          $" + str(cash), 14, Color.BLACK)
+	money_row.add_child(UIFactory.icon("money", Color("#4CAF50"), Vector2(15, 15)))
+	var money_lbl := UIFactory.label("Tiền: $" + str(cash), 12, Color.BLACK)
 	money_row.add_child(money_lbl)
 
 	var asset_row := HBoxContainer.new()
 	asset_row.add_theme_constant_override("separation", 6)
 	info.add_child(asset_row)
-	asset_row.add_child(UIFactory.icon("home", Color("#4CAF50"), Vector2(18, 18)))
-	var asset_lbl := UIFactory.label("Tài sản:     " + str(p.properties.size()), 14, Color.BLACK)
+	asset_row.add_child(UIFactory.icon("home", Color("#4CAF50"), Vector2(15, 15)))
+	var asset_lbl := UIFactory.label("Tài sản: " + str(p.properties.size()), 12, Color.BLACK)
 	asset_row.add_child(asset_lbl)
 
 	var status_text := "Bình thường" if not p.is_bankrupt() else "Phá sản"
 	var status_color := Color("#4CAF50") if not p.is_bankrupt() else Color("#E53935")
-	var st_lbl := UIFactory.label("Trạng thái: " + status_text, 13, status_color)
+	var st_lbl := UIFactory.label("TT: " + status_text, 11, status_color)
 	info.add_child(st_lbl)
 
 	return card
