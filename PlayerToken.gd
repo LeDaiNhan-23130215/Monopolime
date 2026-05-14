@@ -4,6 +4,7 @@ class_name PlayerToken
 var player_id: int
 
 @onready var token_sprite = $TokenSprite
+@onready var balance_label = $BalanceLabel
 
 func _ready():
 	token_sprite.centered = true
@@ -56,3 +57,11 @@ func show_floating_money(amount: int):
 	
 	# 3. Khi bay xong và mờ hết thì xóa cái nhãn này đi cho nhẹ game
 	tween.tween_callback(float_label.queue_free)
+	
+func set_balance (value: int):
+	balance_label.text = "$" + str(value)
+	
+	if value >= 200:
+		balance_label.modulate = Color.LIME_GREEN
+	else:
+		balance_label.modulate = Color.TOMATO

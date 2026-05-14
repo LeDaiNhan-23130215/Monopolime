@@ -26,12 +26,14 @@ func get_random_token():
 		token.token_texture = token.get_random_token_texture()
 
 func add_money(amount: int):
-	state.add_balance(amount)
-	print(name, " nhận $", amount, ". Số dư mới: $", state.balance)
+	balance += amount
+	print(name, " nhận $", amount, ". Số dư mới: $", balance)
 
 func deduct_money(amount: int):
-	state.deduct_balance(amount)
-	print(name, " bị trừ $", amount, ". Số dư mới: $", state.balance)
+	balance -= amount
+	if balance < 0:
+		state.set_bankrupt(true)
+	print(name, " bị trừ $", amount, ". Số dư mới: $", balance)
 
 func is_bankrupt() -> bool:
 	return state.bankrupt
@@ -54,3 +56,12 @@ func release_all_assets():
 	special_card.clear()
 	state.set_bankrupt(true)
 	print("--- ", name, " ĐÃ PHÁ SẢN – Toàn bộ tài sản giải phóng về Ngân hàng ---")
+
+var balance: int:
+	get:
+		return state.balance
+	set(value):
+		state.balance = value
+
+		if token:
+			token.set_balance(value)

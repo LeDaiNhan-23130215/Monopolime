@@ -1,4 +1,4 @@
-extends RefCounted
+extends Node2D
 class_name TokenManager
 
 static var textures = [
