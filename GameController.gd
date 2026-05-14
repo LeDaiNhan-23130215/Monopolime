@@ -482,7 +482,7 @@ func calculate_net_worth(player: Player) -> int:
 func count_player_houses(player: Player) -> int:
 	var total = 0
 	for cell in player.properties:
-		if cell.house_count > 0 and cell.house_count < 5:
+		if cell.house_count > 0 and cell.house_count < 4:
 			total += cell.house_count
 	return total
 
@@ -490,7 +490,7 @@ func count_player_houses(player: Player) -> int:
 func count_player_hotels(player: Player) -> int:
 	var total = 0
 	for cell in player.properties:
-		if cell.house_count == 5:
+		if cell.house_count >= 4:
 			total += 1
 	return total
 

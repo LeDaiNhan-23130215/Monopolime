@@ -9,14 +9,8 @@ var cells = []
 @export var auto_center_in_editor := true
 @export var size := 58
 
-var start := Vector2.ZERO
-
-@export_tool_button("Clear Board")
-var clear_action = clear_board
-
-@export_tool_button("Generate Board")
-var generate_action = generate_board
-
+var cell_w := 100.0
+var cell_h := 160.0
 
 func _ready() -> void:
 	generate_board()
@@ -26,7 +20,6 @@ func generate_board():
 	print("GENERATE BOARD")
 
 	var cells_node = $Cells
-
 	for c in cells_node.get_children():
 		c.queue_free()
 
@@ -44,28 +37,51 @@ func generate_board():
 
 
 func _create_40_cell_positions():
-	for i in range(11):
-		cell_positions.append(start + Vector2(i * size, 0))
+	for i in range(40):
+		cell_positions.append(_calc_pos(i))
 
-	for i in range(1, 10):
-		cell_positions.append(start + Vector2(10 * size, i * size))
 
-	for i in range(10, -1, -1):
-		cell_positions.append(start + Vector2(i * size, 10 * size))
+func _calc_pos(i: int) -> Vector2:
+	if i == 0: return Vector2(0, 0)
+	elif i > 0 and i < 10: return Vector2(cell_h + (i-1)*cell_w, 0)
+	elif i == 10: return Vector2(cell_h + 9*cell_w, 0)
+	elif i > 10 and i < 20: return Vector2(cell_h + 9*cell_w, cell_h + (i-11)*cell_w)
+	elif i == 20: return Vector2(cell_h + 9*cell_w, cell_h + 9*cell_w)
+	elif i > 20 and i < 30: return Vector2(cell_h + (29-i)*cell_w, cell_h + 9*cell_w)
+	elif i == 30: return Vector2(0, cell_h + 9*cell_w)
+	elif i > 30 and i < 40: return Vector2(0, cell_h + (39-i)*cell_w)
+	return Vector2.ZERO
 
-	for i in range(9, 0, -1):
-		cell_positions.append(start + Vector2(0, i * size))
+
+func _get_cell_size(i: int) -> Vector2:
+	if i % 10 == 0: return Vector2(cell_h, cell_h)
+	if i > 0 and i < 10: return Vector2(cell_w, cell_h)
+	if i > 10 and i < 20: return Vector2(cell_h, cell_w)
+	if i > 20 and i < 30: return Vector2(cell_w, cell_h)
+	if i > 30 and i < 40: return Vector2(cell_h, cell_w)
+	return Vector2(cell_h, cell_h)
+
+
+func _get_cell_side(i: int) -> String:
+	if i % 10 == 0: return "corner"
+	if i > 0 and i < 10: return "top"
+	if i > 10 and i < 20: return "right"
+	if i > 20 and i < 30: return "bottom"
+	if i > 30 and i < 40: return "left"
+	return "corner"
 
 
 func _spawn_cells(cells_node: Node):
 	var configs = BoardData.get_cell_configs()
-	var cell_scale = float(size) / 100.0
 
-	for i in range(cell_positions.size()):
+	for i in range(40):
 		var cell = cell_scene.instantiate()
 		cell.position = cell_positions[i]
-		cell.scale = Vector2.ONE * cell_scale
-
+		
+		# Set physical properties
+		cell.set("cell_rect_size", _get_cell_size(i))
+		cell.set("cell_side", _get_cell_side(i))
+		
 		if cell.get_script() != null:
 			cell.set("index", i)
 
@@ -88,45 +104,88 @@ func _create_cell_labels():
 
 	for i in range(cells.size()):
 		var cell = cells[i]
+		var c_size = _get_cell_size(i)
+		var side = _get_cell_side(i)
 
+		# Name label
 		var name_label = Label.new()
 		name_label.text = cell.cell_name
-		name_label.position = cell_positions[i] + Vector2(2, size - 22)
-		name_label.add_theme_font_size_override("font_size", 7)
-		name_label.size = Vector2(size - 4, 22)
+		name_label.add_theme_font_size_override("font_size", 18)
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 		name_label.add_theme_color_override("font_color", _font_color_for_cell(cell))
-		labels_node.add_child(name_label)
-
+		
+		# Price label
+		var price_label = null
 		if cell.price > 0:
-			var price_label = Label.new()
+			price_label = Label.new()
 			price_label.text = "$" + str(cell.price)
-			price_label.position = cell_positions[i] + Vector2(2, size - 34)
-			price_label.add_theme_font_size_override("font_size", 8)
-			price_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5))
-			price_label.size = Vector2(size - 4, 14)
+			price_label.add_theme_font_size_override("font_size", 18)
+			price_label.add_theme_color_override("font_color", Color("#1B5E20"))
 			price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			price_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+		# Positioning logic based on side
+		match side:
+			"top":
+				name_label.position = cell_positions[i] + Vector2(2, 5)
+				name_label.size = Vector2(c_size.x - 4, 60)
+				name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+				if price_label:
+					price_label.position = cell_positions[i] + Vector2(2, c_size.y - 50)
+					price_label.size = Vector2(c_size.x - 4, 25)
+			"bottom":
+				name_label.position = cell_positions[i] + Vector2(2, 30)
+				name_label.size = Vector2(c_size.x - 4, 60)
+				name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+				if price_label:
+					price_label.position = cell_positions[i] + Vector2(2, c_size.y - 30)
+					price_label.size = Vector2(c_size.x - 4, 25)
+			"left":
+				name_label.position = cell_positions[i] + Vector2(5, 5)
+				name_label.size = Vector2(95, c_size.y - 10)
+				if price_label:
+					price_label.position = cell_positions[i] + Vector2(100, 5)
+					price_label.size = Vector2(35, c_size.y - 10)
+			"right":
+				name_label.position = cell_positions[i] + Vector2(65, 5)
+				name_label.size = Vector2(90, c_size.y - 10)
+				if price_label:
+					price_label.position = cell_positions[i] + Vector2(25, 5)
+					price_label.size = Vector2(35, c_size.y - 10)
+			"corner":
+				name_label.position = cell_positions[i] + Vector2(10, 10)
+				name_label.size = Vector2(c_size.x - 20, c_size.y - 20)
+
+		labels_node.add_child(name_label)
+		if price_label:
 			labels_node.add_child(price_label)
 
 
 func _font_color_for_cell(cell: Cell) -> Color:
 	match cell.cell_type:
 		"go":
-			return Color(0.3, 1.0, 0.5)
+			return Color("#1B5E20") # Dark green
 		"chance":
-			return Color(1.0, 0.7, 0.3)
+			return Color("#E65100") # Dark orange
 		"community":
-			return Color(0.5, 0.7, 1.0)
+			return Color("#0D47A1") # Dark blue
 		"tax":
-			return Color(1.0, 0.4, 0.4)
+			return Color("#B71C1C") # Dark red
 		"jail":
-			return Color(0.7, 0.7, 0.7)
+			return Color("#3E2723") # Dark brown
 		"go_to_jail":
-			return Color(1.0, 0.3, 0.3)
+			return Color("#B71C1C") # Dark red
+		"parking":
+			return Color("#1B5E20")
+		"railroad":
+			return Color("#212121") # Dark gray
+		"utility":
+			return Color("#424242")
 		"teleport":
-			return Color(0.4, 0.9, 1.0)
-	return Color(0.85, 0.88, 0.92)
+			return Color("#311B92") # Deep purple
+	return Color("#212121") # Dark gray default
 
 
 func _create_center_decoration():
@@ -139,56 +198,43 @@ func _create_center_decoration():
 	center_node.z_index = 1
 	add_child(center_node)
 
-	var center_x = size
-	var center_y = size
-	var center_w = 9 * size
-	var center_h = 9 * size
+	var center_x = cell_h
+	var center_y = cell_h
+	var center_w = 9 * cell_w
+	var center_h_inner = 9 * cell_w
 
-	var bg = ColorRect.new()
+	var bg := TextureRect.new()
 	bg.position = Vector2(center_x, center_y)
-	bg.size = Vector2(center_w, center_h)
-	bg.color = Color(0.12, 0.35, 0.22, 1.0)
+	bg.size = Vector2(center_w, center_h_inner)
+	
+	var tex = load("res://resources/center_bg.png")
+	if tex:
+		bg.texture = tex
+		bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	else:
+		var grad := Gradient.new()
+		grad.add_point(0.0, Color("#3FA9F5"))
+		grad.add_point(1.0, Color("#0D47A1"))
+		var grad_tex := GradientTexture2D.new()
+		grad_tex.gradient = grad
+		grad_tex.fill_to = Vector2(0, 1)
+		grad_tex.width = int(center_w)
+		grad_tex.height = int(center_h_inner)
+		bg.texture = grad_tex
+		
 	center_node.add_child(bg)
 
 	var panel_style = StyleBoxFlat.new()
 	panel_style.bg_color = Color(0, 0, 0, 0)
-	panel_style.border_color = Color(0.8, 0.7, 0.3, 0.5)
-	panel_style.set_border_width_all(2)
+	panel_style.border_color = Color("#28A8FF")
+	panel_style.set_border_width_all(3)
 
 	var panel = Panel.new()
-	panel.position = Vector2(center_x + 8, center_y + 8)
-	panel.size = Vector2(center_w - 16, center_h - 16)
+	panel.position = Vector2(center_x, center_y)
+	panel.size = Vector2(center_w, center_h_inner)
 	panel.add_theme_stylebox_override("panel", panel_style)
 	center_node.add_child(panel)
-
-	var title = Label.new()
-	title.text = "MONOPOLIME"
-	title.position = Vector2(center_x + 50, center_y + center_h * 0.34)
-	title.size = Vector2(center_w - 100, 60)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 40)
-	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-	title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	title.add_theme_constant_override("outline_size", 8)
-	center_node.add_child(title)
-
-	var subtitle = Label.new()
-	subtitle.text = "Co Ty Phu Viet Nam"
-	subtitle.position = Vector2(center_x + 50, center_y + center_h * 0.48)
-	subtitle.size = Vector2(center_w - 100, 30)
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 16)
-	subtitle.add_theme_color_override("font_color", Color(0.8, 0.9, 0.85))
-	center_node.add_child(subtitle)
-
-	var help = Label.new()
-	help.text = "Roll dice to play\nBuy land - collect rent - build houses"
-	help.position = Vector2(center_x + 30, center_y + center_h * 0.58)
-	help.size = Vector2(center_w - 60, 60)
-	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	help.add_theme_font_size_override("font_size", 11)
-	help.add_theme_color_override("font_color", Color(0.65, 0.75, 0.7))
-	center_node.add_child(help)
 
 
 func center_board():
@@ -196,11 +242,39 @@ func center_board():
 		return
 
 	var board_size_vec = Vector2(
-		cell_positions.max().x + size,
-		cell_positions.max().y + size
+		2 * cell_h + 9 * cell_w,
+		2 * cell_h + 9 * cell_w
 	)
 	var viewport_size = get_viewport_rect().size
-	position = (viewport_size - board_size_vec) / 2 - Vector2(150, 0)
+	
+	# Calculate UI scale based on 1280x720 design size used by ResponsiveCanvas
+	var ui_scale = min(viewport_size.x / 1280.0, viewport_size.y / 720.0)
+	
+	# Safe area margins in absolute viewport coordinates
+	var top_margin = 60 * ui_scale
+	var bottom_margin = 60 * ui_scale
+	var left_margin = 270 * ui_scale
+	var right_margin = 320 * ui_scale
+	
+	var safe_w = viewport_size.x - left_margin - right_margin
+	var safe_h = viewport_size.y - top_margin - bottom_margin
+	
+	# Scale board to fit safe area with 98% padding
+	var scale_x = safe_w / board_size_vec.x
+	var scale_y = safe_h / board_size_vec.y
+	var board_scale = min(scale_x, scale_y) * 0.98
+	
+	scale = Vector2(board_scale, board_scale)
+	
+	# Center the scaled board within the safe area
+	var scaled_board_size = board_size_vec * board_scale
+	var safe_center_x = left_margin + safe_w / 2.0
+	var safe_center_y = top_margin + safe_h / 2.0
+	
+	position = Vector2(
+		safe_center_x - scaled_board_size.x / 2.0,
+		safe_center_y - scaled_board_size.y / 2.0
+	)
 
 
 func clear_board():
@@ -219,7 +293,8 @@ func _process(_delta):
 func get_cell_position(cell_index: int) -> Vector2:
 	if cell_positions.is_empty():
 		return Vector2.ZERO
-	return cell_positions[cell_index % cell_positions.size()] + Vector2(size / 2, size / 2)
+	var safe_i = cell_index % cell_positions.size()
+	return cell_positions[safe_i] + _get_cell_size(safe_i) / 2.0
 
 
 func get_cell(cell_index: int) -> Cell:
