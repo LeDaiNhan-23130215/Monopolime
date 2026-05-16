@@ -37,6 +37,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func open_menu() -> void:
 	refresh_slots()
 	visible = true
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
 	close_button.grab_focus()
 
 
@@ -44,6 +45,7 @@ func close_menu() -> void:
 	if not visible:
 		return
 	visible = false
+	dimmer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pending_overwrite_slot_id = -1
 	emit_signal("menu_closed")
 
