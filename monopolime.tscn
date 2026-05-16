@@ -12,12 +12,12 @@
 [ext_resource type="Script" uid="uid://cbxfq6n7terf8" path="res://Cells/Cell.gd" id="10_oeeh8"]
 [ext_resource type="PackedScene" uid="uid://dmior1yjgw8w1" path="res://CellScenes/PropertyCell.tscn" id="10_uwyxl"]
 [ext_resource type="PackedScene" uid="uid://r8ic24ahsfvu" path="res://CellScenes/TaxCell.tscn" id="11_hj1c4"]
-[ext_resource type="PackedScene" path="res://SaveLoadMenu.tscn" id="11_nyn1k"]
+[ext_resource type="PackedScene" uid="uid://c2g3wyiodim06" path="res://SaveLoadMenu.tscn" id="11_nyn1k"]
 [ext_resource type="Script" uid="uid://chbjx6htmbaud" path="res://scripts/TokenManager/TokenManager.gd" id="11_y5t0d"]
 [ext_resource type="PackedScene" uid="uid://bebd74jpd2j4k" path="res://CellScenes/ChanceCell.tscn" id="12_tfrc1"]
 [ext_resource type="PackedScene" uid="uid://drvvf57bfb2xw" path="res://CellScenes/ChestCell.tscn" id="13_fhree"]
 [ext_resource type="PackedScene" uid="uid://d3krjl7alrwpm" path="res://CellScenes/SpecialCell.tscn" id="14_swiv5"]
-[ext_resource type="Script" path="res://scripts/AssetManager.gd" id="20_uc7am"]
+[ext_resource type="Script" uid="uid://j83fs078g2e3" path="res://scripts/AssetManager.gd" id="20_uc7am"]
 
 [node name="Main" type="Node2D" unique_id=1488605029]
 script = ExtResource("1_wplms")
@@ -77,7 +77,8 @@ texture_normal = ExtResource("6_s088g")
 ignore_texture_size = true
 stretch_mode = 4
 
-[node name="AssetPanel" type="PanelContainer" parent="GameUI/UI" unique_id=2000000010]
+[node name="SaveLoadMenu" parent="GameUI/UI" unique_id=2110449978 instance=ExtResource("11_nyn1k")]
+visible = false
 
 [node name="BtnOpenManage" type="Button" parent="GameUI/UI" unique_id=2000000070]
 visible = false
@@ -172,8 +173,6 @@ custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 disabled = true
 text = "Xác nhận ✔"
-
-[node name="SaveLoadMenu" parent="GameUI" unique_id=2110449978 instance=ExtResource("11_nyn1k")]
 
 [node name="GameState" type="Node" parent="." unique_id=510804286]
 script = ExtResource("5_r4gxj")
