@@ -53,28 +53,28 @@ func generate_board():
 	create_board_layout()
 
 	$Cells.z_index = 0
-	$Tokens.z_index = 1
+	$Tokens.z_index = 3
 
 
-	# TOP
+	# TOP (trái → phải)
 	for i in range(6):
 		cell_positions.append(
 			start + Vector2(i * size, 0)
 		)
 
-	# RIGHT
+	# RIGHT (trên → dưới)
 	for i in range(1, 5):
 		cell_positions.append(
 			start + Vector2(5 * size, i * size)
 		)
 
-	# BOTTOM
+	# BOTTOM (phải → trái)
 	for i in range(5, -1, -1):
 		cell_positions.append(
 			start + Vector2(i * size, 5 * size)
 		)
 
-	# LEFT
+	# LEFT (dưới → lên)
 	for i in range(4, 0, -1):
 		cell_positions.append(
 			start + Vector2(0, i * size)
@@ -118,6 +118,16 @@ func generate_board():
 		cells_node.add_child(cell)
 
 		cells.append(cell)
+
+		# Gán dữ liệu cấu hình
+		if i < configs.size():
+			cell.setup(configs[i])
+
+	# =========================
+	# Tạo các lớp phủ giao diện
+	# =========================
+	_create_cell_labels()
+	_create_center_decoration()
 
 	center_board()
 
@@ -402,7 +412,7 @@ func center_board():
 	if cell_positions.is_empty():
 		return
 
-	var board_size = Vector2(
+	var board_size_vec = Vector2(
 		cell_positions.max().x + size,
 		cell_positions.max().y + size
 	)

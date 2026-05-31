@@ -254,6 +254,18 @@ func _on_save_slot_requested(slot_id: int):
 	game_controller.save_game(slot_id)
 	save_load_menu.refresh_slots()
 
+func _on_dice_timer_timeout():
+	if not rolling:
+		return
+	roll_time += timer.wait_time
+	var fake1 = randi_range(1, 6)
+	var fake2 = randi_range(1, 6)
+	dice1_sprite.texture = dice_textures[fake1 - 1]
+	dice2_sprite.texture = dice_textures[fake2 - 1]
+	dice1_sprite.rotation = randf_range(-0.3, 0.3)
+	dice2_sprite.rotation = randf_range(-0.3, 0.3)
+	bounce(dice1_sprite)
+	bounce(dice2_sprite)
 
 func _on_load_slot_requested(slot_id: int):
 	game_controller.load_game(slot_id)

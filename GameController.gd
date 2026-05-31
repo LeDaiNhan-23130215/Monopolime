@@ -2,6 +2,9 @@ extends Node
 class_name GameController
 
 signal turn_action_completed
+signal buy_decision_made(accepted: bool)
+signal auction_bid_made(amount: int)
+signal build_decision_made
 
 var board: Board
 var game_state: GameState
@@ -132,6 +135,55 @@ func resolve_roll():
 	end_turn()
 
 
+# =========================
+# XỬ LÝ TÙ
+# =========================
+
+func _handle_jail_turn(player: Player):
+	# Ưu tiên dùng thẻ Ra Tù nếu có VÀ không đổ được double
+	if player.state.special_cards > 0 and not final_result.is_double:
+		player.state.special_cards -= 1
+		player.state.set_in_jail(false)
+		ui.show_message(player.name + " dùng thẻ Ra Tù Miễn Phí!")
+		print(player.name + " dùng thẻ Ra Tù!")
+
+		await move_player(player, final_result.total())
+		await handle_landed_cell(player, player.state.position)
+
+	elif final_result.is_double:
+		player.state.set_in_jail(false)
+		player.state.jail_turns = 0
+		ui.show_message(player.name + " đổ Double - Thoát tù!")
+		print(player.name + " thoát tù bằng Double!")
+
+		await move_player(player, final_result.total())
+		await handle_landed_cell(player, player.state.position)
+
+	else:
+		player.state.jail_turns += 1
+		print(player.name + " không đổ được Double. Lượt tù: ", player.state.jail_turns)
+
+		# Sau 3 lượt tù -> bắt buộc nộp $50
+		if player.state.jail_turns >= 3:
+			ui.show_message(player.name + " hết 3 lượt! Nộp phạt $50 ra tù!")
+			process_payment(player, null, 50, "Phạt tù")
+			player.state.set_in_jail(false)
+			player.state.jail_turns = 0
+
+			await move_player(player, final_result.total())
+			await handle_landed_cell(player, player.state.position)
+		else:
+			ui.show_message(player.name + " vẫn ở tù (Lượt " + str(player.state.jail_turns) + "/3)")
+
+	end_turn()
+	is_rolling = false
+	ui.set_roll_enabled(true)
+
+
+# =========================
+# DI CHUYỂN
+# =========================
+
 func move_player(player: Player, steps: int) -> void:
 	for i in range(steps):
 		var next_pos = (player.state.position + 1)
@@ -161,6 +213,10 @@ func go_to_jail(player: Player):
 		ui.show_jail()
 	await move_player_to_position(player, 5)
 
+
+# =========================
+# KẾT THÚC LƯỢT & GAME OVER
+# =========================
 
 func end_turn():
 	auto_save_game()
@@ -467,6 +523,75 @@ func handle_landed_cell(player: Player, cell_index: int):
 		if cell.data.cell_type == CellType.Type.GO_TO_JAIL:
 			await go_to_jail(player)
 
+	# --- Ô của mình ---
+	elif cell.cell_owner == player:
+		ui.show_message("Đây là đất của bạn: " + cell.cell_name)
+
+		# Cho phép xây nhà nếu có đủ bộ màu
+		if cell.can_build_house():
+			ui.show_build_prompt(player, cell)
+			await build_decision_made
+
+	ui.update_player_info(game_state.players)
+
+
+# =========================
+# MUA ĐẤT
+# =========================
+
+func buy_property(player: Player, cell: Cell):
+	player.deduct_money(cell.price)
+	cell.cell_owner = player
+	player.add_property(cell)
+
+	ui.show_message(player.name + " mua " + cell.cell_name + " ($" + str(cell.price) + ")")
+	print(player.name, " đã mua: ", cell.cell_name)
+
+	cell.play_buy_effect()
+	ui.update_player_info(game_state.players)
+
+
+# =========================
+# ĐẤU GIÁ (Auction)
+# =========================
+
+func run_auction(cell: Cell):
+	print("--- ĐẤU GIÁ: ", cell.cell_name, " ---")
+
+	var highest_bid = 0
+	var highest_bidder: Player = null
+
+	# Đấu giá tự động giữa các AI/player
+	for player in game_state.players:
+		if player.is_bankrupt():
+			continue
+
+		# Logic đấu giá đơn giản: trả giá nếu có tiền và giá hợp lý
+		var max_willing = int(cell.price * 0.8) # Tối đa 80% giá niêm yết
+		var bid = min(max_willing, player.state.balance - 100) # Giữ lại ít nhất $100
+
+		if bid > highest_bid and bid > 0:
+			highest_bid = bid
+			highest_bidder = player
+
+	if highest_bidder != null:
+		highest_bidder.deduct_money(highest_bid)
+		cell.cell_owner = highest_bidder
+		highest_bidder.add_property(cell)
+		cell.play_buy_effect()
+
+		ui.show_message(highest_bidder.name + " thắng đấu giá " + cell.cell_name + " với $" + str(highest_bid))
+		print(highest_bidder.name, " thắng đấu giá: ", cell.cell_name, " - $", highest_bid)
+	else:
+		ui.show_message("Không ai đấu giá " + cell.cell_name)
+		print("Đấu giá thất bại - không ai mua")
+
+	await get_tree().create_timer(1.5).timeout
+
+
+# =========================
+# TÀI CHÍNH
+# =========================
 
 # ══════════════════════════════════════════════════════════════════════
 # Financial
