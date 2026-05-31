@@ -72,6 +72,8 @@ func load_file(save_id: int) -> SaveSlot:
 	loaded_slot.id = save_id
 	loaded_slot.is_auto = (save_id == AUTO_SLOT_ID)
 	loaded_slot.occupied = bool(parsed.get("occupied", not loaded_slot.date_save.is_empty()))
+	loaded_slot.v_total = int(parsed.get("v_total", 0))
+	loaded_slot.player_count = int(parsed.get("player_count", 0))
 	return loaded_slot
 
 
@@ -212,6 +214,8 @@ func _normalized_payload_for_checksum(payload: Dictionary) -> Dictionary:
 	normalized["occupied"] = bool(payload.get("occupied", false))
 	normalized["current_player"] = int(payload.get("current_player", 0))
 	normalized["double_count"] = int(payload.get("double_count", 0))
+	normalized["v_total"] = int(payload.get("v_total", 0))
+	normalized["player_count"] = int(payload.get("player_count", 0))
 
 	var normalized_players_state: Array = []
 	var players_state = payload.get("players_state", [])
@@ -224,10 +228,28 @@ func _normalized_payload_for_checksum(payload: Dictionary) -> Dictionary:
 				"position": int(entry.get("position", 0)),
 				"balance": int(entry.get("balance", 0)),
 				"in_jail": bool(entry.get("in_jail", false)),
-				"bankrupt": bool(entry.get("bankrupt", false))
+				"jail_turns": int(entry.get("jail_turns", 0)),
+				"bankrupt": bool(entry.get("bankrupt", false)),
+				"get_out_of_jail_cards": int(entry.get("get_out_of_jail_cards", 0)),
+				"special_cards": entry.get("special_cards", [])
+			})
+
+	var normalized_properties_state: Array = []
+	var properties_state = payload.get("properties_state", [])
+	if typeof(properties_state) == TYPE_ARRAY:
+		for entry in properties_state:
+			if typeof(entry) != TYPE_DICTIONARY:
+				continue
+			normalized_properties_state.append({
+				"cell_index": int(entry.get("cell_index", 0)),
+				"owner_player_id": int(entry.get("owner_player_id", 0)),
+				"is_mortgaged": bool(entry.get("is_mortgaged", false)),
+				"house_count": int(entry.get("house_count", 0)),
+				"has_hotel": bool(entry.get("has_hotel", false))
 			})
 
 	normalized["players_state"] = normalized_players_state
+	normalized["properties_state"] = normalized_properties_state
 	return normalized
 
 func validate_checksum(payload: Dictionary) -> bool:

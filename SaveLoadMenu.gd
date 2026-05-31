@@ -103,7 +103,15 @@ func refresh_slots() -> void:
 
 		var date_label := slot_date_labels.get(slot_id) as Label
 		if date_label:
-			date_label.text = slot.date_save if not slot.is_empty() else "Empty"
+			if slot.is_empty():
+				date_label.text = "Empty"
+			else:
+				var parts: Array[String] = [slot.date_save]
+				if slot.player_count > 0:
+					parts.append(str(slot.player_count) + "P")
+				if slot.v_total > 0:
+					parts.append(_format_v_total(slot.v_total))
+				date_label.text = "  ".join(parts)
 
 		var load_button := slot_load_buttons.get(slot_id) as Button
 		if load_button:
@@ -152,3 +160,11 @@ func _on_overwrite_confirmed() -> void:
 
 	emit_signal("save_slot_requested", pending_overwrite_slot_id)
 	pending_overwrite_slot_id = -1
+
+
+func _format_v_total(total: int) -> String:
+	if total >= 1000000:
+		return "$%.1fM" % (total / 1000000.0)
+	elif total >= 1000:
+		return "$%.1fk" % (total / 1000.0)
+	return "$%d" % total
