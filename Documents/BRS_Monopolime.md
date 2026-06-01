@@ -66,7 +66,7 @@ Tài liệu này mô tả chi tiết các yêu cầu nghiệp vụ của hệ th
 
 **BR-07: Ô chưa có chủ**
 - Người chơi có quyền mua  
-- Nếu không mua → mở đấu giá  
+- Nếu không mua hoặc không đủ tiền mua → bỏ qua, ô đất vẫn chưa có chủ  
 
 **BR-08: Ô có chủ**
 - Phải trả tiền thuê  
