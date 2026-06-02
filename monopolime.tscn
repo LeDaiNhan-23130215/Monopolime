@@ -10,13 +10,8 @@
 [ext_resource type="Script" uid="uid://bodlhlq5ibv53" path="res://Dice.gd" id="8_fo70c"]
 [ext_resource type="Script" uid="uid://brplgjoawe8oh" path="res://scripts/Board.gd" id="8_s088g"]
 [ext_resource type="Script" uid="uid://cbxfq6n7terf8" path="res://Cells/Cell.gd" id="10_oeeh8"]
-[ext_resource type="PackedScene" uid="uid://dmior1yjgw8w1" path="res://CellScenes/PropertyCell.tscn" id="10_uwyxl"]
-[ext_resource type="PackedScene" uid="uid://r8ic24ahsfvu" path="res://CellScenes/TaxCell.tscn" id="11_hj1c4"]
 [ext_resource type="PackedScene" uid="uid://c2g3wyiodim06" path="res://SaveLoadMenu.tscn" id="11_nyn1k"]
 [ext_resource type="Script" uid="uid://chbjx6htmbaud" path="res://scripts/TokenManager/TokenManager.gd" id="11_y5t0d"]
-[ext_resource type="PackedScene" uid="uid://bebd74jpd2j4k" path="res://CellScenes/ChanceCell.tscn" id="12_tfrc1"]
-[ext_resource type="PackedScene" uid="uid://drvvf57bfb2xw" path="res://CellScenes/ChestCell.tscn" id="13_fhree"]
-[ext_resource type="PackedScene" uid="uid://d3krjl7alrwpm" path="res://CellScenes/SpecialCell.tscn" id="14_swiv5"]
 [ext_resource type="Script" uid="uid://j83fs078g2e3" path="res://scripts/AssetManager.gd" id="20_uc7am"]
 [ext_resource type="PackedScene" uid="uid://da543anbagjij" path="res://CellScenes/Cell.tscn" id="21_cell"]
 
@@ -182,20 +177,16 @@ script = ExtResource("5_r4gxj")
 script = ExtResource("8_fo70c")
 
 [node name="Board" type="Node2D" parent="." unique_id=940783717]
-position = Vector2(302, 93.5)
+position = Vector2(146.73749, 88.0109)
+scale = Vector2(0.43839508, 0.43839508)
 script = ExtResource("8_s088g")
 cell_scene = ExtResource("21_cell")
-property_scene = ExtResource("10_uwyxl")
-tax_scene = ExtResource("11_hj1c4")
-chance_scene = ExtResource("12_tfrc1")
-chest_scene = ExtResource("13_fhree")
-special_scene = ExtResource("14_swiv5")
 
 [node name="Cells" type="Node2D" parent="Board" unique_id=521322491]
 script = ExtResource("10_oeeh8")
 
 [node name="Tokens" type="Node2D" parent="Board" unique_id=812273034]
-z_index = 1
+z_index = 3
 script = ExtResource("11_y5t0d")
 
 [connection signal="timeout" from="GameUI/UI/DiceTimer" to="GameUI" method="_on_dice_timer_timeout"]
