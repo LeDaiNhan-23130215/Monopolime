@@ -470,8 +470,13 @@ func add_history_entry(text: String, color: Color = Color("#2E2A22")) -> void:
 	row.add_child(label)
 
 	history_list.add_child(row)
+	# queue_free() không gỡ node khỏi cây ngay lập tức nên get_child_count()
+	# vẫn giữ nguyên trong vòng lặp này -> phải remove_child trước để tránh
+	# vòng lặp vô hạn làm treo game và phình RAM.
 	while history_list.get_child_count() > 8:
-		history_list.get_child(0).queue_free()
+		var oldest := history_list.get_child(0)
+		history_list.remove_child(oldest)
+		oldest.queue_free()
 	call_deferred("_scroll_history_to_bottom")
 
 func _scroll_history_to_bottom() -> void:
