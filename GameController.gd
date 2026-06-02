@@ -13,6 +13,7 @@ var ui: GameUI
 
 var final_result: DiceResult = null
 var is_rolling := false
+var is_turn_resolving := false
 
 var event_handler: EventHandler = null
 
@@ -69,6 +70,7 @@ func roll_dice():
 
 
 func resolve_roll():
+	is_turn_resolving = true
 	var player = get_current_player()
 
 	ui.show_result(final_result)
@@ -97,6 +99,7 @@ func resolve_roll():
 			game_state.double_count = 0
 			end_turn()
 			is_rolling = false
+			is_turn_resolving = false
 			ui.set_roll_enabled(true)
 			return
 
@@ -114,6 +117,7 @@ func resolve_roll():
 
 	if final_result.is_double:
 		is_rolling = false
+		is_turn_resolving = false
 		ui.set_roll_enabled(true)
 		start_turn()
 		return
@@ -125,6 +129,7 @@ func resolve_roll():
 	game_state.double_count = 0
 	end_turn()
 	is_rolling = false
+	is_turn_resolving = false
 	ui.set_roll_enabled(true)
 
 
@@ -170,6 +175,7 @@ func _handle_jail_turn(player: Player):
 
 	end_turn()
 	is_rolling = false
+	is_turn_resolving = false
 	ui.set_roll_enabled(true)
 
 
@@ -226,6 +232,7 @@ func handle_teleport(player: Player):
 	ui.show_teleport_chooser(player, board)
 	var selected_index = await ui.teleport_cell_selected
 	var target_index = int(selected_index) % game_state.board_size
+	var current_index = player.state.position
 	var target_cell = board.get_cell(target_index)
 	var target_name = target_cell.cell_name if target_cell else str(target_index)
 
@@ -238,7 +245,8 @@ func handle_teleport(player: Player):
 	)
 	ui.play_sfx(GameUI.SFX_TELEPORT)
 	await move_player_to_position_with_teleport_effect(player, target_index)
-	await handle_landed_cell(player, target_index)
+	if target_index != current_index:
+		await handle_landed_cell(player, target_index)
 
 
 func go_to_jail(player: Player):
@@ -256,6 +264,12 @@ func go_to_jail(player: Player):
 # =========================
 # KẾT THÚC LƯỢT & GAME OVER
 # =========================
+
+func request_end_turn():
+	if is_rolling:
+		return
+	end_turn()
+
 
 func end_turn():
 	# Kiểm tra game over

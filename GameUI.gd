@@ -38,6 +38,7 @@ var rules_popup: Control
 var game_over_screen: Control
 
 var _rolling := false
+var _resolving_roll := false
 var _roll_ticks := 0
 var _current_build_cell: Cell = null
 
@@ -189,8 +190,10 @@ func _on_dice_timer_timeout() -> void:
 		_rolling = false
 		timer.stop()
 		if game_controller:
+			_resolving_roll = true
 			show_result(game_controller.final_result)
 			await game_controller.resolve_roll()
+			_resolving_roll = false
 
 func _on_roll_dice_pressed() -> void:
 	if game_controller:

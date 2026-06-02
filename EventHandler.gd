@@ -219,6 +219,16 @@ func _process_card(player: Player, card: Dictionary):
 			await _show_arrival(player, 0)
 			call_deferred("emit_signal", "event_finished")
 
+		"move_forward":
+			var steps = card.get("steps", 3)
+			var new_pos = (player.state.position + steps) % game_controller.game_state.board_size
+			if player.state.position + steps >= game_controller.game_state.board_size:
+				game_controller.process_reward(player, 200)
+			game_controller.ui.show_message(player.name + " di chuyen do su kien: " + card.text)
+			await game_controller.move_player_to_position(player, new_pos)
+			await _show_arrival(player, new_pos)
+			await _handle_cell_after_move(player, new_pos)
+
 		"move_back":
 			var steps = card.get("steps", 3)
 			var new_pos = player.state.position - steps
@@ -227,7 +237,7 @@ func _process_card(player: Player, card: Dictionary):
 			game_controller.ui.show_message(player.name + " di chuyen do su kien: " + card.text)
 			await game_controller.move_player_to_position(player, new_pos)
 			await _show_arrival(player, new_pos)
-			call_deferred("_handle_cell_after_move", player, new_pos)
+			await _handle_cell_after_move(player, new_pos)
 
 		"move_forward":
 			var steps = card.get("steps", 3)
@@ -244,7 +254,7 @@ func _process_card(player: Player, card: Dictionary):
 			game_controller.ui.show_message(player.name + " di chuyen do su kien: " + card.text)
 			await game_controller.move_player_to_position(player, nearest)
 			await _show_arrival(player, nearest)
-			call_deferred("_handle_cell_after_move", player, nearest)
+			await _handle_cell_after_move(player, nearest)
 
 		"go_jail":
 			await game_controller.go_to_jail(player)

@@ -1,0 +1,1139 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "BRS_Monopolime.md",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L1",
+      "id": "documents_brs_monopolime_md",
+      "community": 0,
+      "norm_label": "brs_monopolime.md"
+    },
+    {
+      "label": "T\u00c0I LI\u1ec6U \u0110\u1eb6C T\u1ea2 Y\u00caU C\u1ea6U NGHI\u1ec6P V\u1ee4 (BRS)",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L1",
+      "id": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "community": 0,
+      "norm_label": "tai lieu \u0111ac ta yeu cau nghiep vu (brs)"
+    },
+    {
+      "label": "H\u1ec7 th\u1ed1ng Game Monopolime (Offline)",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L2",
+      "id": "documents_brs_monopolime_h\u1ec7_th\u1ed1ng_game_monopolime_offline",
+      "community": 0,
+      "norm_label": "he thong game monopolime (offline)"
+    },
+    {
+      "label": "1. Gi\u1edbi thi\u1ec7u",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L6",
+      "id": "documents_brs_monopolime_1_gi\u1edbi_thi\u1ec7u",
+      "community": 0,
+      "norm_label": "1. gioi thieu"
+    },
+    {
+      "label": "1.1 M\u1ee5c \u0111\u00edch",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L8",
+      "id": "documents_brs_monopolime_1_1_m\u1ee5c_\u0111\u00edch",
+      "community": 0,
+      "norm_label": "1.1 muc \u0111ich"
+    },
+    {
+      "label": "1.2 Ph\u1ea1m vi",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L14",
+      "id": "documents_brs_monopolime_1_2_ph\u1ea1m_vi",
+      "community": 0,
+      "norm_label": "1.2 pham vi"
+    },
+    {
+      "label": "2. M\u1ee5c ti\u00eau nghi\u1ec7p v\u1ee5",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L21",
+      "id": "documents_brs_monopolime_2_m\u1ee5c_ti\u00eau_nghi\u1ec7p_v\u1ee5",
+      "community": 0,
+      "norm_label": "2. muc tieu nghiep vu"
+    },
+    {
+      "label": "3. Y\u00eau c\u1ea7u nghi\u1ec7p v\u1ee5 chi ti\u1ebft (Business Rules)",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L30",
+      "id": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "community": 1,
+      "norm_label": "3. yeu cau nghiep vu chi tiet (business rules)"
+    },
+    {
+      "label": "3.1 Setup & Turn Order",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L32",
+      "id": "documents_brs_monopolime_3_1_setup_turn_order",
+      "community": 1,
+      "norm_label": "3.1 setup & turn order"
+    },
+    {
+      "label": "3.2 Movement",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L54",
+      "id": "documents_brs_monopolime_3_2_movement",
+      "community": 1,
+      "norm_label": "3.2 movement"
+    },
+    {
+      "label": "3.3 Property",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L65",
+      "id": "documents_brs_monopolime_3_3_property",
+      "community": 1,
+      "norm_label": "3.3 property"
+    },
+    {
+      "label": "3.4 Rent Logic",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L77",
+      "id": "documents_brs_monopolime_3_4_rent_logic",
+      "community": 1,
+      "norm_label": "3.4 rent logic"
+    },
+    {
+      "label": "3.5 Building Rules",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L89",
+      "id": "documents_brs_monopolime_3_5_building_rules",
+      "community": 1,
+      "norm_label": "3.5 building rules"
+    },
+    {
+      "label": "3.6 Jail Rules",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L107",
+      "id": "documents_brs_monopolime_3_6_jail_rules",
+      "community": 1,
+      "norm_label": "3.6 jail rules"
+    },
+    {
+      "label": "3.7 Event Rules",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L130",
+      "id": "documents_brs_monopolime_3_7_event_rules",
+      "community": 1,
+      "norm_label": "3.7 event rules"
+    },
+    {
+      "label": "3.8 Mortgage",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L143",
+      "id": "documents_brs_monopolime_3_8_mortgage",
+      "community": 1,
+      "norm_label": "3.8 mortgage"
+    },
+    {
+      "label": "3.9 Trading",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L154",
+      "id": "documents_brs_monopolime_3_9_trading",
+      "community": 1,
+      "norm_label": "3.9 trading"
+    },
+    {
+      "label": "3.10 Bankruptcy & End Game",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L186",
+      "id": "documents_brs_monopolime_3_10_bankruptcy_end_game",
+      "community": 1,
+      "norm_label": "3.10 bankruptcy & end game"
+    },
+    {
+      "label": "4. Save / Load Game",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L197",
+      "id": "documents_brs_monopolime_4_save_load_game",
+      "community": 5,
+      "norm_label": "4. save / load game"
+    },
+    {
+      "label": "4.1 Save Game",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L199",
+      "id": "documents_brs_monopolime_4_1_save_game",
+      "community": 5,
+      "norm_label": "4.1 save game"
+    },
+    {
+      "label": "4.2 Load Game",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L221",
+      "id": "documents_brs_monopolime_4_2_load_game",
+      "community": 5,
+      "norm_label": "4.2 load game"
+    },
+    {
+      "label": "4.3 Tho\u00e1t gi\u1eefa ch\u1eebng",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L235",
+      "id": "documents_brs_monopolime_4_3_tho\u00e1t_gi\u1eefa_ch\u1eebng",
+      "community": 5,
+      "norm_label": "4.3 thoat giua chung"
+    },
+    {
+      "label": "5. Y\u00eau c\u1ea7u ch\u1ee9c n\u0103ng (Functional Requirements)",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L243",
+      "id": "documents_brs_monopolime_5_y\u00eau_c\u1ea7u_ch\u1ee9c_n\u0103ng_functional_requirements",
+      "community": 0,
+      "norm_label": "5. yeu cau chuc nang (functional requirements)"
+    },
+    {
+      "label": "6. Y\u00eau c\u1ea7u phi ch\u1ee9c n\u0103ng",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L267",
+      "id": "documents_brs_monopolime_6_y\u00eau_c\u1ea7u_phi_ch\u1ee9c_n\u0103ng",
+      "community": 6,
+      "norm_label": "6. yeu cau phi chuc nang"
+    },
+    {
+      "label": "6.1 Hi\u1ec7u n\u0103ng",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L269",
+      "id": "documents_brs_monopolime_6_1_hi\u1ec7u_n\u0103ng",
+      "community": 6,
+      "norm_label": "6.1 hieu nang"
+    },
+    {
+      "label": "6.2 Kh\u1ea3 d\u1ee5ng",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L272",
+      "id": "documents_brs_monopolime_6_2_kh\u1ea3_d\u1ee5ng",
+      "community": 6,
+      "norm_label": "6.2 kha dung"
+    },
+    {
+      "label": "6.3 \u0110\u1ed9 tin c\u1eady",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L276",
+      "id": "documents_brs_monopolime_6_3_\u0111\u1ed9_tin_c\u1eady",
+      "community": 6,
+      "norm_label": "6.3 \u0111o tin cay"
+    },
+    {
+      "label": "7. Gi\u1ea3 \u0111\u1ecbnh",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L281",
+      "id": "documents_brs_monopolime_7_gi\u1ea3_\u0111\u1ecbnh",
+      "community": 0,
+      "norm_label": "7. gia \u0111inh"
+    },
+    {
+      "label": "8. R\u1ee7i ro",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L287",
+      "id": "documents_brs_monopolime_8_r\u1ee7i_ro",
+      "community": 0,
+      "norm_label": "8. rui ro"
+    },
+    {
+      "label": "9. M\u1edf r\u1ed9ng t\u01b0\u01a1ng lai",
+      "file_type": "document",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L293",
+      "id": "documents_brs_monopolime_9_m\u1edf_r\u1ed9ng_t\u01b0\u01a1ng_lai",
+      "community": 0,
+      "norm_label": "9. mo rong tuong lai"
+    },
+    {
+      "label": "Dac_ta_UC03_Save_Load.md",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L1",
+      "id": "documents_dac_ta_uc03_save_load_md",
+      "community": 2,
+      "norm_label": "dac_ta_uc03_save_load.md"
+    },
+    {
+      "label": "\u0110\u1eb7c t\u1ea3 Use Case: L\u01b0u v\u00e0 T\u1ea3i v\u00e1n ch\u01a1i (UC-03)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L1",
+      "id": "documents_dac_ta_uc03_save_load_\u0111\u1eb7c_t\u1ea3_use_case_l\u01b0u_v\u00e0_t\u1ea3i_v\u00e1n_ch\u01a1i_uc_03",
+      "community": 2,
+      "norm_label": "\u0111ac ta use case: luu va tai van choi (uc-03)"
+    },
+    {
+      "label": "1. Th\u00f4ng tin chung (General Information)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L3",
+      "id": "documents_dac_ta_uc03_save_load_1_th\u00f4ng_tin_chung_general_information",
+      "community": 2,
+      "norm_label": "1. thong tin chung (general information)"
+    },
+    {
+      "label": "2. Lu\u1ed3ng s\u1ef1 ki\u1ec7n ch\u00ednh (Main Flow 3.1)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L16",
+      "id": "documents_dac_ta_uc03_save_load_2_lu\u1ed3ng_s\u1ef1_ki\u1ec7n_ch\u00ednh_main_flow_3_1",
+      "community": 2,
+      "norm_label": "2. luong su kien chinh (main flow 3.1)"
+    },
+    {
+      "label": "3. Lu\u1ed3ng thay th\u1ebf (Alternative Flows)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L34",
+      "id": "documents_dac_ta_uc03_save_load_3_lu\u1ed3ng_thay_th\u1ebf_alternative_flows",
+      "community": 2,
+      "norm_label": "3. luong thay the (alternative flows)"
+    },
+    {
+      "label": "Lu\u1ed3ng thay th\u1ebf 1 (3.2): T\u1ea3i v\u00e1n ch\u01a1i \u0111\u00e3 l\u01b0u (Load Game)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L36",
+      "id": "documents_dac_ta_uc03_save_load_lu\u1ed3ng_thay_th\u1ebf_1_3_2_t\u1ea3i_v\u00e1n_ch\u01a1i_\u0111\u00e3_l\u01b0u_load_game",
+      "community": 2,
+      "norm_label": "luong thay the 1 (3.2): tai van choi \u0111a luu (load game)"
+    },
+    {
+      "label": "Lu\u1ed3ng thay th\u1ebf 2 (3.3): T\u1ef1 \u0111\u1ed9ng l\u01b0u (Auto-save)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L44",
+      "id": "documents_dac_ta_uc03_save_load_lu\u1ed3ng_thay_th\u1ebf_2_3_3_t\u1ef1_\u0111\u1ed9ng_l\u01b0u_auto_save",
+      "community": 2,
+      "norm_label": "luong thay the 2 (3.3): tu \u0111ong luu (auto-save)"
+    },
+    {
+      "label": "4. Lu\u1ed3ng ngo\u1ea1i l\u1ec7 (Exception Flow - 3.4)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L53",
+      "id": "documents_dac_ta_uc03_save_load_4_lu\u1ed3ng_ngo\u1ea1i_l\u1ec7_exception_flow_3_4",
+      "community": 2,
+      "norm_label": "4. luong ngoai le (exception flow - 3.4)"
+    },
+    {
+      "label": "3.4.1 L\u1ed7i kh\u00f4ng gian l\u01b0u tr\u1eef",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L55",
+      "id": "documents_dac_ta_uc03_save_load_3_4_1_l\u1ed7i_kh\u00f4ng_gian_l\u01b0u_tr\u1eef",
+      "community": 2,
+      "norm_label": "3.4.1 loi khong gian luu tru"
+    },
+    {
+      "label": "3.4.2 D\u1eef li\u1ec7u b\u1ea3n l\u01b0u b\u1ecb h\u1ecfng (Corrupted Data)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L59",
+      "id": "documents_dac_ta_uc03_save_load_3_4_2_d\u1eef_li\u1ec7u_b\u1ea3n_l\u01b0u_b\u1ecb_h\u1ecfng_corrupted_data",
+      "community": 2,
+      "norm_label": "3.4.2 du lieu ban luu bi hong (corrupted data)"
+    },
+    {
+      "label": "5. Quy t\u1eafc nghi\u1ec7p v\u1ee5 mapping (Business Rules)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L65",
+      "id": "documents_dac_ta_uc03_save_load_5_quy_t\u1eafc_nghi\u1ec7p_v\u1ee5_mapping_business_rules",
+      "community": 2,
+      "norm_label": "5. quy tac nghiep vu mapping (business rules)"
+    },
+    {
+      "label": "Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L1",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_md",
+      "community": 4,
+      "norm_label": "dac_ta_uc06_quan_ly_tai_chinh.md"
+    },
+    {
+      "label": "\u0110\u1eb7c t\u1ea3 Use Case: Qu\u1ea3n l\u00fd t\u00e0i ch\u00ednh (UC-06)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L1",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_\u0111\u1eb7c_t\u1ea3_use_case_qu\u1ea3n_l\u00fd_t\u00e0i_ch\u00ednh_uc_06",
+      "community": 4,
+      "norm_label": "\u0111ac ta use case: quan ly tai chinh (uc-06)"
+    },
+    {
+      "label": "1. Th\u00f4ng tin chung (General Information)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L3",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_1_th\u00f4ng_tin_chung_general_information",
+      "community": 4,
+      "norm_label": "1. thong tin chung (general information)"
+    },
+    {
+      "label": "2. Lu\u1ed3ng s\u1ef1 ki\u1ec7n ch\u00ednh (Main Flow 6.1)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L16",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_2_lu\u1ed3ng_s\u1ef1_ki\u1ec7n_ch\u00ednh_main_flow_6_1",
+      "community": 4,
+      "norm_label": "2. luong su kien chinh (main flow 6.1)"
+    },
+    {
+      "label": "3. Alternative Flows",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L33",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_3_alternative_flows",
+      "community": 4,
+      "norm_label": "3. alternative flows"
+    },
+    {
+      "label": "Lu\u1ed3ng thay th\u1ebf 1 (6.2): Nh\u1eadn ti\u1ec1n th\u01b0\u1edfng",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L35",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_lu\u1ed3ng_thay_th\u1ebf_1_6_2_nh\u1eadn_ti\u1ec1n_th\u01b0\u1edfng",
+      "community": 4,
+      "norm_label": "luong thay the 1 (6.2): nhan tien thuong"
+    },
+    {
+      "label": "Lu\u1ed3ng thay th\u1ebf 2 (6.3): Th\u1ebf ch\u1ea5p t\u00e0i s\u1ea3n \u0111\u1ec3 thanh to\u00e1n",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L45",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_lu\u1ed3ng_thay_th\u1ebf_2_6_3_th\u1ebf_ch\u1ea5p_t\u00e0i_s\u1ea3n_\u0111\u1ec3_thanh_to\u00e1n",
+      "community": 4,
+      "norm_label": "luong thay the 2 (6.3): the chap tai san \u0111e thanh toan"
+    },
+    {
+      "label": "4. Lu\u1ed3ng ngo\u1ea1i l\u1ec7 (Exception Flow - 6.4)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L57",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_4_lu\u1ed3ng_ngo\u1ea1i_l\u1ec7_exception_flow_6_4",
+      "community": 4,
+      "norm_label": "4. luong ngoai le (exception flow - 6.4)"
+    },
+    {
+      "label": "5. Quy t\u1eafc nghi\u1ec7p v\u1ee5 (Business Rules)",
+      "file_type": "document",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L69",
+      "id": "documents_dac_ta_uc06_quan_ly_tai_chinh_5_quy_t\u1eafc_nghi\u1ec7p_v\u1ee5_business_rules",
+      "community": 4,
+      "norm_label": "5. quy tac nghiep vu (business rules)"
+    },
+    {
+      "label": "Monopolime_URS.md",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L1",
+      "id": "documents_monopolime_urs_md",
+      "community": 3,
+      "norm_label": "monopolime_urs.md"
+    },
+    {
+      "label": "USER REQUIREMENT SPECIFICATION (URS) - MONOPOLIME (C\u1edc T\u1ef6 PH\u00da)",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L1",
+      "id": "documents_monopolime_urs_user_requirement_specification_urs_monopolime_c\u1edd_t\u1ef7_ph\u00fa",
+      "community": 3,
+      "norm_label": "user requirement specification (urs) - monopolime (co ty phu)"
+    },
+    {
+      "label": "1. Gi\u1edbi thi\u1ec7u d\u1ef1 \u00e1n",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L3",
+      "id": "documents_monopolime_urs_1_gi\u1edbi_thi\u1ec7u_d\u1ef1_\u00e1n",
+      "community": 3,
+      "norm_label": "1. gioi thieu du an"
+    },
+    {
+      "label": "2. Y\u00eau c\u1ea7u Ch\u1ee9c n\u0103ng (Functional Requirements)",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L8",
+      "id": "documents_monopolime_urs_2_y\u00eau_c\u1ea7u_ch\u1ee9c_n\u0103ng_functional_requirements",
+      "community": 3,
+      "norm_label": "2. yeu cau chuc nang (functional requirements)"
+    },
+    {
+      "label": "2.1 H\u1ec7 th\u1ed1ng Qu\u1ea3n l\u00fd V\u00e1n ch\u01a1i",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L10",
+      "id": "documents_monopolime_urs_2_1_h\u1ec7_th\u1ed1ng_qu\u1ea3n_l\u00fd_v\u00e1n_ch\u01a1i",
+      "community": 3,
+      "norm_label": "2.1 he thong quan ly van choi"
+    },
+    {
+      "label": "2.2 C\u01a1 ch\u1ebf Gameplay C\u1ed1t l\u00f5i",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L14",
+      "id": "documents_monopolime_urs_2_2_c\u01a1_ch\u1ebf_gameplay_c\u1ed1t_l\u00f5i",
+      "community": 3,
+      "norm_label": "2.2 co che gameplay cot loi"
+    },
+    {
+      "label": "2.3 H\u1ec7 th\u1ed1ng Kinh t\u1ebf & S\u1ef1 ki\u1ec7n",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L24",
+      "id": "documents_monopolime_urs_2_3_h\u1ec7_th\u1ed1ng_kinh_t\u1ebf_s\u1ef1_ki\u1ec7n",
+      "community": 3,
+      "norm_label": "2.3 he thong kinh te & su kien"
+    },
+    {
+      "label": "3. Y\u00eau c\u1ea7u Giao di\u1ec7n & Tr\u1ea3i nghi\u1ec7m (UI/UX)",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L31",
+      "id": "documents_monopolime_urs_3_y\u00eau_c\u1ea7u_giao_di\u1ec7n_tr\u1ea3i_nghi\u1ec7m_ui_ux",
+      "community": 3,
+      "norm_label": "3. yeu cau giao dien & trai nghiem (ui/ux)"
+    },
+    {
+      "label": "4. Y\u00eau c\u1ea7u K\u1ef9 thu\u1eadt & Phi ch\u1ee9c n\u0103ng",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L39",
+      "id": "documents_monopolime_urs_4_y\u00eau_c\u1ea7u_k\u1ef9_thu\u1eadt_phi_ch\u1ee9c_n\u0103ng",
+      "community": 3,
+      "norm_label": "4. yeu cau ky thuat & phi chuc nang"
+    },
+    {
+      "label": "5. Quy t\u1eafc T\u00ednh to\u00e1n (Logic)",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L45",
+      "id": "documents_monopolime_urs_5_quy_t\u1eafc_t\u00ednh_to\u00e1n_logic",
+      "community": 3,
+      "norm_label": "5. quy tac tinh toan (logic)"
+    },
+    {
+      "label": "6. Danh m\u1ee5c \u00f4 tr\u00ean b\u00e0n c\u1edd",
+      "file_type": "document",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L52",
+      "id": "documents_monopolime_urs_6_danh_m\u1ee5c_\u00f4_tr\u00ean_b\u00e0n_c\u1edd",
+      "community": 3,
+      "norm_label": "6. danh muc o tren ban co"
+    },
+    {
+      "label": "UC7_Qu#U1ea3n l#U00fd t#U00e0i s#U1ea3n_0636aff1.md",
+      "file_type": "document",
+      "source_file": "graphify-out/converted/UC7_Qu#U1ea3n l#U00fd t#U00e0i s#U1ea3n_0636aff1.md",
+      "source_location": "L1",
+      "id": "graphify_out_converted_uc7_qu_u1ea3n_l_u00fd_t_u00e0i_s_u1ea3n_0636aff1_md",
+      "community": 7,
+      "norm_label": "uc7_qu#u1ea3n l#u00fd t#u00e0i s#u1ea3n_0636aff1.md"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_md",
+      "target": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_h\u1ec7_th\u1ed1ng_game_monopolime_offline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_1_gi\u1edbi_thi\u1ec7u",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_2_m\u1ee5c_ti\u00eau_nghi\u1ec7p_v\u1ee5",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L197",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_4_save_load_game",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L243",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_5_y\u00eau_c\u1ea7u_ch\u1ee9c_n\u0103ng_functional_requirements",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L267",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_6_y\u00eau_c\u1ea7u_phi_ch\u1ee9c_n\u0103ng",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L281",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_7_gi\u1ea3_\u0111\u1ecbnh",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L287",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_8_r\u1ee7i_ro",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L293",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_t\u00e0i_li\u1ec7u_\u0111\u1eb7c_t\u1ea3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_brs",
+      "target": "documents_brs_monopolime_9_m\u1edf_r\u1ed9ng_t\u01b0\u01a1ng_lai",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_1_gi\u1edbi_thi\u1ec7u",
+      "target": "documents_brs_monopolime_1_1_m\u1ee5c_\u0111\u00edch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_1_gi\u1edbi_thi\u1ec7u",
+      "target": "documents_brs_monopolime_1_2_ph\u1ea1m_vi",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_1_setup_turn_order",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_2_movement",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_3_property",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_4_rent_logic",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L89",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_5_building_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_6_jail_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L130",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_7_event_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L143",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_8_mortgage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L154",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_9_trading",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_3_y\u00eau_c\u1ea7u_nghi\u1ec7p_v\u1ee5_chi_ti\u1ebft_business_rules",
+      "target": "documents_brs_monopolime_3_10_bankruptcy_end_game",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L199",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_4_save_load_game",
+      "target": "documents_brs_monopolime_4_1_save_game",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L221",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_4_save_load_game",
+      "target": "documents_brs_monopolime_4_2_load_game",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L235",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_4_save_load_game",
+      "target": "documents_brs_monopolime_4_3_tho\u00e1t_gi\u1eefa_ch\u1eebng",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L269",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_6_y\u00eau_c\u1ea7u_phi_ch\u1ee9c_n\u0103ng",
+      "target": "documents_brs_monopolime_6_1_hi\u1ec7u_n\u0103ng",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L272",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_6_y\u00eau_c\u1ea7u_phi_ch\u1ee9c_n\u0103ng",
+      "target": "documents_brs_monopolime_6_2_kh\u1ea3_d\u1ee5ng",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/BRS_Monopolime.md",
+      "source_location": "L276",
+      "weight": 1.0,
+      "source": "documents_brs_monopolime_6_y\u00eau_c\u1ea7u_phi_ch\u1ee9c_n\u0103ng",
+      "target": "documents_brs_monopolime_6_3_\u0111\u1ed9_tin_c\u1eady",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_md",
+      "target": "documents_dac_ta_uc03_save_load_\u0111\u1eb7c_t\u1ea3_use_case_l\u01b0u_v\u00e0_t\u1ea3i_v\u00e1n_ch\u01a1i_uc_03",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_\u0111\u1eb7c_t\u1ea3_use_case_l\u01b0u_v\u00e0_t\u1ea3i_v\u00e1n_ch\u01a1i_uc_03",
+      "target": "documents_dac_ta_uc03_save_load_1_th\u00f4ng_tin_chung_general_information",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_\u0111\u1eb7c_t\u1ea3_use_case_l\u01b0u_v\u00e0_t\u1ea3i_v\u00e1n_ch\u01a1i_uc_03",
+      "target": "documents_dac_ta_uc03_save_load_2_lu\u1ed3ng_s\u1ef1_ki\u1ec7n_ch\u00ednh_main_flow_3_1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_\u0111\u1eb7c_t\u1ea3_use_case_l\u01b0u_v\u00e0_t\u1ea3i_v\u00e1n_ch\u01a1i_uc_03",
+      "target": "documents_dac_ta_uc03_save_load_3_lu\u1ed3ng_thay_th\u1ebf_alternative_flows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_\u0111\u1eb7c_t\u1ea3_use_case_l\u01b0u_v\u00e0_t\u1ea3i_v\u00e1n_ch\u01a1i_uc_03",
+      "target": "documents_dac_ta_uc03_save_load_4_lu\u1ed3ng_ngo\u1ea1i_l\u1ec7_exception_flow_3_4",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_\u0111\u1eb7c_t\u1ea3_use_case_l\u01b0u_v\u00e0_t\u1ea3i_v\u00e1n_ch\u01a1i_uc_03",
+      "target": "documents_dac_ta_uc03_save_load_5_quy_t\u1eafc_nghi\u1ec7p_v\u1ee5_mapping_business_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_3_lu\u1ed3ng_thay_th\u1ebf_alternative_flows",
+      "target": "documents_dac_ta_uc03_save_load_lu\u1ed3ng_thay_th\u1ebf_1_3_2_t\u1ea3i_v\u00e1n_ch\u01a1i_\u0111\u00e3_l\u01b0u_load_game",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_3_lu\u1ed3ng_thay_th\u1ebf_alternative_flows",
+      "target": "documents_dac_ta_uc03_save_load_lu\u1ed3ng_thay_th\u1ebf_2_3_3_t\u1ef1_\u0111\u1ed9ng_l\u01b0u_auto_save",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_4_lu\u1ed3ng_ngo\u1ea1i_l\u1ec7_exception_flow_3_4",
+      "target": "documents_dac_ta_uc03_save_load_3_4_1_l\u1ed7i_kh\u00f4ng_gian_l\u01b0u_tr\u1eef",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC03_Save_Load.md",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc03_save_load_4_lu\u1ed3ng_ngo\u1ea1i_l\u1ec7_exception_flow_3_4",
+      "target": "documents_dac_ta_uc03_save_load_3_4_2_d\u1eef_li\u1ec7u_b\u1ea3n_l\u01b0u_b\u1ecb_h\u1ecfng_corrupted_data",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc06_quan_ly_tai_chinh_md",
+      "target": "documents_dac_ta_uc06_quan_ly_tai_chinh_\u0111\u1eb7c_t\u1ea3_use_case_qu\u1ea3n_l\u00fd_t\u00e0i_ch\u00ednh_uc_06",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc06_quan_ly_tai_chinh_\u0111\u1eb7c_t\u1ea3_use_case_qu\u1ea3n_l\u00fd_t\u00e0i_ch\u00ednh_uc_06",
+      "target": "documents_dac_ta_uc06_quan_ly_tai_chinh_1_th\u00f4ng_tin_chung_general_information",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc06_quan_ly_tai_chinh_\u0111\u1eb7c_t\u1ea3_use_case_qu\u1ea3n_l\u00fd_t\u00e0i_ch\u00ednh_uc_06",
+      "target": "documents_dac_ta_uc06_quan_ly_tai_chinh_2_lu\u1ed3ng_s\u1ef1_ki\u1ec7n_ch\u00ednh_main_flow_6_1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc06_quan_ly_tai_chinh_\u0111\u1eb7c_t\u1ea3_use_case_qu\u1ea3n_l\u00fd_t\u00e0i_ch\u00ednh_uc_06",
+      "target": "documents_dac_ta_uc06_quan_ly_tai_chinh_3_alternative_flows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc06_quan_ly_tai_chinh_\u0111\u1eb7c_t\u1ea3_use_case_qu\u1ea3n_l\u00fd_t\u00e0i_ch\u00ednh_uc_06",
+      "target": "documents_dac_ta_uc06_quan_ly_tai_chinh_4_lu\u1ed3ng_ngo\u1ea1i_l\u1ec7_exception_flow_6_4",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc06_quan_ly_tai_chinh_\u0111\u1eb7c_t\u1ea3_use_case_qu\u1ea3n_l\u00fd_t\u00e0i_ch\u00ednh_uc_06",
+      "target": "documents_dac_ta_uc06_quan_ly_tai_chinh_5_quy_t\u1eafc_nghi\u1ec7p_v\u1ee5_business_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc06_quan_ly_tai_chinh_3_alternative_flows",
+      "target": "documents_dac_ta_uc06_quan_ly_tai_chinh_lu\u1ed3ng_thay_th\u1ebf_1_6_2_nh\u1eadn_ti\u1ec1n_th\u01b0\u1edfng",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Dac_ta_UC06_Quan_ly_tai_chinh.md",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "documents_dac_ta_uc06_quan_ly_tai_chinh_3_alternative_flows",
+      "target": "documents_dac_ta_uc06_quan_ly_tai_chinh_lu\u1ed3ng_thay_th\u1ebf_2_6_3_th\u1ebf_ch\u1ea5p_t\u00e0i_s\u1ea3n_\u0111\u1ec3_thanh_to\u00e1n",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_md",
+      "target": "documents_monopolime_urs_user_requirement_specification_urs_monopolime_c\u1edd_t\u1ef7_ph\u00fa",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_user_requirement_specification_urs_monopolime_c\u1edd_t\u1ef7_ph\u00fa",
+      "target": "documents_monopolime_urs_1_gi\u1edbi_thi\u1ec7u_d\u1ef1_\u00e1n",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_user_requirement_specification_urs_monopolime_c\u1edd_t\u1ef7_ph\u00fa",
+      "target": "documents_monopolime_urs_2_y\u00eau_c\u1ea7u_ch\u1ee9c_n\u0103ng_functional_requirements",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_user_requirement_specification_urs_monopolime_c\u1edd_t\u1ef7_ph\u00fa",
+      "target": "documents_monopolime_urs_3_y\u00eau_c\u1ea7u_giao_di\u1ec7n_tr\u1ea3i_nghi\u1ec7m_ui_ux",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_user_requirement_specification_urs_monopolime_c\u1edd_t\u1ef7_ph\u00fa",
+      "target": "documents_monopolime_urs_4_y\u00eau_c\u1ea7u_k\u1ef9_thu\u1eadt_phi_ch\u1ee9c_n\u0103ng",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_user_requirement_specification_urs_monopolime_c\u1edd_t\u1ef7_ph\u00fa",
+      "target": "documents_monopolime_urs_5_quy_t\u1eafc_t\u00ednh_to\u00e1n_logic",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_user_requirement_specification_urs_monopolime_c\u1edd_t\u1ef7_ph\u00fa",
+      "target": "documents_monopolime_urs_6_danh_m\u1ee5c_\u00f4_tr\u00ean_b\u00e0n_c\u1edd",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_2_y\u00eau_c\u1ea7u_ch\u1ee9c_n\u0103ng_functional_requirements",
+      "target": "documents_monopolime_urs_2_1_h\u1ec7_th\u1ed1ng_qu\u1ea3n_l\u00fd_v\u00e1n_ch\u01a1i",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_2_y\u00eau_c\u1ea7u_ch\u1ee9c_n\u0103ng_functional_requirements",
+      "target": "documents_monopolime_urs_2_2_c\u01a1_ch\u1ebf_gameplay_c\u1ed1t_l\u00f5i",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Documents/Monopolime_URS.md",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "documents_monopolime_urs_2_y\u00eau_c\u1ea7u_ch\u1ee9c_n\u0103ng_functional_requirements",
+      "target": "documents_monopolime_urs_2_3_h\u1ec7_th\u1ed1ng_kinh_t\u1ebf_s\u1ef1_ki\u1ec7n",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "717f4784634af83eb687fbe32aee83eb5cf3f0d4"
+}

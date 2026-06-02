@@ -11,8 +11,8 @@ var victory_mode: String = "bankruptcy"
 
 func _ready():
 	players = [
-		create_player(0, "P1"),
-		create_player(1, "P2")
+		add_player(0, "P1"),
+		add_player(1, "P2")
 	]
 
 func add_player(id, player_name, avatar_id = 0):
