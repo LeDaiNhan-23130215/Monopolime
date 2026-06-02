@@ -10,6 +10,7 @@ var board: Board
 var game_state: GameState
 var dice: Dice
 var ui: GameUI
+var asset_manager: AssetManager
 
 var final_result: DiceResult = null
 var is_rolling := false
@@ -27,6 +28,17 @@ func get_event_handler() -> EventHandler:
 		add_child(event_handler)
 		event_handler.refresh_board_deck_counts()
 	return event_handler
+
+
+func _on_asset_action_completed(_action: String, success: bool, message: String) -> void:
+	if ui == null:
+		return
+	ui.show_message(message)
+	ui.add_history(message, Color("#1B5E20") if success else Color("#B71C1C"))
+	if board and board.has_method("update_cell_tooltips"):
+		board.update_cell_tooltips()
+	if game_state:
+		ui.update_player_info(game_state.players)
 
 
 # =========================
