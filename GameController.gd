@@ -17,6 +17,7 @@ var is_rolling := false
 var is_turn_resolving := false
 
 var event_handler: EventHandler = null
+var jail_manager: JailManager = null
 
 # Lưu dice total để tính utility rent
 var last_dice_total: int = 0
@@ -28,6 +29,12 @@ func get_event_handler() -> EventHandler:
 		add_child(event_handler)
 		event_handler.refresh_board_deck_counts()
 	return event_handler
+
+
+func get_jail_manager() -> JailManager:
+	if jail_manager == null:
+		jail_manager = JailManager.new(self)
+	return jail_manager
 
 
 func _on_asset_action_completed(_action: String, success: bool, message: String) -> void:
@@ -62,10 +69,7 @@ func start_turn():
 
 	if player.state.in_jail:
 		print(player.name + " đang ở tù! (Lượt ", player.state.jail_turns, "/3)")
-		if player.state.special_cards > 0:
-			ui.show_message(player.name + " ở tù. Có thẻ Ra Tù. Nhấn Roll!")
-		else:
-			ui.show_message(player.name + " ở tù. Đổ Double để ra! (Lượt " + str(player.state.jail_turns + 1) + "/3)")
+		get_jail_manager().begin_jail_turn(player)
 
 
 func roll_dice():
@@ -92,7 +96,11 @@ func resolve_roll():
 	# =========================
 
 	if player.state.in_jail:
-		await _handle_jail_turn(player)
+		await get_jail_manager().handle_jail_turn(player, final_result)
+		end_turn()
+		is_rolling = false
+		is_turn_resolving = false
+		ui.set_roll_enabled(true)
 		return
 
 	# =========================
@@ -146,49 +154,9 @@ func resolve_roll():
 
 
 # =========================
-# XỬ LÝ TÙ
+# XỬ LÝ TÙ – đã chuyển sang JailManager (UC-07)
+# Xem: JailManager.gd, handle_jail_turn(), resolve_jail_turn()
 # =========================
-
-func _handle_jail_turn(player: Player):
-	# Ưu tiên dùng thẻ Ra Tù nếu có VÀ không đổ được double
-	if player.state.special_cards > 0 and not final_result.is_double:
-		player.state.special_cards -= 1
-		player.state.set_in_jail(false)
-		ui.show_message(player.name + " dùng thẻ Ra Tù Miễn Phí!")
-		print(player.name + " dùng thẻ Ra Tù!")
-
-		await move_player(player, final_result.total())
-		await handle_landed_cell(player, player.state.position)
-
-	elif final_result.is_double:
-		player.state.set_in_jail(false)
-		player.state.jail_turns = 0
-		ui.show_message(player.name + " đổ Double - Thoát tù!")
-		print(player.name + " thoát tù bằng Double!")
-
-		await move_player(player, final_result.total())
-		await handle_landed_cell(player, player.state.position)
-
-	else:
-		player.state.jail_turns += 1
-		print(player.name + " không đổ được Double. Lượt tù: ", player.state.jail_turns)
-
-		# Sau 3 lượt tù -> bắt buộc nộp $50
-		if player.state.jail_turns >= 3:
-			ui.show_message(player.name + " hết 3 lượt! Nộp phạt $50 ra tù!")
-			process_payment(player, null, 50, "Phạt tù")
-			player.state.set_in_jail(false)
-			player.state.jail_turns = 0
-
-			await move_player(player, final_result.total())
-			await handle_landed_cell(player, player.state.position)
-		else:
-			ui.show_message(player.name + " vẫn ở tù (Lượt " + str(player.state.jail_turns) + "/3)")
-
-	end_turn()
-	is_rolling = false
-	is_turn_resolving = false
-	ui.set_roll_enabled(true)
 
 
 # =========================
@@ -262,15 +230,8 @@ func handle_teleport(player: Player):
 
 
 func go_to_jail(player: Player):
-	print("🔒 ", player.name, " VÀO TÙ!")
-	player.state.set_in_jail(true)
-	player.state.jail_turns = 0
-
-	ui.play_sfx(GameUI.SFX_JAIL)
-	ui.show_jail()
-
-	var jail_pos = board.get_jail_position()
-	await move_player_to_position(player, jail_pos)
+	# Delegate toàn bộ logic vào tù sang JailManager (UC-07, 7.1.1→7.1.3)
+	await get_jail_manager().go_to_jail(player)
 
 
 # =========================
