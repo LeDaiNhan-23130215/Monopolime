@@ -167,7 +167,7 @@ func handle_event(player: Player, cell: Cell) -> bool:
 			return true
 
 		"go_to_jail":
-			game_controller.ui.show_message(player.name + " bi dua vao Jail!")
+			game_controller.ui.show_message(player.name + " dừng ô Vào Tù – bị đưa vào Nhà tù ngay! (BR-26)")
 			await game_controller.go_to_jail(player)
 			call_deferred("emit_signal", "event_finished")
 			return true
@@ -257,6 +257,7 @@ func _process_card(player: Player, card: Dictionary):
 			await _handle_cell_after_move(player, nearest)
 
 		"go_jail":
+			game_controller.ui.show_message(player.name + " rút thẻ Vào Tù – bị đưa vào Nhà tù ngay! (BR-26)")
 			await game_controller.go_to_jail(player)
 			call_deferred("emit_signal", "event_finished")
 

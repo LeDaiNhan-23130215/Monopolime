@@ -7,7 +7,8 @@ var avatar_id: int = 0
 
 var state: PlayerState
 var properties: Array = []
-var special_card: Array = []
+var special_card: Array = []  # Legacy: danh sách object thẻ (chưa dùng)
+							   # Số lượng thẻ Ra Tù đang dùng: state.special_cards (int)
 
 var token: PlayerToken
 
