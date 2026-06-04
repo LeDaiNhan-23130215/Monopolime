@@ -3,7 +3,7 @@ class_name EventHandler
 
 signal event_finished
 
-var game_controller: GameController
+var game_controller
 
 var chance_cards = [
 	{"title": "Nhận thưởng dự án", "text": "Dự án mới sinh lời. Nhận $200.", "action": "gain", "amount": 200, "icon": "money"},
@@ -95,7 +95,7 @@ var _chance_deck: Array = []
 var _community_deck: Array = []
 
 
-func _init(controller: GameController = null):
+func _init(controller = null):
 	game_controller = controller
 	_shuffle_decks()
 
@@ -268,12 +268,12 @@ func _process_card(player: Player, card: Dictionary):
 		"birthday":
 			var total_received = 0
 			for p in game_controller.game_state.players:
-				if p != player and not p.is_bankrupt():
-					var gift = card.amount
-					if p.state.balance >= gift:
-						p.deduct_money(gift)
-						player.add_money(gift)
-						total_received += gift
+				if p == player or p.is_bankrupt():
+					continue
+				var gift = int(card.get("amount", 0))
+				# Use FinanceManager.transfer which returns false if payer lacks funds
+				if FinanceManager.transfer(p, player, gift):
+					total_received += gift
 			game_controller.ui.show_message(player.name + " nhan $" + str(total_received) + " qua sinh nhat!")
 			game_controller.ui.add_history(player.name + " nhận $" + str(total_received) + " từ người chơi khác", Color("#1B5E20"))
 			game_controller.ui.show_money_float(total_received, player.token)

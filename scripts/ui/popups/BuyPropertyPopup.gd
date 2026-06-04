@@ -234,7 +234,7 @@ func show_property(cell: Cell, player: Player) -> void:
 	color_label.add_theme_color_override("font_color", group_color)
 	upgrade_label.text = UIFactory.format_money(cell.house_cost)
 	cash_label.text = "Bạn còn " + UIFactory.format_money(player.state.balance)
-	buy_button.disabled = player.state.balance < cell.get_modified_price()
+	buy_button.disabled = not FinanceManager.can_afford(player, cell.get_modified_price())
 	_animate_open()
 
 func _emit(accepted: bool) -> void:

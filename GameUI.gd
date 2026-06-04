@@ -41,6 +41,8 @@ var _rolling := false
 var _resolving_roll := false
 var _roll_ticks := 0
 var _current_build_cell: Cell = null
+var _pending_mortgage_player: Player = null
+var _pending_mortgage_amount: int = 0
 
 func _ready() -> void:
 	_hide_legacy_nodes()
@@ -203,6 +205,31 @@ func _on_open_assets_pressed() -> void:
 	if game_controller:
 		show_property_manager(game_controller.get_current_player())
 
+
+func request_mortgage(player: Player, amount_needed: int) -> void:
+	# Show assets and let player trigger mortgage; when mortgage button pressed, delegate to GameController
+	_current_build_cell = null
+	show_property_manager(player)
+	_pending_mortgage_player = player
+	_pending_mortgage_amount = amount_needed
+	# Connect once
+	if assets_popup:
+		assets_popup.mortgage_requested.connect(_on_assets_mortgage_requested)
+
+
+func _on_assets_mortgage_requested() -> void:
+	# Delegate mortgage handling to controller (will emit turn_action_completed when done)
+	if game_controller and _pending_mortgage_player != null:
+		game_controller.handle_mortgage_from_ui(_pending_mortgage_player, _pending_mortgage_amount)
+	# Cleanup and hide popup
+	if assets_popup:
+		assets_popup.visible = false
+		# disconnect if connected
+		if assets_popup.mortgage_requested.is_connected(_on_assets_mortgage_requested):
+			assets_popup.mortgage_requested.disconnect(_on_assets_mortgage_requested)
+	_pending_mortgage_player = null
+	_pending_mortgage_amount = 0
+
 func _on_open_build_pressed() -> void:
 	if game_controller:
 		show_build_options(game_controller.get_current_player(), game_controller.get_current_player().properties)
@@ -307,6 +334,125 @@ func show_teleport_chooser(player: Player, board: Board) -> void:
 
 func play_sfx(_key: String) -> void:
 	pass
+
+
+func request_auction_bid(player: Player, min_bid: int, max_bid: int) -> int:
+	# Styled auction popup consistent with other project popups
+	var overlay := UIFactory.dim_overlay()
+	if ui_layer:
+		ui_layer.add_child(overlay)
+	else:
+		add_child(overlay)
+
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color("FFF8EC")
+	panel_style.border_color = Color("57C6FF")
+	panel_style.set_border_width_all(4)
+	panel_style.set_corner_radius_all(18)
+	panel_style.set_content_margin_all(14)
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", panel_style)
+	panel.custom_minimum_size = Vector2(640, 320)
+	panel.size = panel.custom_minimum_size
+	ui_layer.add_child(panel)
+	# ensure overlay is removed when panel is closed
+	if overlay and overlay.is_inside_tree():
+		panel.connect("tree_exited", Callable(overlay, "queue_free"))
+
+	# center the panel in the ui_layer
+	var parent_size: Vector2 = Vector2(1280, 720)
+	if get_viewport() != null:
+		parent_size = get_viewport().get_visible_rect().size
+	panel.position = (parent_size - panel.size) * 0.5
+
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 12)
+	panel.add_child(root)
+
+	# Header
+	var header := HBoxContainer.new()
+	header.alignment = BoxContainer.ALIGNMENT_CENTER
+	root.add_child(header)
+	var title := UIFactory.label("Đấu giá: " + player.name, 28, CoTyPhuTheme.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
+	var close_btn := Button.new()
+	close_btn.text = "✕"
+	close_btn.custom_minimum_size = Vector2(44, 44)
+	header.add_child(close_btn)
+
+	# Info / instruction
+	var info := Label.new()
+	info.text = "Nhập giá (tối thiểu: $" + str(min_bid) + ", tối đa: $" + str(max_bid) + "). Nhập 0 để bỏ."
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	root.add_child(info)
+
+	# Input row
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 8)
+	root.add_child(row)
+
+	var le := LineEdit.new()
+	le.text = str(min_bid)
+	le.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	le.custom_minimum_size = Vector2(220, 48)
+	row.add_child(le)
+
+	var min_lbl := UIFactory.label("Min: $" + str(min_bid), 16, CoTyPhuTheme.TEXT_DARK)
+	row.add_child(min_lbl)
+	var max_lbl := UIFactory.label("Max: $" + str(max_bid), 16, CoTyPhuTheme.TEXT_DARK)
+	row.add_child(max_lbl)
+
+	# Buttons
+	var btn_row := HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 18)
+	root.add_child(btn_row)
+
+	var bid_btn := UIFactory.button("Đặt giá", CoTyPhuTheme.GREEN, Vector2(160, 56))
+	var pass_btn := UIFactory.button("Bỏ", CoTyPhuTheme.BLUE, Vector2(120, 56))
+	btn_row.add_child(bid_btn)
+	btn_row.add_child(pass_btn)
+
+	# Focus
+	le.call_deferred("grab_focus")
+
+	var chosen_bid := 0
+
+	# Handlers
+	bid_btn.pressed.connect(func():
+		var text := le.text.strip_edges()
+		if text == "":
+			call_deferred("show_toast_and_wait", "Lỗi", "Giá không được để trống.", CoTyPhuTheme.RED, 0.9)
+			return
+		if not text.is_valid_int():
+			call_deferred("show_toast_and_wait", "Lỗi", "Giá phải là số nguyên.", CoTyPhuTheme.RED, 0.9)
+			return
+		var n := int(text)
+		if n == 0:
+			chosen_bid = 0
+		elif n < min_bid or n > max_bid:
+			call_deferred("show_toast_and_wait", "Lỗi", "Giá phải từ $" + str(min_bid) + " đến $" + str(max_bid) + ".", CoTyPhuTheme.RED, 0.9)
+			return
+		else:
+			chosen_bid = n
+		panel.queue_free()
+	)
+
+	pass_btn.pressed.connect(func():
+		chosen_bid = 0
+		panel.queue_free()
+	)
+
+	close_btn.pressed.connect(func():
+		chosen_bid = 0
+		panel.queue_free()
+	)
+
+	# Wait for panel to be freed
+	await panel.tree_exited
+	return chosen_bid
 
 func show_money_float(amount: int, from_node: Node = null, to_node: Node = null) -> void:
 	var label := Label.new()

@@ -14,6 +14,7 @@ static func can_afford(player: Player, amount: int) -> bool:
 # Trừ tiền (deduct) – trả về true nếu thành công
 static func deduct(player: Player, amount: int) -> bool:
 	if not can_afford(player, amount):
+		print("[FinanceManager] Insufficient funds: ", player.name, " needs $", amount, " but has $", player.state.balance)
 		return false
 	player.deduct_money(amount)
 	return true
@@ -27,6 +28,7 @@ static func add(player: Player, amount: int) -> void:
 # Chuyển tiền từ người này sang người kia
 static func transfer(from_player: Player, to_player: Player, amount: int) -> bool:
 	if not can_afford(from_player, amount):
+		print("[FinanceManager] Transfer failed - insufficient funds: ", from_player.name, " -> $", amount)
 		return false
 	from_player.deduct_money(amount)
 	if to_player != null:
