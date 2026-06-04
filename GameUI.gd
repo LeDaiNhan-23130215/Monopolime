@@ -454,11 +454,13 @@ func request_auction_bid(player: Player, min_bid: int, max_bid: int) -> int:
 	# Focus
 	le.call_deferred("grab_focus")
 
-	var chosen_bid := 0
+	# Use a mutable container so inline connected closures update the same reference
+	var chosen_bid_ref := {"v": 0, "close_via": ""}
 
 	# Handlers
 	bid_btn.pressed.connect(func():
 		var text := le.text.strip_edges()
+		print("[AuctionUI] submit (btn); le.text='", le.text, "' stripped='", text, "' is_valid_int=", text.is_valid_int())
 		if text == "":
 			call_deferred("show_toast_and_wait", "Lỗi", "Giá không được để trống.", CoTyPhuTheme.RED, 0.9)
 			return
@@ -467,28 +469,58 @@ func request_auction_bid(player: Player, min_bid: int, max_bid: int) -> int:
 			return
 		var n := int(text)
 		if n == 0:
-			chosen_bid = 0
+			chosen_bid_ref.v = 0
+			chosen_bid_ref.close_via = "btn"
 		elif n < min_bid or n > max_bid:
 			call_deferred("show_toast_and_wait", "Lỗi", "Giá phải từ $" + str(min_bid) + " đến $" + str(max_bid) + ".", CoTyPhuTheme.RED, 0.9)
 			return
 		else:
-			chosen_bid = n
+			chosen_bid_ref.v = n
+			chosen_bid_ref.close_via = "btn"
+		print("[AuctionUI] chosen_bid set (btn):", chosen_bid_ref.v)
+		panel.queue_free()
+	)
+
+	# Use Godot 4's LineEdit `text_submitted` signal (Enter key)
+	le.text_submitted.connect(func(submitted_text: String):
+		var text: String = submitted_text.strip_edges()
+		print("[AuctionUI] submit (enter); le.text='", submitted_text, "' stripped='", text, "' is_valid_int=", text.is_valid_int())
+		if text == "":
+			call_deferred("show_toast_and_wait", "Lỗi", "Giá không được để trống.", CoTyPhuTheme.RED, 0.9)
+			return
+		if not text.is_valid_int():
+			call_deferred("show_toast_and_wait", "Lỗi", "Giá phải là số nguyên.", CoTyPhuTheme.RED, 0.9)
+			return
+		var n := int(text)
+		if n == 0:
+			chosen_bid_ref.v = 0
+			chosen_bid_ref.close_via = "enter"
+		elif n < min_bid or n > max_bid:
+			call_deferred("show_toast_and_wait", "Lỗi", "Giá phải từ $" + str(min_bid) + " đến $" + str(max_bid) + ".", CoTyPhuTheme.RED, 0.9)
+			return
+		else:
+			chosen_bid_ref.v = n
+			chosen_bid_ref.close_via = "enter"
+		print("[AuctionUI] chosen_bid set (enter):", chosen_bid_ref.v)
 		panel.queue_free()
 	)
 
 	pass_btn.pressed.connect(func():
-		chosen_bid = 0
+		chosen_bid_ref.v = 0
+		chosen_bid_ref.close_via = "pass"
 		panel.queue_free()
 	)
 
 	close_btn.pressed.connect(func():
-		chosen_bid = 0
+		chosen_bid_ref.v = 0
+		chosen_bid_ref.close_via = "close"
 		panel.queue_free()
 	)
 
 	# Wait for panel to be freed
 	await panel.tree_exited
-	return chosen_bid
+	print("[AuctionUI] after await; returning chosen_bid=", chosen_bid_ref.v, " close_via=", chosen_bid_ref.close_via)
+	return chosen_bid_ref.v
 
 func show_money_float(amount: int, from_node: Node = null, to_node: Node = null) -> void:
 	var label := Label.new()
