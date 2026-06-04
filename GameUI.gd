@@ -258,6 +258,9 @@ func show_card_popup(title: String, text: String, color: Color, amount: int = 0)
 	if color == CoTyPhuTheme.RED:
 		icon = "tax"
 	event_popup.show_event(_clean_text(title), _clean_text(text), amount, icon)
+	# Ensure event popup is above any temporary overlays/popups
+	if ui_layer and ui_layer.has_method("move_child"):
+		ui_layer.move_child(event_popup, ui_layer.get_child_count() - 1)
 
 func show_card_and_wait(title: String, text: String, color: Color, amount: int = 0):
 	show_card_popup(title, text, color, amount)
@@ -272,10 +275,14 @@ func show_event_card_and_wait(deck_title: String, card: Dictionary, color: Color
 
 func show_toast_and_wait(title: String, text: String, color: Color, amount: int = 0, duration: float = 0.9):
 	show_card_popup(title, text, color, amount)
-	if duration > 0:
-		await get_tree().create_timer(duration).timeout
-	if event_popup.visible:
-		event_popup.visible = false
+	# For error (red) toasts, require user to press OK; otherwise auto-hide after `duration`
+	if color == CoTyPhuTheme.RED:
+		await card_dismissed
+	else:
+		if duration > 0:
+			await get_tree().create_timer(duration).timeout
+		if event_popup.visible:
+			event_popup.visible = false
 
 func show_property_manager(player: Player) -> void:
 	assets_popup.show_assets(player)
@@ -386,6 +393,8 @@ func request_auction_bid(player: Player, min_bid: int, max_bid: int) -> int:
 	info.text = "Nhập giá (tối thiểu: $" + str(min_bid) + ", tối đa: $" + str(max_bid) + "). Nhập 0 để bỏ."
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root.add_child(info)
+	# Ensure info text is readable on light background
+	info.add_theme_color_override("font_color", CoTyPhuTheme.TEXT_DARK)
 
 	# Input row
 	var row := HBoxContainer.new()
@@ -397,7 +406,34 @@ func request_auction_bid(player: Player, min_bid: int, max_bid: int) -> int:
 	le.text = str(min_bid)
 	le.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	le.custom_minimum_size = Vector2(220, 48)
-	row.add_child(le)
+	# Make input text dark for readability
+	le.add_theme_color_override("font_color", CoTyPhuTheme.TEXT_DARK)
+	# Prepare white style for the input and wrapper
+	var le_style := StyleBoxFlat.new()
+	le_style.bg_color = Color(1, 1, 1)
+	le_style.border_color = Color(0, 0, 0, 0.06)
+	le_style.set_border_width_all(1)
+	le_style.set_corner_radius_all(8)
+	le_style.set_content_margin_all(8)
+	# Ensure LineEdit itself uses a white background (some themes draw LineEdit over the panel)
+	le.add_theme_stylebox_override("background", le_style)
+	le.add_theme_stylebox_override("panel", le_style)
+	le.add_theme_color_override("background_color", Color(1, 1, 1))
+	# Wrap LineEdit in a white PanelContainer for a solid white background
+	var le_panel := PanelContainer.new()
+	le_panel.custom_minimum_size = le.custom_minimum_size
+	le_panel.add_theme_stylebox_override("panel", le_style)
+	le_panel.add_child(le)
+	# Add a white ColorRect behind the LineEdit to force a solid white background
+	var le_bg := ColorRect.new()
+	le_bg.color = Color(1, 1, 1)
+	le_bg.custom_minimum_size = le.custom_minimum_size
+	le_bg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	le_bg.size_flags_vertical = Control.SIZE_FILL
+	le_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	le_panel.add_child(le_bg)
+	le_panel.move_child(le_bg, 0)
+	row.add_child(le_panel)
 
 	var min_lbl := UIFactory.label("Min: $" + str(min_bid), 16, CoTyPhuTheme.TEXT_DARK)
 	row.add_child(min_lbl)

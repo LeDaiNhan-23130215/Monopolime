@@ -14,6 +14,7 @@ var asset_manager: AssetManager
 
 var final_result: DiceResult = null
 var is_rolling := false
+var is_turn_resolving := false
 var event_handler: EventHandler = null
 var jail_manager: JailManager = null
 
@@ -669,7 +670,9 @@ func run_auction(cell: Cell) -> void:
 			# Determine desired bid: simple strategy - bid up to base_price, capped by cash
 			if bidder.get_meta("is_ai") == false and ui:
 				# Human player - ask for input
-				var human_bid = await ui.request_auction_bid(bidder, min_needed, max_cash)
+				# Cap human max bid to the lesser of their cash and the base price (same as AI strategy)
+				var human_max: int = min(max_cash, int(base_price))
+				var human_bid: int = await ui.request_auction_bid(bidder, min_needed, human_max)
 				if human_bid <= 0:
 					passed[bidder] = true
 					active_count -= 1
