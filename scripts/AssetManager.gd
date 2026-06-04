@@ -22,7 +22,7 @@ func _get_all_cells() -> Array:
 # AF7.2 – Mua tài sản (BR-07)
 # =========================
 func buy_property(player: Player, cell: PropertyCell) -> bool:
-	if cell.property_owner != null:
+	if cell.cell_owner != null:
 		_emit("buy", false, "Ô đất đã có chủ: " + cell.data.cell_name)
 		return false
 
@@ -36,9 +36,8 @@ func buy_property(player: Player, cell: PropertyCell) -> bool:
 	if not FinanceManager.can_afford(player, price):
 		_emit("buy", false, player.name + " không đủ tiền mua " + cell.data.cell_name)
 		return false
-
 	FinanceManager.deduct(player, price)
-	cell.property_owner = player
+	cell.cell_owner = player
 	player.add_property(cell)
 	cell.queue_redraw()
 
@@ -52,7 +51,7 @@ func buy_property(player: Player, cell: PropertyCell) -> bool:
 func build_house(player: Player, cell: PropertyCell) -> bool:
 	var all_cells = _get_all_cells()
 
-	if cell.property_owner != player:
+	if cell.cell_owner != player:
 		_emit("build", false, "Không phải tài sản của bạn")
 		return false
 
@@ -85,7 +84,7 @@ func build_house(player: Player, cell: PropertyCell) -> bool:
 # AF7.4 – Thế chấp tài sản (BR-19)
 # =========================
 func mortgage_property(player: Player, cell: PropertyCell) -> bool:
-	if cell.property_owner != player:
+	if cell.cell_owner != player:
 		_emit("mortgage", false, "Không phải tài sản của bạn")
 		return false
 
@@ -108,7 +107,7 @@ func mortgage_property(player: Player, cell: PropertyCell) -> bool:
 # Chuộc lại tài sản (BR-20)
 # =========================
 func redeem_property(player: Player, cell: PropertyCell) -> bool:
-	if cell.property_owner != player:
+	if cell.cell_owner != player:
 		_emit("redeem", false, "Không phải tài sản của bạn")
 		return false
 
@@ -132,7 +131,7 @@ func redeem_property(player: Player, cell: PropertyCell) -> bool:
 # AF7.5 – Bán nhà / Khách sạn về Ngân hàng (nhận 50% chi phí xây)
 # =========================
 func sell_house_to_bank(player: Player, cell: PropertyCell) -> bool:
-	if cell.property_owner != player:
+	if cell.cell_owner != player:
 		_emit("sell_house", false, "Không phải tài sản của bạn")
 		return false
 
@@ -160,7 +159,7 @@ func sell_house_to_bank(player: Player, cell: PropertyCell) -> bool:
 # Điều kiện bắt buộc: Không còn nhà/KS + Không đang thế chấp
 # =========================
 func sell_property_to_bank(player: Player, cell: PropertyCell) -> bool:
-	if cell.property_owner != player:
+	if cell.cell_owner != player:
 		_emit("sell", false, "Không phải tài sản của bạn")
 		return false
 

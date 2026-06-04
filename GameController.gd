@@ -15,7 +15,6 @@ var asset_manager: AssetManager
 var final_result: DiceResult = null
 var is_rolling := false
 var is_turn_resolving := false
-
 var event_handler: EventHandler = null
 var jail_manager: JailManager = null
 
@@ -23,7 +22,7 @@ var jail_manager: JailManager = null
 var last_dice_total: int = 0
 
 
-func get_event_handler() -> EventHandler:
+func get_event_handler():
 	if event_handler == null:
 		event_handler = EventHandler.new(self)
 		add_child(event_handler)
@@ -371,7 +370,7 @@ func handle_landed_cell(player: Player, cell_index: int) -> void:
 
 	# --- Ô có thể mua ---
 	if cell.can_be_purchased():
-		if player.state.balance >= cell.get_modified_price():
+		if FinanceManager.can_afford(player, cell.get_modified_price()):
 			ui.show_buy_prompt(player, cell)
 			var accepted = await buy_decision_made
 
@@ -411,7 +410,9 @@ func handle_landed_cell(player: Player, cell_index: int) -> void:
 
 func buy_property(player: Player, cell: Cell) -> void:
 	var purchase_price = cell.get_modified_price()
-	player.deduct_money(purchase_price)
+	if not FinanceManager.deduct(player, purchase_price):
+		ui.show_message(player.name + " không đủ tiền để mua " + cell.cell_name)
+		return
 	cell.cell_owner = player
 	player.add_property(cell)
 
@@ -511,6 +512,46 @@ func build_protection_tower_for_current_player(cell: Cell) -> bool:
 	return ok
 
 
+## UI-driven mortgage helper: mortgage properties until player reaches required balance
+func handle_mortgage_from_ui(player: Player, amount_needed: int) -> void:
+	if asset_manager == null:
+		print("[GameController] No AssetManager available for mortgage handling")
+		_emit_turn_action_completed()
+		return
+
+	var target_balance = player.state.balance + amount_needed
+	var mortgaged_any = false
+
+	# Sort properties by mortgage value descending to raise funds faster
+	var props := []
+	for c in player.properties:
+		props.append(c)
+	props.sort_custom(func(a, b): return b.get_mortgage_value() - a.get_mortgage_value())
+
+	for cell in props:
+		if FinanceManager.can_afford(player, target_balance):
+			break
+		if cell.is_mortgaged:
+			continue
+		if cell.house_count > 0 or cell.has_hotel:
+			continue
+		# Attempt mortgage via AssetManager; it will add funds on success
+		var ok = asset_manager.mortgage_property(player, cell)
+		if ok:
+			mortgaged_any = true
+
+	if FinanceManager.can_afford(player, target_balance):
+		ui.show_message(player.name + " đã thế chấp đủ tiền.")
+		ui.add_history(player.name + " thế chấp để gom đủ tiền", Color("#1B5E20"))
+	else:
+		ui.show_message(player.name + " không thể thế chấp đủ tiền.")
+		ui.add_history(player.name + " không thể thế chấp đủ tiền", Color("#B71C1C"))
+
+	# Update UI and finish the mortgage action
+	_refresh_player_info()
+	_emit_turn_action_completed()
+
+
 func calculate_net_worth(player: Player) -> int:
 	var total = player.state.balance
 	for cell in player.properties:
@@ -582,34 +623,106 @@ func get_winner_by_net_worth() -> Player:
 func run_auction(cell: Cell) -> void:
 	print("--- ĐẤU GIÁ: ", cell.cell_name, " ---")
 
-	var highest_bid = 0
-	var highest_bidder: Player = null
+	# Prepare bidders (all non-bankrupt players)
+	var bidders: Array = []
+	for p in game_state.players:
+		if not p.is_bankrupt():
+			bidders.append(p)
 
-	for player in game_state.players:
-		if player.is_bankrupt():
-			continue
+	if bidders.size() == 0:
+		ui.show_message("Không ai tham gia đấu giá " + cell.cell_name)
+		return
 
-		var max_willing = int(cell.get_modified_price() * 0.8)
-		var bid = min(max_willing, player.state.balance - 100)
+	var current_bid: int = 0
+	var current_winner: Player = null
 
-		if bid > highest_bid and bid > 0:
-			highest_bid = bid
-			highest_bidder = player
+	# Basic increment based on property price
+	var base_price = cell.get_modified_price()
+	var increment = max(1, int(base_price * 0.05))
 
-	if highest_bidder != null:
-		highest_bidder.deduct_money(highest_bid)
-		cell.cell_owner = highest_bidder
-		highest_bidder.add_property(cell)
-		cell.play_buy_effect()
-		ui.show_money_float(-highest_bid, highest_bidder.token)
-		ui.add_history(highest_bidder.name + " thắng đấu giá " + cell.cell_name + " (-$" + str(highest_bid) + ")", Color("#0D47A1"))
-		board.update_cell_tooltips()
+	# Track players who have passed
+	var passed = {}
+	for p in bidders:
+		passed[p] = false
 
-		ui.show_message(highest_bidder.name + " thắng đấu giá " + cell.cell_name + " với $" + str(highest_bid))
-		print(highest_bidder.name, " thắng đấu giá: ", cell.cell_name, " - $", highest_bid)
+	# Auction rounds: continue until no new bids
+	var active_count = bidders.size()
+	var round_index = 0
+
+	while true:
+		var any_new_bid = false
+		for i in range(bidders.size()):
+			var idx = (round_index + i) % bidders.size()
+			var bidder: Player = bidders[idx]
+
+			if bidder.is_bankrupt() or passed.get(bidder, false):
+				continue
+
+			# Compute the maximum this bidder can pay in cash
+			var max_cash := bidder.state.balance
+
+			# If bidder cannot afford at least current_bid + increment, they pass
+			var min_needed = current_bid + increment
+			if max_cash < min_needed:
+				passed[bidder] = true
+				active_count -= 1
+				continue
+
+			# Determine desired bid: simple strategy - bid up to base_price, capped by cash
+			if bidder.get_meta("is_ai") == false and ui:
+				# Human player - ask for input
+				# Cap human max bid to the lesser of their cash and the base price (same as AI strategy)
+				var human_max: int = min(max_cash, int(base_price))
+				var human_bid: int = await ui.request_auction_bid(bidder, min_needed, human_max)
+				if human_bid <= 0:
+					passed[bidder] = true
+					active_count -= 1
+					continue
+				if human_bid > current_bid and FinanceManager.can_afford(bidder, human_bid):
+					current_bid = human_bid
+					current_winner = bidder
+					any_new_bid = true
+					ui.show_message(bidder.name + " đặt giá $" + str(current_bid))
+					ui.add_history(bidder.name + " đặt giá đấu giá " + cell.cell_name + " ($" + str(current_bid) + ")", Color("#1B5E20"))
+				else:
+					# invalid or unaffordable bid -> treat as pass
+					passed[bidder] = true
+					active_count -= 1
+					continue
+			else:
+				# AI bidding strategy
+				var desired_max = min(max_cash, int(base_price * 1.0))
+				var next_bid = max(min_needed, current_bid + min(increment, desired_max - current_bid))
+
+				# If next_bid is higher than current, accept it
+				if next_bid > current_bid and FinanceManager.can_afford(bidder, next_bid):
+					current_bid = next_bid
+					current_winner = bidder
+					any_new_bid = true
+					ui.show_message(bidder.name + " đặt giá $" + str(current_bid))
+					ui.add_history(bidder.name + " đặt giá đấu giá " + cell.cell_name + " ($" + str(current_bid) + ")", Color("#1B5E20"))
+
+		# If no new bids in this full round, auction ends
+		if not any_new_bid:
+			break
+		round_index = (round_index + 1) % bidders.size()
+
+	if current_winner != null and current_bid > 0:
+		if FinanceManager.deduct(current_winner, current_bid):
+			cell.cell_owner = current_winner
+			current_winner.add_property(cell)
+			cell.play_buy_effect()
+			ui.show_money_float(-current_bid, current_winner.token)
+			ui.add_history(current_winner.name + " thắng đấu giá " + cell.cell_name + " (-$" + str(current_bid) + ")", Color("#0D47A1"))
+			board.update_cell_tooltips()
+			ui.show_message(current_winner.name + " thắng đấu giá " + cell.cell_name + " với $" + str(current_bid))
+			print(current_winner.name, " thắng đấu giá: ", cell.cell_name, " - $", current_bid)
+		else:
+			ui.show_message(current_winner.name + " không đủ tiền để thanh toán $" + str(current_bid) + " (đấu giá thất bại)")
+			print(current_winner.name, " thắng đấu giá nhưng không đủ tiền: ", cell.cell_name, " - $", current_bid)
 	else:
 		ui.show_message("Không ai đấu giá " + cell.cell_name)
-		print("Đấu giá thất bại - không ai mua")
+		print("Đấu giá kết thúc - không ai mua")
 
 	await get_tree().create_timer(1.5).timeout
 
@@ -619,7 +732,7 @@ func run_auction(cell: Cell) -> void:
 # =========================
 
 func process_reward(player: Player, amount: int = 200) -> void:
-	player.add_money(amount)
+	FinanceManager.add(player, amount)
 	ui.play_sfx(GameUI.SFX_REWARD)
 	ui.show_message(player.name + " nhận $" + str(amount))
 	ui.add_history(player.name + " nhận $" + str(amount), Color("#1B5E20"))
@@ -627,35 +740,39 @@ func process_reward(player: Player, amount: int = 200) -> void:
 
 
 func process_payment(payer: Player, beneficiary: Player, amount: int, reason: String) -> void:
-	if payer.state.balance >= amount:
+	if FinanceManager.can_afford(payer, amount):
 		execute_transaction(payer, beneficiary, amount, reason)
 	else:
 		await handle_insufficient_funds(payer, beneficiary, amount, reason)
 
 
 func execute_transaction(payer: Player, beneficiary: Player, amount: int, reason: String = "") -> void:
-	payer.deduct_money(amount)
-	ui.play_sfx(GameUI.SFX_PAY)
-	ui.show_money_float(-amount, payer.token, beneficiary.token if beneficiary else null)
+	# Dùng FinanceManager để trừ và cộng tiền an toàn
+	if FinanceManager.deduct(payer, amount):
+		ui.play_sfx(GameUI.SFX_PAY)
+		ui.show_money_float(-amount, payer.token, beneficiary.token if beneficiary else null)
 
-	if beneficiary:
-		beneficiary.add_money(amount)
-		ui.show_money_float(amount, beneficiary.token)
+		if beneficiary:
+			FinanceManager.add(beneficiary, amount)
+			ui.show_money_float(amount, beneficiary.token)
 
-		if reason != "":
-			ui.add_history(
-				payer.name + " trả $" + str(amount) + " cho " + beneficiary.name + " (" + reason + ")",
-				Color("#B71C1C")
-			)
+			if reason != "":
+				ui.add_history(
+					payer.name + " trả $" + str(amount) + " cho " + beneficiary.name + " (" + reason + ")",
+					Color("#B71C1C")
+				)
+			else:
+				ui.add_history(payer.name + " trả $" + str(amount) + " cho " + beneficiary.name, Color("#B71C1C"))
 		else:
-			ui.add_history(payer.name + " trả $" + str(amount) + " cho " + beneficiary.name, Color("#B71C1C"))
+			if reason != "":
+				ui.add_history(payer.name + " trả $" + str(amount) + " (" + reason + ")", Color("#B71C1C"))
+			else:
+				ui.add_history(payer.name + " trả $" + str(amount), Color("#B71C1C"))
+
+		_emit_turn_action_completed()
 	else:
-		if reason != "":
-			ui.add_history(payer.name + " trả $" + str(amount) + " (" + reason + ")", Color("#B71C1C"))
-		else:
-			ui.add_history(payer.name + " trả $" + str(amount), Color("#B71C1C"))
-
-	_emit_turn_action_completed()
+		# Nếu trừ không thành công, xử lý thiếu tiền (deferred để tránh await trong hàm đồng bộ)
+		call_deferred("handle_insufficient_funds", payer, beneficiary, amount, reason)
 
 
 func handle_insufficient_funds(
@@ -670,11 +787,11 @@ func handle_insufficient_funds(
 		handle_bankruptcy(payer, beneficiary)
 		return
 
-	var amount_needed = amount - payer.state.balance
+	var amount_needed = max(0, amount - payer.state.balance)
 	await ui.show_insufficient_funds_options(payer, amount_needed)
 
 	# Sau khi người chơi đóng popup / xử lý tài sản, kiểm tra lại
-	if payer.state.balance >= amount:
+	if FinanceManager.can_afford(payer, amount):
 		execute_transaction(payer, beneficiary, amount, reason)
 	else:
 		handle_bankruptcy(payer, beneficiary)
@@ -684,7 +801,7 @@ func handle_bankruptcy(debtor: Player, creditor: Player) -> void:
 	print("💀 ", debtor.name, " PHÁ SẢN!")
 	ui.show_message("💀 " + debtor.name + " đã PHÁ SẢN!")
 
-	debtor.transfer_all_assets_to(creditor)
+	debtor.release_all_assets()
 
 	if board.has_method("remove_player_token"):
 		board.remove_player_token(debtor)

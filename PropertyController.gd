@@ -19,7 +19,7 @@ static func has_full_color_set(player: Player, color_name: String, all_cells: Ar
 	if color_cells.is_empty():
 		return false
 	for cell in color_cells:
-		if cell.property_owner != player:
+		if cell.cell_owner != player:
 			return false
 	return true
 
@@ -28,7 +28,7 @@ static func has_full_color_set(player: Player, color_name: String, all_cells: Ar
 static func has_no_mortgaged_in_set(player: Player, color_name: String, all_cells: Array) -> bool:
 	var color_cells = get_cells_by_color(color_name, all_cells)
 	for cell in color_cells:
-		if cell.property_owner == player and cell.is_mortgaged:
+		if cell.cell_owner == player and cell.is_mortgaged:
 			return false
 	return true
 
@@ -50,7 +50,7 @@ static func can_build_on(target_cell: PropertyCell, player: Player, all_cells: A
 		return false
 	
 	# Điều kiện 4: player phải có đủ tiền xây nhà
-	if player.state.balance < target_cell.house_cost:
+	if not FinanceManager.can_afford(player, target_cell.house_cost):
 		return false
 		
 	# Điều kiện 4: xây đồng đều (BR-13)

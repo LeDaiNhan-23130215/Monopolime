@@ -163,8 +163,6 @@ func get_build_level_name(level: int = -1) -> String:
 	if target_level < 4:
 		return "Nha cap " + str(target_level)
 	return "Cong trinh lon"
-
-
 # =========================
 # XÂY NHÀ
 # =========================
@@ -189,7 +187,7 @@ func can_build_house() -> bool:
 		return false
 
 	# Kiểm tra đủ tiền
-	if cell_owner.state.balance < house_cost:
+	if not FinanceManager.can_afford(cell_owner, house_cost):
 		return false
 	
 	if _has_mortgaged_property_in_set():
@@ -222,7 +220,7 @@ func get_build_block_reason() -> String:
 		return "Chua so huu du bo mau."
 	if not _check_even_building():
 		return "Can xay deu cac o cung mau."
-	if cell_owner.state.balance < house_cost:
+	if not FinanceManager.can_afford(cell_owner, house_cost):
 		return "Khong du tien."
 	return ""
 
@@ -231,7 +229,10 @@ func build_house() -> bool:
 	if not can_build_house():
 		return false
 
-	cell_owner.deduct_money(house_cost)
+	# Dùng FinanceManager để trừ tiền (kiểm tra an toàn bên trong)
+	if not FinanceManager.deduct(cell_owner, house_cost):
+		return false
+
 	house_count += 1
 	queue_redraw()
 
@@ -252,7 +253,7 @@ func sell_house() -> bool:
 		return false
 
 	var refund = int(house_cost * 0.5)
-	cell_owner.add_money(refund)
+	FinanceManager.add(cell_owner, refund)
 	house_count -= 1
 	queue_redraw()
 	print(cell_owner.name, " bán nhà trên ", cell_name, " nhận $", refund)
@@ -289,7 +290,7 @@ func mortgage_property() -> int:
 
 	is_mortgaged = true
 	var amount = get_mortgage_value()
-	cell_owner.add_money(amount)
+	FinanceManager.add(cell_owner, amount)
 	queue_redraw()
 	return amount
 
@@ -301,8 +302,8 @@ func unmortgage_property() -> bool:
 
 	var cost = get_mortgage_value() + int(get_mortgage_value() * 0.1)
 
-	if cell_owner.state.balance >= cost:
-		cell_owner.deduct_money(cost)
+
+	if FinanceManager.deduct(cell_owner, cost):
 		is_mortgaged = false
 		queue_redraw()
 		return true
@@ -315,14 +316,15 @@ func can_build_protection_tower(player: Player) -> bool:
 		and cell_type == "property"
 		and not has_protection_tower
 		and not is_mortgaged
-		and player.state.balance >= protection_cost
+		and FinanceManager.can_afford(player, protection_cost)
 	)
 
 
 func build_protection_tower(player: Player) -> bool:
 	if not can_build_protection_tower(player):
 		return false
-	player.deduct_money(protection_cost)
+	if not FinanceManager.deduct(player, protection_cost):
+		return false
 	has_protection_tower = true
 	queue_redraw()
 	play_upgrade_effect()
@@ -827,3 +829,14 @@ func _get_owner_color() -> Color:
 		2: return Color(0.3, 0.9, 0.4)
 		3: return Color(0.95, 0.9, 0.3)
 	return Color.WHITE
+	
+func reset_property():
+	cell_owner = null
+	is_mortgaged = false
+	house_count = 0
+	has_protection_tower = false
+
+	price_modifier = 0
+	rent_modifier = 0
+
+	queue_redraw()

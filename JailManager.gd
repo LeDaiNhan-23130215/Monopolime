@@ -177,7 +177,7 @@ func pay_fine_voluntarily(player: Player, dice_result: DiceResult) -> bool:
 ## Nội bộ: kiểm tra tiền và trừ $50, sau đó cho di chuyển (7.2.6).
 func _pay_fine(player: Player, dice_result: DiceResult) -> bool:
 	# 7.2.6 – Đủ tiền mặt
-	if player.state.balance >= JAIL_FINE:
+	if FinanceManager.can_afford(player, JAIL_FINE):
 		_gc.process_payment(player, null, JAIL_FINE, "Phạt tù $" + str(JAIL_FINE))
 		_release_from_jail(player)
 
@@ -225,15 +225,17 @@ func _handle_fine_broke(player: Player, dice_result: DiceResult) -> bool:
 			". Mở Quản lý tài sản...")
 
 		# Mở giao diện quản lý tài sản, chờ người chơi thế chấp đủ tiền
-		_gc.ui.request_mortgage(player, JAIL_FINE - player.state.balance)
+		var amount_needed: int = max(0, JAIL_FINE - player.state.balance)
+		_gc.ui.request_mortgage(player, amount_needed)
 
 		# Chờ sự kiện turn_action_completed phát ra từ FinanceManager/UI
 		await _gc.turn_action_completed
 
 		# Sau khi thế chấp, quay lại kiểm tra tiền (7.2.6)
-		if player.state.balance >= JAIL_FINE:
+		if FinanceManager.can_afford(player, JAIL_FINE):
 			_gc.process_payment(player, null, JAIL_FINE, "Phạt tù sau thế chấp")
 			_release_from_jail(player)
+
 			_gc.ui.show_message(player.name + " đã nộp $" + str(JAIL_FINE) + " – Ra Tù!")
 			_gc.ui.add_history(player.name + " thế chấp xong, trả $" + str(JAIL_FINE) + " ra tù", Color("#F57F17"))
 			await _gc.move_player(player, dice_result.total())
