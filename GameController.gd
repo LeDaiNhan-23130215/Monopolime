@@ -645,11 +645,14 @@ func run_auction(cell: Cell) -> void:
 	for p in bidders:
 		passed[p] = false
 
-	# Auction rounds: continue until no new bids
+	# Auction rounds: continue until no new bids or a maximum round cap
 	var active_count = bidders.size()
 	var round_index = 0
+	var max_rounds = max(10, bidders.size() * 5)
+	var round_counter = 0
 
-	while true:
+	while round_counter < max_rounds:
+		round_counter += 1
 		var any_new_bid = false
 		for i in range(bidders.size()):
 			var idx = (round_index + i) % bidders.size()
@@ -709,7 +712,16 @@ func run_auction(cell: Cell) -> void:
 		# If no new bids in this full round, auction ends
 		if not any_new_bid:
 			break
+
+		# If only one active bidder remains, that bidder wins immediately
+		if active_count <= 1:
+			print("[Auction] Only one active bidder remains; ending auction early")
+			break
+
 		round_index = (round_index + 1) % bidders.size()
+
+	if round_counter >= max_rounds:
+		print("[Auction] Reached max rounds (", max_rounds, "); ending auction")
 
 	if current_winner != null and current_bid > 0:
 		if FinanceManager.deduct(current_winner, current_bid):
