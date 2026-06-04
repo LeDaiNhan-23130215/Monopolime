@@ -161,7 +161,7 @@ func resolve_roll() -> void:
 
 
 # =========================
-# XỬ LÝ TÙ – đã chuyển sang JailManager (UC-07)
+# XỬ LÝ TÙ – đã chuyển sang JailManager (UC-09)
 # Xem: JailManager.gd, handle_jail_turn(), resolve_jail_turn()
 # =========================
 
