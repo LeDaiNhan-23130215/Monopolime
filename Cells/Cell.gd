@@ -191,9 +191,23 @@ func can_build_house() -> bool:
 	# Kiểm tra đủ tiền
 	if cell_owner.state.balance < house_cost:
 		return false
-
+	
+	if _has_mortgaged_property_in_set():
+		return false
+		
 	return true
 
+func _has_mortgaged_property_in_set() -> bool:
+	if cell_owner == null:
+		return true
+	for cell in get_tree().get_nodes_in_group("properties"):
+		if cell == self:
+			continue
+		
+		if cell.color_group == color_group:
+			if cell.cell_owner == cell_owner and cell.is_mortgaged:
+				return true
+	return false
 
 func get_build_block_reason() -> String:
 	if cell_type != "property":

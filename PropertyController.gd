@@ -48,7 +48,11 @@ static func can_build_on(target_cell: PropertyCell, player: Player, all_cells: A
 	# Điều kiện 3: ô target không có khách sạn
 	if target_cell.has_hotel:
 		return false
-
+	
+	# Điều kiện 4: player phải có đủ tiền xây nhà
+	if player.state.balance < target_cell.house_cost:
+		return false
+		
 	# Điều kiện 4: xây đồng đều (BR-13)
 	# target phải có mức thấp nhất (hoặc bằng) trong bộ màu trước khi xây thêm
 	var color_cells = get_cells_by_color(color_name, all_cells)
