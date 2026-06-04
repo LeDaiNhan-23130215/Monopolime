@@ -230,8 +230,10 @@ func _normalized_payload_for_checksum(payload: Dictionary) -> Dictionary:
 				"in_jail": bool(entry.get("in_jail", false)),
 				"jail_turns": int(entry.get("jail_turns", 0)),
 				"bankrupt": bool(entry.get("bankrupt", false)),
-				"get_out_of_jail_cards": int(entry.get("get_out_of_jail_cards", 0)),
-				"special_cards": entry.get("special_cards", [])
+				# special_cards: số thẻ Ra Tù (PlayerState.special_cards: int)
+				# Tương thích ngược: đọc cả field cũ "get_out_of_jail_cards" nếu tồn tại
+				"special_cards": int(entry.get("special_cards",
+					entry.get("get_out_of_jail_cards", 0)))
 			})
 
 	var normalized_properties_state: Array = []
