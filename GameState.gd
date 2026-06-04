@@ -22,5 +22,7 @@ func add_player(id, player_name, avatar_id = 0):
 	state.balance = 1500
 	p.state = state
 	p.avatar_id = avatar_id
+	# Ensure AI meta exists for consistent checks (default: human)
+	p.set_meta("is_ai", false)
 	players.append(p)
 	return p

@@ -669,16 +669,20 @@ func run_auction(cell: Cell) -> void:
 				continue
 
 			# Determine desired bid: simple strategy - bid up to base_price, capped by cash
-			if bidder.get_meta("is_ai") == false and ui:
+			if not bool(bidder.get_meta("is_ai")) and ui:
 				# Human player - ask for input
 				# Cap human max bid to the lesser of their cash and the base price (same as AI strategy)
-				var human_max: int = min(max_cash, int(base_price))
+				# Allow human to bid up to their cash (don't artificially cap at base price)
+				var human_max: int = max_cash
+				print("[Auction] Asking ", bidder.name, " min_needed=", min_needed, " human_max=", human_max, " is_ai=", bidder.get_meta("is_ai"))
 				var human_bid: int = await ui.request_auction_bid(bidder, min_needed, human_max)
+				print("[Auction] ", bidder.name, " returned bid=", human_bid)
 				if human_bid <= 0:
 					passed[bidder] = true
 					active_count -= 1
 					continue
-				if human_bid > current_bid and FinanceManager.can_afford(bidder, human_bid):
+				# Accept bids that meet or exceed the minimum needed for this turn
+				if human_bid >= min_needed and FinanceManager.can_afford(bidder, human_bid):
 					current_bid = human_bid
 					current_winner = bidder
 					any_new_bid = true
@@ -694,8 +698,8 @@ func run_auction(cell: Cell) -> void:
 				var desired_max = min(max_cash, int(base_price * 1.0))
 				var next_bid = max(min_needed, current_bid + min(increment, desired_max - current_bid))
 
-				# If next_bid is higher than current, accept it
-				if next_bid > current_bid and FinanceManager.can_afford(bidder, next_bid):
+				# If next_bid meets or exceeds the min needed for this bidder, accept it
+				if next_bid >= min_needed and FinanceManager.can_afford(bidder, next_bid):
 					current_bid = next_bid
 					current_winner = bidder
 					any_new_bid = true
