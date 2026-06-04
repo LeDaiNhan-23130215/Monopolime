@@ -235,6 +235,7 @@ func _handle_fine_broke(player: Player, dice_result: DiceResult) -> bool:
 		if FinanceManager.can_afford(player, JAIL_FINE):
 			_gc.process_payment(player, null, JAIL_FINE, "Phạt tù sau thế chấp")
 			_release_from_jail(player)
+
 			_gc.ui.show_message(player.name + " đã nộp $" + str(JAIL_FINE) + " – Ra Tù!")
 			_gc.ui.add_history(player.name + " thế chấp xong, trả $" + str(JAIL_FINE) + " ra tù", Color("#F57F17"))
 			await _gc.move_player(player, dice_result.total())

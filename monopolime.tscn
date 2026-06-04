@@ -12,7 +12,7 @@
 [ext_resource type="Script" uid="uid://cbxfq6n7terf8" path="res://Cells/Cell.gd" id="10_oeeh8"]
 [ext_resource type="PackedScene" uid="uid://c2g3wyiodim06" path="res://SaveLoadMenu.tscn" id="11_nyn1k"]
 [ext_resource type="Script" uid="uid://chbjx6htmbaud" path="res://scripts/TokenManager/TokenManager.gd" id="11_y5t0d"]
-[ext_resource type="Script" path="res://scripts/AssetManager.gd" id="20_uc7am"]
+[ext_resource type="Script" uid="uid://j83fs078g2e3" path="res://scripts/AssetManager.gd" id="20_uc7am"]
 [ext_resource type="PackedScene" uid="uid://da543anbagjij" path="res://CellScenes/Cell.tscn" id="21_cell"]
 
 [node name="Main" type="Node2D" unique_id=1488605029]
@@ -177,8 +177,8 @@ script = ExtResource("5_r4gxj")
 script = ExtResource("8_fo70c")
 
 [node name="Board" type="Node2D" parent="." unique_id=940783717]
-position = Vector2(228.038, 36.055557)
-scale = Vector2(0.16067538, 0.16067538)
+position = Vector2(146.73749, 88.0109)
+scale = Vector2(0.43839508, 0.43839508)
 script = ExtResource("8_s088g")
 cell_scene = ExtResource("21_cell")
 

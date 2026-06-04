@@ -30,6 +30,12 @@ func get_event_handler():
 	return event_handler
 
 
+func get_jail_manager() -> JailManager:
+	if jail_manager == null:
+		jail_manager = JailManager.new(self)
+	return jail_manager
+
+
 func _on_asset_action_completed(_action: String, success: bool, message: String) -> void:
 	if ui == null:
 		return
@@ -78,10 +84,7 @@ func start_turn() -> void:
 
 	if player.state.in_jail:
 		print(player.name + " đang ở tù! (Lượt ", player.state.jail_turns, "/3)")
-		if player.state.special_cards > 0:
-			ui.show_message(player.name + " ở tù. Có thẻ Ra Tù. Nhấn Roll!")
-		else:
-			ui.show_message(player.name + " ở tù. Đổ Double để ra! (Lượt " + str(player.state.jail_turns + 1) + "/3)")
+		get_jail_manager().begin_jail_turn(player)
 
 
 func roll_dice() -> void:
@@ -108,7 +111,11 @@ func resolve_roll() -> void:
 	# =========================
 
 	if player.state.in_jail:
-		await _handle_jail_turn(player)
+		await get_jail_manager().handle_jail_turn(player, final_result)
+		end_turn()
+		is_rolling = false
+		is_turn_resolving = false
+		ui.set_roll_enabled(true)
 		return
 
 	# =========================
@@ -154,7 +161,8 @@ func resolve_roll() -> void:
 
 
 # =========================
-# XỬ LÝ TÙ
+# XỬ LÝ TÙ – đã chuyển sang JailManager (UC-07)
+# Xem: JailManager.gd, handle_jail_turn(), resolve_jail_turn()
 # =========================
 
 func _handle_jail_turn(player: Player) -> void:
@@ -267,16 +275,9 @@ func handle_teleport(player: Player) -> void:
 		await handle_landed_cell(player, target_index)
 
 
-func go_to_jail(player: Player) -> void:
-	print("🔒 ", player.name, " VÀO TÙ!")
-	player.state.set_in_jail(true)
-	player.state.jail_turns = 0
-
-	ui.play_sfx(GameUI.SFX_JAIL)
-	ui.show_jail()
-
-	var jail_pos = board.get_jail_position()
-	await move_player_to_position(player, jail_pos)
+func go_to_jail(player: Player):
+	# Delegate toàn bộ logic vào tù sang JailManager (UC-07, 7.1.1→7.1.3)
+	await get_jail_manager().go_to_jail(player)
 
 
 # =========================
