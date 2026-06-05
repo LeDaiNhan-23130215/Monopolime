@@ -59,6 +59,49 @@ var chance_cards: Array = [
 		"desc": "Sửa chữa nhà cửa bắt buộc!\nBạn bị phạt $75.",
 		"amount": 75
 	},
+	{
+		"type": "reward",
+		"title": "🎴 Cơ Hội",
+		"desc": "Đầu tư chứng khoán có lãi!\nBạn nhận $120.",
+		"amount": 120
+	},
+	{
+		"type": "penalty",
+		"title": "🎴 Cơ Hội",
+		"desc": "Hóa đơn tiền điện tăng cao!\nBạn bị phạt $40.",
+		"amount": 40
+	},
+	{
+		"type": "move",
+		"title": "🎴 Cơ Hội",
+		"desc": "Vé tàu miễn phí!\nDi chuyển đến ô Bãi Đỗ Xe.",
+		"target": 20
+	},
+	{
+		"type": "jail",
+		"title": "🎴 Cơ Hội",
+		"desc": "Trốn vé bị phát hiện!\nVào tù ngay, không qua ô Bắt Đầu."
+	},
+	{
+		"type": "card",
+		"title": "🎴 Cơ Hội",
+		"desc": "Thẻ Ra Tù Miễn Phí!\nGiữ thẻ này để dùng khi cần."
+	},
+	{
+		"type": "choice",
+		"title": "🎴 Cơ Hội",
+		"desc": "Bạn có thể:\n• Nộp phạt $50\n• Hoặc rút thẻ Khí Vận thử vận may!",
+		"choices": [
+			"💸 Nộp phạt $50",
+			"🎁 Rút Khí Vận"
+		]
+	},
+	{
+		"type": "reward",
+		"title": "🎴 Cơ Hội",
+		"desc": "Thắng giải xổ số!\nBạn nhận $250.",
+		"amount": 250
+	},
 ]
 
 # ===========================
@@ -109,6 +152,46 @@ var community_chest_cards: Array = [
 		"type": "jail",
 		"title": "🎁 Khí Vận",
 		"desc": "Cảnh sát bắt bạn!\nVào tù ngay, không qua ô Bắt Đầu."
+	},
+	{
+		"type": "reward",
+		"title": "🎁 Khí Vận",
+		"desc": "Thừa kế từ người thân!\nBạn nhận $200.",
+		"amount": 200
+	},
+	{
+		"type": "penalty",
+		"title": "🎁 Khí Vận",
+		"desc": "Học phí cho con!\nBạn phải đóng $80.",
+		"amount": 80
+	},
+	{
+		"type": "move",
+		"title": "🎁 Khí Vận",
+		"desc": "Chuyến công tác đột xuất!\nDi chuyển đến ô Thăm Tù.",
+		"target": 5
+	},
+	{
+		"type": "birthday",
+		"title": "🎁 Khí Vận",
+		"desc": "Kỷ niệm ngày cưới!\nMỗi người chơi khác tặng bạn $40."
+	},
+	{
+		"type": "card",
+		"title": "🎁 Khí Vận",
+		"desc": "Thẻ Ra Tù Miễn Phí!\nGiữ thẻ này để thoát tù không tốn tiền."
+	},
+	{
+		"type": "reward",
+		"title": "🎁 Khí Vận",
+		"desc": "Bán đồ cũ được giá!\nBạn nhận $75.",
+		"amount": 75
+	},
+	{
+		"type": "penalty",
+		"title": "🎁 Khí Vận",
+		"desc": "Quyên góp từ thiện!\nBạn ủng hộ $60.",
+		"amount": 60
 	},
 ]
 
