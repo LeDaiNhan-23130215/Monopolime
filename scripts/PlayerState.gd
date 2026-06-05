@@ -9,8 +9,24 @@ var bankrupt: bool = false
 # BR-16: Đếm số lượt đã ngồi tù (0 = chưa vào tù hoặc vừa vào)
 var jail_turns: int = 0
 
+# Số thẻ "Ra Tù Miễn Phí" đang giữ
+var get_out_of_jail_cards: int = 0
+
 func update_position(new_position: int):
 	position = new_position
+
+
+# Nhận thêm 1 thẻ Ra Tù Miễn Phí
+func add_jail_free_card():
+	get_out_of_jail_cards += 1
+
+
+# Dùng 1 thẻ Ra Tù Miễn Phí nếu còn. Trả về true nếu dùng thành công.
+func use_jail_free_card() -> bool:
+	if get_out_of_jail_cards > 0:
+		get_out_of_jail_cards -= 1
+		return true
+	return false
 
 func add_balance(amount: int):
 	balance += amount

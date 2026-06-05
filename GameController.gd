@@ -85,7 +85,18 @@ func resolve_roll():
 	if player.state.in_jail:
 		player.state.jail_turns += 1
 
-		if final_result.is_double:
+		if player.state.get_out_of_jail_cards > 0:
+			# Dùng thẻ Ra Tù Miễn Phí → thoát tù không tốn tiền
+			player.state.use_jail_free_card()
+			print(player.name + " dùng Thẻ Ra Tù Miễn Phí – thoát tù!")
+			if ui:
+				ui.show_message(player.name + " dùng Thẻ Ra Tù Miễn Phí và thoát tù!")
+			player.state.set_in_jail(false)
+			await move_player(player, final_result.total())
+			await handle_landed_cell(player, player.state.position)
+			print("LAND DONE")
+
+		elif final_result.is_double:
 			# BR-17: Tung được double → ra tù, không được thêm lượt
 			print(player.name + " tung double – thoát tù!")
 			player.state.set_in_jail(false)
