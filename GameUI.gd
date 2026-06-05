@@ -3,7 +3,8 @@ class_name GameUI
 
 # Signal báo GameController rằng người chơi đã xử lý xong ô đất (landing)
 signal ui_action_done
-
+#---
+@onready var tokens_node = $"../Board/Tokens"
 # ─── Dice nodes ──────────────────────────────────────────────────────
 @onready var label            : Label               = get_node("UI/Result")
 @onready var timer            : Timer               = get_node("UI/DiceTimer")
@@ -13,7 +14,7 @@ signal ui_action_done
 @onready var audio_roll       : AudioStreamPlayer2D = get_node("UI/AudioRoll")
 @onready var roll_button      : TextureButton       = get_node("UI/Roll Dice")
 
-@onready var save_load_menu = get_node("SaveLoadMenu")
+@onready var save_load_menu = $UI/SaveLoadMenu
 # ─── Nút quản lý tài sản luôn hiện suốt lượt (bất kỳ ô nào) ────────
 @onready var btn_open_manage  : Button         = get_node("UI/BtnOpenManage")
 
@@ -67,7 +68,6 @@ var _buy_cell : PropertyCell = null
 var _mandatory := false
 
 # ─── UC09 Event & Player Panel ──────────────────────────────────────
-signal buy_decision_made(want_to_buy: bool)
 
 var _ev_overlay    : ColorRect     = null
 var _ev_panel      : Panel         = null
@@ -76,8 +76,6 @@ var _ev_title      : Label         = null
 var _ev_desc       : Label         = null
 var _ev_btn_box    : HBoxContainer = null
 var _ev_callback   : Callable
-
-var _buy_panel     : Panel         = null
 
 var _pp_panel      : Panel         = null
 var _pp_content    : VBoxContainer = null
@@ -125,6 +123,13 @@ func _unhandled_input(event: InputEvent):
 
 func _open_save_load_menu():
 	save_load_menu.open_menu()
+	
+	if _pp_panel:
+		_pp_panel.visible = false
+	
+	if btn_open_manage:
+		btn_open_manage.visible = false
+	
 	_set_roll_button_enabled(false)
 	if not get_tree().paused:
 		get_tree().paused = true
@@ -133,6 +138,13 @@ func _open_save_load_menu():
 
 func _on_save_load_menu_closed():
 	_set_roll_button_enabled(true)
+	
+	if _pp_panel:
+		_pp_panel.visible = true
+		
+	if btn_open_manage:
+		btn_open_manage.visible = true
+		
 	if paused_for_menu:
 		get_tree().paused = false
 		paused_for_menu = false
@@ -679,7 +691,8 @@ func refresh_player_panel(snapshot: Array) -> void:
 
 	for p in snapshot:
 		var card = Panel.new()
-		card.custom_minimum_size = Vector2(192, 0)
+		card.custom_minimum_size = Vector2(192, 80)
+		card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		var pid: int = p["id"]
 		var pc: Color = player_colors[pid % player_colors.size()]
 		var cs = StyleBoxFlat.new()
@@ -694,7 +707,7 @@ func refresh_player_panel(snapshot: Array) -> void:
 		card.add_theme_stylebox_override("panel", cs)
 
 		var vb = VBoxContainer.new()
-		vb.set_anchors_preset(Control.PRESET_FULL_RECT)
+		vb.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		vb.add_theme_constant_override("separation", 4)
 		card.add_child(vb)
 
@@ -704,7 +717,7 @@ func refresh_player_panel(snapshot: Array) -> void:
 		name_lbl.add_theme_font_size_override("font_size", 14)
 		name_lbl.add_theme_color_override("font_color", pc)
 		vb.add_child(name_lbl)
-
+		
 		var bal_lbl = Label.new()
 		bal_lbl.text = "💰 $" + str(p["balance"])
 		bal_lbl.add_theme_font_size_override("font_size", 13)
@@ -726,6 +739,7 @@ func refresh_player_panel(snapshot: Array) -> void:
 				pl.add_theme_font_size_override("font_size", 12)
 				pl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 				pl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				pl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				vb.add_child(pl)
 		else:
 			var no_p = Label.new()
@@ -735,3 +749,4 @@ func refresh_player_panel(snapshot: Array) -> void:
 			vb.add_child(no_p)
 
 		_pp_content.add_child(card)
+		

@@ -5,7 +5,7 @@ var index: int
 var data: CellData
 
 
-func setup(cell_data: CellData):
+func setup(cell_data):
 
 	data = cell_data
 	index = data.cell_index

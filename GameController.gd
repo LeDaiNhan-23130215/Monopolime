@@ -15,6 +15,9 @@ var is_rolling := false
 # Untyped để tránh circular dependency với EventHandler.gd
 var _event_handler = null
 
+func get_players() -> Array:
+	return game_state.players
+
 func get_event_handler():
 	if _event_handler == null:
 		_event_handler = EventHandler.new(self)
@@ -194,10 +197,12 @@ func save_game(save_id: int) -> void:
 
 	var game_data = {
 		"players_state": _collect_players_state(),
+		"properties_state": _collect_properties_state(),
 		"current_player": game_state.current_player,
-		"double_count": game_state.double_count
+		"double_count": game_state.double_count,
+		"player_count": game_state.players.size(),
+		"v_total": _compute_v_total()
 	}
-
 	if StorageService.save_file(save_id, game_data):
 		if ui.has_method("show_message"):
 			ui.show_message("Saved Slot %02d" % [save_id])
@@ -238,6 +243,10 @@ func load_game(save_id: int) -> void:
 	game_state.current_player = int(loaded_data.get("current_player", game_state.current_player))
 	game_state.double_count = int(loaded_data.get("double_count", game_state.double_count))
 
+	var properties_state_data = loaded_data.get("properties_state", [])
+	if typeof(properties_state_data) == TYPE_ARRAY:
+		_apply_properties_state(properties_state_data)
+
 	_refresh_player_tokens_from_state()
 
 	if ui.has_method("show_message"):
@@ -251,8 +260,11 @@ func auto_save_game() -> void:
 
 	var game_data = {
 		"players_state": _collect_players_state(),
+		"properties_state": _collect_properties_state(),
 		"current_player": game_state.current_player,
-		"double_count": game_state.double_count
+		"double_count": game_state.double_count,
+		"player_count": game_state.players.size(),
+		"v_total": _compute_v_total()
 	}
 
 	if StorageService.save_auto(game_data) and ui.has_method("show_message"):
@@ -260,21 +272,101 @@ func auto_save_game() -> void:
 
 
 func _collect_players_state() -> Array:
-	# TODO(UC-03): Extend saved payload when property/building/card systems are finalized.
 	var players_state_data: Array = []
 	for player in game_state.players:
+		var card_ids: Array = []
+		for card in player.special_card:
+			if typeof(card) == TYPE_DICTIONARY and card.has("type"):
+				card_ids.append(str(card.get("type", "")))
+
 		players_state_data.append({
 			"player_id": player.player_id,
 			"position": player.state.position,
 			"balance": player.state.balance,
 			"in_jail": player.state.in_jail,
-			"bankrupt": player.state.bankrupt
+			"jail_turns": player.state.jail_turns,
+			"bankrupt": player.state.bankrupt,
+			"get_out_of_jail_cards": player.state.get("get_out_of_jail_cards") if "get_out_of_jail_cards" in player.state else 0,
+			"special_cards": card_ids
 		})
 	return players_state_data
 
 
+func _collect_properties_state() -> Array:
+	var props_state: Array = []
+	for cell in board.cells:
+		if not cell is PropertyCell:
+			continue
+		var prop = cell as PropertyCell
+		if prop.property_owner == null:
+			continue
+
+		props_state.append({
+			"cell_index": cell.index,
+			"owner_player_id": prop.property_owner.player_id,
+			"is_mortgaged": prop.is_mortgaged,
+			"house_count": prop.house_count,
+			"has_hotel": prop.has_hotel
+		})
+	return props_state
+
+
+func _apply_properties_state(properties_state: Array) -> void:
+	for player in game_state.players:
+		player.properties.clear()
+
+	for cell in board.cells:
+		if cell is PropertyCell:
+			var prop = cell as PropertyCell
+			prop.property_owner = null
+			prop.is_mortgaged = false
+			prop.house_count = 0
+			prop.has_hotel = false
+
+	if typeof(properties_state) != TYPE_ARRAY:
+		return
+
+	for entry in properties_state:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+
+		var cell_index = int(entry.get("cell_index", -1))
+		var cell = board.get_cell(cell_index)
+		if not cell is PropertyCell:
+			continue
+
+		var prop = cell as PropertyCell
+		var owner_id = int(entry.get("owner_player_id", -1))
+		var owner: Player = null
+		for p in game_state.players:
+			if p.player_id == owner_id:
+				owner = p
+				break
+
+		prop.property_owner = owner
+		prop.is_mortgaged = bool(entry.get("is_mortgaged", false))
+		prop.house_count = int(entry.get("house_count", 0))
+		prop.has_hotel = bool(entry.get("has_hotel", false))
+		prop.queue_redraw()
+
+		if owner != null:
+			owner.add_property(prop)
+
+
+func _compute_v_total() -> int:
+	# TODO(UC-03): Include accurate house/hotel valuation when finalized.
+	var total := 0
+	for player in game_state.players:
+		total += player.state.balance
+		for prop in player.properties:
+			if prop is PropertyCell:
+				var pd = prop.data as PropertyData
+				if pd != null:
+					total += pd.buy_price
+	return total
+
+
 func _apply_players_state(players_state_data: Array) -> bool:
-	# TODO(UC-03): Restore property/building/card states when those domains are implemented.
 	var by_id := {}
 	for entry in players_state_data:
 		if typeof(entry) != TYPE_DICTIONARY:
@@ -291,7 +383,17 @@ func _apply_players_state(players_state_data: Array) -> bool:
 		player.state.position = int(state_data.get("position", player.state.position))
 		player.state.balance = int(state_data.get("balance", player.state.balance))
 		player.state.in_jail = bool(state_data.get("in_jail", player.state.in_jail))
+		player.state.jail_turns = int(state_data.get("jail_turns", player.state.jail_turns))
 		player.state.bankrupt = bool(state_data.get("bankrupt", player.state.bankrupt))
+
+		if state_data.has("get_out_of_jail_cards"):
+			player.state.set("get_out_of_jail_cards", int(state_data.get("get_out_of_jail_cards", 0)))
+
+		var saved_cards: Array = state_data.get("special_cards", [])
+		if typeof(saved_cards) == TYPE_ARRAY and saved_cards.size() > 0:
+			player.special_card.clear()
+			for card_type in saved_cards:
+				player.special_card.append({"type": str(card_type)})
 
 	return true
 
@@ -301,7 +403,7 @@ func _refresh_player_tokens_from_state() -> void:
 		if not player.token:
 			continue
 		var world_pos = board.get_cell_position(player.state.position)
-		var offset = Vector2(player.player_id * 10, 0)
+		var offset = get_offset(player.player_id)
 		player.token.position = world_pos + offset
 
 # --- HÀM XỬ LÝ TÀI CHÍNH ---
@@ -395,13 +497,13 @@ func get_game_state_snapshot() -> Array:
 	return snapshot
 
 
-func process_payment(payer: Player, receiver: Player, amount: int, _reason: String):
-	if payer.state.balance >= amount:
-		payer.deduct_money(amount)
+func process_payment(player: Player, receiver: Player, amount: int, _reason: String):
+	if player.state.balance >= amount:
+		player.deduct_money(amount)
 		if receiver:
 			receiver.add_money(amount)
 	else:
-		handle_insufficient_funds(payer, receiver, amount)
+		handle_insufficient_funds(player, receiver, amount)
 	emit_signal("turn_action_completed")
 
 
