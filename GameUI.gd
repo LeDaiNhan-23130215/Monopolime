@@ -77,6 +77,21 @@ var _ev_desc       : Label         = null
 var _ev_btn_box    : HBoxContainer = null
 var _ev_callback   : Callable
 
+var _auction_panel  : Panel = null
+var _auc_title      : Label = null
+var _auc_desc       : Label = null
+var _auc_current    : Label = null
+var _auc_bid_input  : LineEdit = null
+var _auc_btn_pass   : Button = null
+var _auc_btn_bid    : Button = null
+var _auc_btn_max    : Button = null
+var _auc_participants: VBoxContainer = null
+var _auc_callback = null
+var _auc_bidder_id: int = -1
+
+# Đấu giá: session id để hủy timer cũ khi mở phiên mới / đóng popup
+var _auction_session_id := 0
+
 var _pp_panel      : Panel         = null
 var _pp_content    : VBoxContainer = null
 
@@ -317,6 +332,7 @@ func _done_with_action() -> void:
 	_mandatory = false
 	hide_manage_button()
 	if was_mandatory:
+		print("[UI] ui_action_done emitted")
 		emit_signal("ui_action_done")
 
 func _open_action_menu() -> void:
@@ -361,7 +377,12 @@ func _open_action_menu() -> void:
 func _on_btn_close_action_pressed() -> void:
 	action_popup.visible = false
 	if _mandatory:
-		_done_with_action()
+		# Nếu đang ở chế độ bắt buộc và có ô đang chờ mua, bắt đầu đấu giá khi người chơi từ chối
+		if _buy_cell != null and game_controller != null and _buy_cell.property_owner == null:
+			await game_controller.start_auction(_buy_cell)
+			_done_with_action()
+		else:
+			_done_with_action()
 	else:
 		# Chỉ đóng menu, không xóa trạng thái, không ẩn btn_open_manage
 		_player   = null
@@ -369,7 +390,7 @@ func _on_btn_close_action_pressed() -> void:
 		_buy_cell = null
 		_cell     = null
 		_action   = ""
-			# btn_open_manage vẫn hiện để người chơi mở lại bất cứ lúc nào
+		# btn_open_manage vẫn hiện để người chơi mở lại bất cứ lúc nào
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -589,6 +610,70 @@ func _create_uc09_ui() -> void:
 
 	get_node("UI").add_child(_ev_panel)
 
+	# --- Auction Panel (modal) ---
+	# Đấu giá: panel riêng, modal, dùng session id để tránh timer cũ tự bấm pass vào phiên mới
+	_auction_panel = Panel.new()
+	_auction_panel.set_size(Vector2(520, 320))
+	_auction_panel.set_position(Vector2(260, 140))
+	_auction_panel.visible = false
+	var sbox = StyleBoxFlat.new()
+	sbox.bg_color = Color(0.06, 0.05, 0.12, 0.98)
+	sbox.set_border_width_all(3)
+	sbox.border_color = Color(0.7, 0.5, 0.95)
+	sbox.set_corner_radius_all(12)
+	_auction_panel.add_theme_stylebox_override("panel", sbox)
+
+	var auc_v = VBoxContainer.new()
+	auc_v.set_anchors_preset(Control.PRESET_FULL_RECT)
+	auc_v.offset_left = 18; auc_v.offset_top = 12
+	auc_v.offset_right = -18; auc_v.offset_bottom = -12
+	auc_v.add_theme_constant_override("separation", 8)
+	_auction_panel.add_child(auc_v)
+
+	_auc_title = Label.new()
+	_auc_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_auc_title.add_theme_font_size_override("font_size", 18)
+	auc_v.add_child(_auc_title)
+
+	_auc_desc = Label.new()
+	_auc_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_auc_desc.add_theme_font_size_override("font_size", 14)
+	_auc_desc.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	auc_v.add_child(_auc_desc)
+
+	_auc_current = Label.new()
+	_auc_current.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_auc_current.add_theme_font_size_override("font_size", 16)
+	auc_v.add_child(_auc_current)
+
+	# Bid input row
+	var bid_row = HBoxContainer.new()
+	bid_row.add_theme_constant_override("separation", 8)
+	_auc_bid_input = LineEdit.new()
+	_auc_bid_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_auc_bid_input.placeholder_text = "Nhập giá đặt (số nguyên)"
+	bid_row.add_child(_auc_bid_input)
+	_auc_btn_bid = Button.new()
+	_auc_btn_bid.text = "Đặt"
+	bid_row.add_child(_auc_btn_bid)
+	auc_v.add_child(bid_row)
+
+	_auc_btn_pass = Button.new()
+	_auc_btn_pass.text = "Pass"
+	_auc_btn_pass.custom_minimum_size = Vector2(160, 40)
+	auc_v.add_child(_auc_btn_pass)
+
+	var part_label = Label.new()
+	part_label.text = "Người tham gia"
+	part_label.add_theme_font_size_override("font_size", 14)
+	auc_v.add_child(part_label)
+
+	_auc_participants = VBoxContainer.new()
+	_auc_participants.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	auc_v.add_child(_auc_participants)
+
+	get_node("UI").add_child(_auction_panel)
+
 	# --- Player Panel (bảng tài sản bên phải) ---
 	_pp_panel = Panel.new()
 	_pp_panel.set_size(Vector2(210, 580))
@@ -668,11 +753,114 @@ func show_event_popup(
 	_ev_panel.move_to_front()
 
 
+
 func _on_ev_btn_pressed(choice_index: int) -> void:
 	_ev_overlay.visible = false
 	_ev_panel.visible   = false
 	if _ev_callback.is_valid():
 		_ev_callback.call(choice_index)
+
+
+func prompt_auction(bidder: Player, prop_data: PropertyData, current_bid: int, min_bid: int, participants: Array, callback: Callable) -> void:
+	# Populate auction modal
+	# Đấu giá: mở phiên mới, tăng session id để timer cũ không còn hiệu lực
+	_auction_session_id += 1
+	var session_id := _auction_session_id
+
+	_auc_callback = callback
+	_auc_bidder_id = bidder.player_id
+
+	# Show on next idle frame to avoid race with previous close/hide
+	call_deferred("_show_auction_panel")
+
+	_auc_title.text = "Đấu giá: %s" % prop_data.cell_name
+	_auc_desc.text = "%s - đến lượt: %s" % [prop_data.cell_name, bidder.name]
+	_auc_current.text = "Giá hiện tại: $%d (tối thiểu $%d)" % [current_bid, min_bid]
+
+	_auc_bid_input.text = str(max(min_bid, current_bid + 1))
+
+	print("[GameUI] prompt_auction for %s, bidder=%s, current_bid=%d, min_bid=%d" % [prop_data.cell_name, bidder.name, current_bid, min_bid])
+
+	# Participants list
+	for child in _auc_participants.get_children():
+		child.queue_free()
+	for p in participants:
+		var lbl = Label.new()
+		lbl.text = "%s — $%d" % [p.name, p.balance]
+		_auc_participants.add_child(lbl)
+
+	# Connect buttons
+	if _auc_btn_pass.pressed.is_connected(_on_auc_pass_pressed):
+		_auc_btn_pass.pressed.disconnect(_on_auc_pass_pressed)
+	_auc_btn_pass.pressed.connect(_on_auc_pass_pressed)
+
+	if _auc_btn_bid.pressed.is_connected(_on_auc_bid_pressed):
+		_auc_btn_bid.pressed.disconnect(_on_auc_bid_pressed)
+	_auc_btn_bid.pressed.connect(_on_auc_bid_pressed)
+
+	# Start a deferred timeout that will auto-pass if no response (seconds)
+	var timeout_seconds := 20.0
+	call_deferred("_start_auc_timeout", timeout_seconds, session_id)
+
+
+func _show_auction_panel() -> void:
+	if _auction_panel == null:
+		return
+	print("[GameUI] _show_auction_panel called for bidder_id=%d" % _auc_bidder_id)
+	_ev_overlay.visible = true
+	_auction_panel.visible = true
+	_auction_panel.move_to_front()
+
+
+func _close_auction():
+	# Hủy mọi timer đang chạy
+	_auction_session_id += 1
+
+	_ev_overlay.visible = false
+	_auction_panel.visible = false
+
+	_auc_bid_input.text = ""
+
+	for child in _auc_participants.get_children():
+		child.queue_free()
+
+	_auc_callback = null
+	_auc_bidder_id = -1
+
+
+func _on_auc_pass_pressed() -> void:
+	var cb = _auc_callback
+	var bidder = _auc_bidder_id
+	_close_auction()
+	if cb and cb.is_valid():
+		cb.call(bidder, 0, -1)
+
+
+func _on_auc_bid_pressed() -> void:
+	var bid_amount = int(_auc_bid_input.text)
+	var cb = _auc_callback
+	var bidder = _auc_bidder_id
+	_close_auction()
+	if cb and cb.is_valid():
+		cb.call(bidder, 1, bid_amount)
+
+func _start_auc_timeout(seconds: float, session_id: int) -> void:
+	print("[AUC TIMER] started session=", session_id)
+
+	await get_tree().create_timer(seconds).timeout
+
+	print("[AUC TIMER] timeout session=", session_id)
+
+	if session_id != _auction_session_id:
+		print("[AUC TIMER] cancelled")
+		return
+
+	if not _auction_panel.visible:
+		print("[AUC TIMER] panel hidden")
+		return
+
+	print("[AUC TIMER] auto pass")
+	_on_auc_pass_pressed()
 
 
 # Cập nhật bảng tài sản từ snapshot do GameController cung cấp
@@ -749,4 +937,3 @@ func refresh_player_panel(snapshot: Array) -> void:
 			vb.add_child(no_p)
 
 		_pp_content.add_child(card)
-		

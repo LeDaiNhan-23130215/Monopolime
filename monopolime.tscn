@@ -181,7 +181,7 @@ script = ExtResource("5_r4gxj")
 script = ExtResource("8_fo70c")
 
 [node name="Board" type="Node2D" parent="." unique_id=940783717]
-position = Vector2(302, 93.5)
+position = Vector2(96, -157.5)
 script = ExtResource("8_s088g")
 property_scene = ExtResource("10_uwyxl")
 tax_scene = ExtResource("11_hj1c4")
