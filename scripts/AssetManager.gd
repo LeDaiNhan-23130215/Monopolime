@@ -47,6 +47,33 @@ func buy_property(player: Player, cell: PropertyCell) -> bool:
 
 
 # =========================
+# Chuyển nhượng tài sản (dùng cho đấu giá)
+# price: số tiền người mua phải trả (không nhất thiết bằng buy_price)
+# =========================
+func transfer_property(player: Player, cell: PropertyCell, price: int) -> bool:
+	if cell.property_owner != null:
+		_emit("auction", false, "Ô đất đã có chủ: " + cell.data.cell_name)
+		return false
+
+	var prop_data = cell.data as PropertyData
+	if prop_data == null:
+		_emit("auction", false, "Dữ liệu tài sản không hợp lệ")
+		return false
+
+	if not FinanceManager.can_afford(player, price):
+		_emit("auction", false, player.name + " không đủ tiền mua " + cell.data.cell_name + " với giá $" + str(price))
+		return false
+
+	FinanceManager.deduct(player, price)
+	cell.property_owner = player
+	player.add_property(cell)
+	cell.queue_redraw()
+
+	_emit("auction", true, player.name + " thắng đấu giá " + cell.data.cell_name + " với giá $" + str(price))
+	return true
+
+
+# =========================
 # AF7.3 – Xây nhà / Khách sạn (BR-11–BR-14)
 # =========================
 func build_house(player: Player, cell: PropertyCell) -> bool:
