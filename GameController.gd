@@ -30,6 +30,29 @@ func _on_asset_action_completed(action: String, success: bool, message: String):
 		ui.show_message(message)
 
 
+# Auction interaction signal: emitted when UI auction choice is made
+signal auction_choice_made
+
+# Internal storage for last auction choice (player_id, choice_index)
+var _last_auction_choice := {"player_id": -1, "choice_index": -1, "bid_amount": -1}
+
+# Đấu giá: chỉ nhận phản hồi đúng từ người đang được chờ
+var _auction_expected_player_id := -1
+
+func _on_auction_choice(player_id: int, choice_index: int, bid_amount: int = -1) -> void:
+	print("[GameController] _on_auction_choice called with -> player_id=%s choice=%s bid_amount=%s" % [str(player_id), str(choice_index), str(bid_amount)])
+
+	# Đấu giá: chặn signal cũ / sai người
+	if _auction_expected_player_id != -1 and player_id != _auction_expected_player_id:
+		print("[GameController] Ignore auction choice from unexpected player_id=%d, expected=%d" % [player_id, _auction_expected_player_id])
+		return
+
+	_last_auction_choice["player_id"] = player_id
+	_last_auction_choice["choice_index"] = choice_index
+	_last_auction_choice["bid_amount"] = bid_amount
+	emit_signal("auction_choice_made")
+
+
 func start_turn():
 	var player = get_current_player()
 	if player.is_bankrupt():
@@ -68,6 +91,7 @@ func resolve_roll():
 			player.state.set_in_jail(false)
 			await move_player(player, final_result.total())
 			await handle_landed_cell(player, player.state.position)
+			print("LAND DONE")
 			# Ra tù bằng double không được đi thêm lượt
 
 		elif player.state.jail_turns >= 3:
@@ -79,6 +103,7 @@ func resolve_roll():
 			player.state.set_in_jail(false)
 			await move_player(player, final_result.total())
 			await handle_landed_cell(player, player.state.position)
+			print("LAND DONE")
 
 		else:
 			# Chưa double, chưa hết 3 lượt → ở lại
@@ -191,7 +216,7 @@ func save_game(save_id: int) -> void:
 
 	var storage_status = StorageService.check_storage_availability()
 	if not storage_status.get("ok", false):
-		if ui.has_method("show_message"):
+		if ui and ui.has_method("show_message"):
 			ui.show_message("Insufficient Storage")
 		return
 
@@ -204,39 +229,39 @@ func save_game(save_id: int) -> void:
 		"v_total": _compute_v_total()
 	}
 	if StorageService.save_file(save_id, game_data):
-		if ui.has_method("show_message"):
+		if ui and ui.has_method("show_message"):
 			ui.show_message("Saved Slot %02d" % [save_id])
 	else:
-		if ui.has_method("show_message"):
+		if ui and ui.has_method("show_message"):
 			ui.show_message("Save failed at Slot %02d" % [save_id])
 
 
 func load_game(save_id: int) -> void:
 	var slot: SaveSlot = StorageService.load_file(save_id)
 	if slot.is_empty():
-		if ui.has_method("show_message"):
+		if ui and ui.has_method("show_message"):
 			ui.show_message("Slot %02d is empty" % [save_id])
 		return
 
 	var loaded_data = StorageService.load_game_data(save_id)
 	if loaded_data.is_empty() or not loaded_data.has("players_state"):
-		if ui.has_method("show_message"):
+		if ui and ui.has_method("show_message"):
 			ui.show_message("Corrupted Data")
 		return
 
 	var players_state_data = loaded_data.get("players_state", [])
 	if typeof(players_state_data) != TYPE_ARRAY:
-		if ui.has_method("show_message"):
+		if ui and ui.has_method("show_message"):
 			ui.show_message("Corrupted Data")
 		return
 
 	if not loaded_data.has("current_player") or not loaded_data.has("double_count"):
-		if ui.has_method("show_message"):
+		if ui and ui.has_method("show_message"):
 			ui.show_message("Corrupted Data")
 		return
 
 	if not _apply_players_state(players_state_data):
-		if ui.has_method("show_message"):
+		if ui and ui.has_method("show_message"):
 			ui.show_message("Corrupted Data")
 		return
 
@@ -249,7 +274,7 @@ func load_game(save_id: int) -> void:
 
 	_refresh_player_tokens_from_state()
 
-	if ui.has_method("show_message"):
+	if ui and ui.has_method("show_message"):
 		ui.show_message("Loaded Slot %02d (%s)" % [save_id, slot.date_save])
 
 
@@ -267,7 +292,7 @@ func auto_save_game() -> void:
 		"v_total": _compute_v_total()
 	}
 
-	if StorageService.save_auto(game_data) and ui.has_method("show_message"):
+	if StorageService.save_auto(game_data) and ui and ui.has_method("show_message"):
 		ui.show_message("Auto-save complete")
 
 
@@ -432,7 +457,9 @@ func handle_landed_cell(player: Player, cell_index: int):
 			# Chưa có chủ → mua / đấu giá
 			if ui:
 				ui.prompt_buy_or_pass(player, prop, asset_manager)
+				print("WAIT UI")
 				await ui.ui_action_done
+				print("UI DONE")
 		elif prop.property_owner != player and not prop.is_mortgaged:
 			# Trả tiền thuê
 			process_payment(player, prop.property_owner, prop.get_current_rent(), prop.data.cell_name)
@@ -467,7 +494,140 @@ func handle_landed_cell(player: Player, cell_index: int):
 		if cell.data.cell_type == CellType.Type.GO_TO_JAIL:
 			await go_to_jail(player)
 
+func start_auction(cell: PropertyCell) -> void:
+	if ui == null:
+		return
 
+	print("[GameController] start_auction called for cell: ", cell)
+	var pd = cell.data as PropertyData
+	if pd == null:
+		ui.show_message("Dữ liệu ô không hợp lệ cho đấu giá")
+		return
+
+	# Đấu giá: mở phiên mới, reset trạng thái cũ
+	_auction_expected_player_id = -1
+	_last_auction_choice = {"player_id": -1, "choice_index": -1, "bid_amount": -1}
+
+	ui.show_message("Bắt đầu đấu giá cho: %s" % pd.cell_name)
+	print("[GameController] Auction for %s (buy_price=%d)" % [pd.cell_name, pd.buy_price])
+
+	# Xây danh sách người chơi theo thứ tự lượt, bắt đầu từ người tiếp theo
+	var ordered: Array = []
+	var n = game_state.players.size()
+	for i in range(n):
+		var idx = (game_state.current_player + 1 + i) % n
+		var p = game_state.players[idx]
+		if not p.is_bankrupt():
+			ordered.append(p)
+
+	var bidder_names: Array = []
+	for bp in ordered:
+		bidder_names.append(bp.name)
+	print("[GameController] ordered bidders: ", bidder_names)
+
+	if ordered.size() == 0:
+		ui.show_message("Không có người tham gia đấu giá")
+		if ui and ui.has_method("_close_auction"):
+			ui._close_auction()
+		return
+
+	var passed = {}
+	for p in ordered:
+		passed[p.player_id] = false
+
+	var current_bid: int = 0
+	var current_winner: Player = null
+	var min_increment: int = max(1, int(pd.buy_price / 10))
+
+	var idx = 0
+	var safety := 0
+	while true:
+		safety += 1
+		if safety > 500:
+			print("[GameController] Auction safety break triggered")
+			break
+
+		var bidder = ordered[idx]
+		if not passed[bidder.player_id]:
+			var min_bid = current_bid + min_increment if current_bid > 0 else 1
+			if bidder.balance < min_bid:
+				passed[bidder.player_id] = true
+			else:
+				print("[GameController] Prompting bidder %s (balance=$%d) min_bid=%d current_bid=%d" % [bidder.name, bidder.balance, min_bid, current_bid])
+
+				# Đấu giá: đánh dấu người đang được chờ để chỉ nhận đúng phản hồi của họ
+				_auction_expected_player_id = bidder.player_id
+
+				ui.prompt_auction(bidder, pd, current_bid, min_bid, ordered, Callable(self, "_on_auction_choice"))
+				await self.auction_choice_made
+
+				if int(_last_auction_choice["player_id"]) != bidder.player_id:
+					print("[GameController] Auction choice mismatch")
+					continue
+
+				var choice = int(_last_auction_choice["choice_index"])
+				var bid_amount = int(_last_auction_choice.get("bid_amount", -1))
+				print("[GameController] Received auction choice: bidder_id=%d choice=%d bid_amount=%d" % [_last_auction_choice["player_id"], choice, bid_amount])
+
+				# Đấu giá: xác nhận xong một phản hồi thì bỏ khóa người đang chờ
+				_auction_expected_player_id = -1
+
+				if choice == 0:
+					passed[bidder.player_id] = true
+
+				elif choice == 1:
+					# Đấu giá: bid tùy chỉnh phải >= min_bid và không vượt quá tiền hiện có
+					if bid_amount < min_bid:
+						ui.show_message("%s phải đặt ít nhất $%d" % [bidder.name, min_bid])
+						continue
+					elif bid_amount > bidder.balance:
+						ui.show_message("%s không đủ tiền." % bidder.name)
+						continue
+						
+					current_bid = bid_amount
+					current_winner = bidder
+
+		# Kiểm tra còn bao nhiêu người chưa pass
+		var remaining = 0
+		for p in ordered:
+			if not passed[p.player_id]:
+				remaining += 1
+		# Nếu tất cả đã pass (remaining == 0) hoặc chỉ còn 1 người, kết thúc vòng đấu
+			if remaining == 0:
+				# Tất cả pass
+				break
+		if remaining == 1:
+			if current_winner == null:
+				for p in ordered:
+					if not passed[p.player_id]:
+						current_winner = p
+						current_bid = max(current_bid, min_increment)
+						break
+			break
+
+		idx = (idx + 1) % ordered.size()
+
+	# Đấu giá: đóng khóa phiên sau khi kết thúc vòng đấu
+	_auction_expected_player_id = -1
+
+	if current_winner != null and current_bid > 0:
+		# Đấu giá: kiểm tra lại tiền trước khi chuyển tài sản
+		if current_winner.balance < current_bid:
+			ui.show_message("%s không còn đủ tiền để thanh toán." % current_winner.name)
+		else:
+			var ok = asset_manager.transfer_property(current_winner, cell, current_bid)
+			if ok:
+				ui.show_message("%s thắng đấu giá %s với $%d" % [current_winner.name, pd.cell_name, current_bid])
+			else:
+				ui.show_message("Giao dịch đấu giá thất bại")
+	else:
+		ui.show_message("Không ai trúng đấu giá. Ô đất vẫn chưa có chủ.")
+
+	# Đảm bảo UI đóng popup đấu giá nếu còn mở
+	if ui and ui.has_method("_close_auction"):
+		ui._close_auction()
+
+	return
 # ══════════════════════════════════════════════════════════════════════
 # Financial
 # ══════════════════════════════════════════════════════════════════════
