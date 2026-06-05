@@ -1,6 +1,8 @@
 extends Node2D
 class_name PlayerToken
 
+const TOKEN_SCALE := Vector2(0.68, 0.68)
+
 var player_id: int
 
 @onready var token_sprite = $TokenSprite
@@ -8,7 +10,7 @@ var player_id: int
 
 func _ready():
 	token_sprite.centered = true
-	token_sprite.scale = Vector2(0.458, 0.458)
+	token_sprite.scale = TOKEN_SCALE
 	
 func move_to(target_pos: Vector2) -> void:
 	var tween = create_tween()
@@ -16,7 +18,10 @@ func move_to(target_pos: Vector2) -> void:
 	await tween.finished
 	
 func get_random_token_texture():
-	var tex = TokenManager.get_random_texture()
+	var token_manager = get_node_or_null("/root/TokenManage")
+	if token_manager == null:
+		return
+	var tex = token_manager.get_random_texture()
 	token_sprite.texture = tex
 	
 	center_sprite()

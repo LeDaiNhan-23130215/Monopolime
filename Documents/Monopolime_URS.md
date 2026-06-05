@@ -19,7 +19,7 @@ Dự án nhằm phát triển ứng dụng trò chơi **Cờ Tỷ Phú (Monopoli
     - **Mua đất:** Người chơi mua ô đất chưa sở hữu.
     - **Thu phí:** Tự động trừ tiền khi người chơi khác dẫm vào đất của mình.
     - **Xây dựng:** Nâng cấp nhà và khách sạn khi sở hữu đủ bộ màu (Color Set).
-    - **Đấu giá:** Tự động kích hoạt đấu giá nếu người chơi hiện tại từ chối mua đất.
+    - **Bỏ qua mua đất:** Nếu người chơi từ chối mua hoặc không đủ tiền mua, ô đất vẫn giữ trạng thái chưa có chủ.
 
 ### 2.3 Hệ thống Kinh tế & Sự kiện
 * **Ngân hàng:** Tự động cấp lương khi đi qua ô "Bắt đầu" (GO).

@@ -5,6 +5,7 @@ var position: int = 0
 var balance: int = 1500
 var in_jail: bool = false
 var bankrupt: bool = false
+var special_cards: int = 0
 
 # BR-16: Đếm số lượt đã ngồi tù (0 = chưa vào tù hoặc vừa vào)
 var jail_turns: int = 0
