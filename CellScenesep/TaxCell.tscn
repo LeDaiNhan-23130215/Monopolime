@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://r8ic24ahsfvu"]
-
-[ext_resource type="Script" uid="uid://bufcsblxhkwoi" path="res://Cells/TaxCell.gd" id="1_ps8jg"]
-
-[node name="TaxCell" type="Node2D" unique_id=1627630138]
-script = ExtResource("1_ps8jg")

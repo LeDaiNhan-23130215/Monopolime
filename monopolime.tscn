@@ -131,6 +131,10 @@ text = "🏠  Bán nhà / Khách sạn về Ngân hàng"
 layout_mode = 2
 text = "🏚  Bán đất về Ngân hàng"
 
+[node name="BtnTrade" type="Button" parent="GameUI/UI/ActionPopup/VBox" unique_id=605057173]
+layout_mode = 2
+text = "🔄  Trao đổi đất"
+
 [node name="Separator1" type="HSeparator" parent="GameUI/UI/ActionPopup/VBox" unique_id=2000000030]
 layout_mode = 2
 
@@ -181,7 +185,7 @@ script = ExtResource("5_r4gxj")
 script = ExtResource("8_fo70c")
 
 [node name="Board" type="Node2D" parent="." unique_id=940783717]
-position = Vector2(96, -157.5)
+position = Vector2(274.5, -60.5)
 script = ExtResource("8_s088g")
 property_scene = ExtResource("10_uwyxl")
 tax_scene = ExtResource("11_hj1c4")
@@ -205,6 +209,7 @@ script = ExtResource("11_y5t0d")
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnRedeem" to="GameUI" method="_on_btn_redeem_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnSellHouse" to="GameUI" method="_on_btn_sell_house_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnSell" to="GameUI" method="_on_btn_sell_pressed"]
+[connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnTrade" to="GameUI" method="_on_btn_trade_pressed"]
 [connection signal="pressed" from="GameUI/UI/ActionPopup/VBox/BtnClose" to="GameUI" method="_on_btn_close_action_pressed"]
 [connection signal="item_selected" from="GameUI/UI/PropertyPopup/VBox/PropertyList" to="GameUI" method="_on_property_list_item_selected"]
 [connection signal="pressed" from="GameUI/UI/PropertyPopup/VBox/HBox/BtnCancel" to="GameUI" method="_on_btn_pp_cancel_pressed"]

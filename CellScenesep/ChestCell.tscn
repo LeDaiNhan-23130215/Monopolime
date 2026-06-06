@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://drvvf57bfb2xw"]
-
-[ext_resource type="Script" uid="uid://cddeqb60hhv8m" path="res://Cells/ChestCell.gd" id="1_6pad1"]
-
-[node name="ChestCell" type="Node2D" unique_id=1922430475]
-script = ExtResource("1_6pad1")

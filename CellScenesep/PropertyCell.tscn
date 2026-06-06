@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://dmior1yjgw8w1"]
-
-[ext_resource type="Script" uid="uid://btfh5ukyftlp5" path="res://Cells/PropertyCell.gd" id="1_mqhp0"]
-
-[node name="PropertyCell" type="Node2D" unique_id=715885633]
-script = ExtResource("1_mqhp0")
