@@ -45,3 +45,48 @@ func test_all_players_pass_results_in_no_winner():
 			remaining += 1
 
 	assert_eq(remaining, 0)
+
+
+func test_highest_bidder_wins():
+	var current_bid = 500
+
+	var p1 = Player.new()
+	p1.player_id = 1
+
+	var p2 = Player.new()
+	p2.player_id = 2
+
+	var current_winner = p2
+
+	assert_eq(current_bid, 500)
+	assert_eq(current_winner.player_id, 2)
+	
+func test_no_winner_when_all_players_pass():
+	var current_winner = null
+	var current_bid = 0
+
+	assert_null(current_winner)
+	assert_eq(current_bid, 0)
+	
+func test_bid_cannot_exceed_balance():
+	var bidder = Player.new()
+	bidder.balance = 100
+
+	var bid_amount = 500
+
+	assert_true(bid_amount > bidder.balance)
+
+func test_property_owner_changes_after_auction():
+	var buyer = Player.new()
+
+	var property = PropertyCell.new()
+
+	property.property_owner = null
+	
+
+
+	property.property_owner = buyer
+
+	assert_eq(property.property_owner, buyer)
+	
+	

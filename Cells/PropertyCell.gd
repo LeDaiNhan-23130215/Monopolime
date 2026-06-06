@@ -88,6 +88,7 @@ func mortgage_property() -> int:
 		return 0  # Phải bán nhà trước
 	is_mortgaged = true
 	var amount = get_mortgage_value()
+	queue_redraw()
 	print("Thế chấp: ", data.cell_name, " → $", amount)
 	return amount
 
@@ -97,6 +98,7 @@ func redeem_property() -> int:
 		return 0
 	is_mortgaged = false
 	var cost = get_redeem_cost()
+	queue_redraw()
 	print("Chuộc lại: ", data.cell_name, " → -$", cost)
 	return cost
 
@@ -110,9 +112,11 @@ func build_house() -> bool:
 	if house_count >= 4:
 		house_count = 0
 		has_hotel = true
+		queue_redraw()
 		print("Nâng cấp khách sạn tại: ", data.cell_name)
 		return true
 	house_count += 1
+	queue_redraw()
 	print("Xây nhà #", house_count, " tại: ", data.cell_name)
 	return true
 
@@ -122,6 +126,7 @@ func upgrade_to_hotel() -> bool:
 		return false
 	house_count = 0
 	has_hotel = true
+	queue_redraw()
 	print("Nâng cấp khách sạn tại: ", data.cell_name)
 	return true
 
@@ -137,10 +142,12 @@ func sell_house() -> int:
 	if has_hotel:
 		has_hotel = false
 		house_count = 4
+		queue_redraw()
 		var prop_data = data as PropertyData
 		return prop_data.build_cost / 2 if prop_data else 0
 	if house_count > 0:
 		house_count -= 1
+		queue_redraw()
 		var prop_data = data as PropertyData
 		return prop_data.build_cost / 2 if prop_data else 0
 	return 0
@@ -170,6 +177,7 @@ func reset_property():
 # Visual Đánh dấu Chủ sở hữu
 # =========================
 func _draw() -> void:
+	
 	# Nền ô kiểu thẻ: kem + viền xanh đậm
 	draw_rect(Rect2(0, 0, 100, 100), CoTyPhuPalette.CREAM, true)
 	draw_rect(Rect2(0, 0, 100, 100), CoTyPhuPalette.DEEP_BLUE, false, 2.0)
@@ -215,6 +223,25 @@ func _draw() -> void:
 		# Chấm tròn góc dưới phải
 		draw_circle(Vector2(88, 88), 8, pc.darkened(0.2))
 		draw_circle(Vector2(88, 88), 5, Color(1, 1, 1, 0.95))
+
+	# Biểu tượng nhà / khách sạn trên đất
+	if has_hotel:
+		var pc = CoTyPhuPalette.player_color(property_owner.player_id)
+		var hotel_color := Color(0.2, 0.2, 0.2)
+		if property_owner != null:
+			hotel_color = pc.darkened(0.25)
+		var hotel_rect := Rect2(16, 68, 14, 14)
+		draw_rect(hotel_rect, Color(1, 1, 1, 0.95), true)
+		draw_rect(hotel_rect, hotel_color, false, 1.5)
+		draw_rect(Rect2(20, 72, 6, 6), hotel_color, true)
+	elif house_count > 0:
+		var house_color := Color(0.2, 0.2, 0.2)
+		if property_owner != null:
+			var pc = CoTyPhuPalette.player_color(property_owner.player_id)
+		for i in range(house_count):
+			var center = Vector2(16 + i * 12, 75)
+			draw_circle(center, 4, house_color)
+			draw_circle(center, 2, Color(1, 1, 1, 0.9))
 
 	if is_mortgaged:
 		draw_rect(Rect2(0, 0, 100, 100), Color(0.1, 0.1, 0.1, 0.55))

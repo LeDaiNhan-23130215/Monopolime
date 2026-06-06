@@ -581,6 +581,13 @@ func _open_prop_popup(title: String, cells: Array) -> void:
 			if c.is_mortgaged:      info += " [Thế chấp]"
 			elif c.has_hotel:       info += " [Khách sạn]"
 			elif c.house_count > 0: info += " [%d nhà]" % c.house_count
+			if _action == "build":
+				var pd = c.data as PropertyData
+				if pd != null:
+					if c.house_count >= 4 and not c.has_hotel:
+						info += " • Nâng cấp KS: $%d" % pd.build_cost
+					else:
+						info += " • Xây nhà: $%d" % pd.build_cost
 			prop_list.add_item(info)
 			prop_list.set_item_metadata(prop_list.item_count - 1, c)
 	prop_popup.visible = true
@@ -606,8 +613,12 @@ func _on_btn_pp_confirm_pressed() -> void:
 	_action = ""
 	match current_action:
 		"build":
+			var build_cost = _cell.get_build_cost()
 			var ok = _am.build_house(_player, _cell)
-			show_message("Xây thành công!" if ok else "Xây thất bại!")
+			if ok:
+				show_message("Xây thành công! Đã trừ $%d" % build_cost)
+			else:
+				show_message("Xây thất bại!")
 			_done_with_action()
 		"mortgage":
 			var ok = _am.mortgage_property(_player, _cell)
