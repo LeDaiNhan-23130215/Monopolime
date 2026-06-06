@@ -215,8 +215,120 @@ func sell_property_to_bank(player: Player, cell: PropertyCell) -> bool:
 	_emit("sell", true,
 		player.name + " bán " + cell.data.cell_name + " về Ngân hàng, nhận $" + str(refund))
 	return true
+# =========================
+# UC-10 – Trao đổi đất
+# =========================
+
+func get_tradeable_properties(player: Player) -> Array:
+	var eligible: Array = []
+
+	for c in player.properties:
+		if c is PropertyCell \
+		and not c.is_mortgaged \
+		and c.house_count == 0 \
+		and not c.has_hotel:
+			eligible.append(c)
+
+	return eligible
 
 
+func validate_trade(
+		initiator: Player,
+		receiver: Player,
+		offer_cell: PropertyCell,
+		request_cell: PropertyCell,
+		compensation: int,
+		payer: Player) -> Dictionary:
+
+	if offer_cell.is_mortgaged or offer_cell.house_count > 0 or offer_cell.has_hotel:
+		return {
+			"valid": false,
+			"reason": offer_cell.data.cell_name + " không hợp lệ"
+		}
+
+	if request_cell.is_mortgaged or request_cell.house_count > 0 or request_cell.has_hotel:
+		return {
+			"valid": false,
+			"reason": request_cell.data.cell_name + " không hợp lệ"
+		}
+
+	if offer_cell.property_owner != initiator:
+		return {
+			"valid": false,
+			"reason": "Bạn không sở hữu " + offer_cell.data.cell_name
+		}
+
+	if request_cell.property_owner != receiver:
+		return {
+			"valid": false,
+			"reason": receiver.name + " không sở hữu " + request_cell.data.cell_name
+		}
+
+	var offer_data := offer_cell.data as PropertyData
+	var request_data := request_cell.data as PropertyData
+
+	if offer_data == null or request_data == null:
+		return {
+			"valid": false,
+			"reason": "Dữ liệu tài sản không hợp lệ"
+		}
+
+	if compensation > 0 and payer != null:
+		if not FinanceManager.can_afford(payer, compensation):
+			return {
+				"valid": false,
+				"reason": payer.name + " không đủ tiền bù"
+			}
+
+	return {
+		"valid": true,
+		"reason": ""
+	}
+
+
+func execute_trade(
+		initiator: Player,
+		receiver: Player,
+		offer_cell: PropertyCell,
+		request_cell: PropertyCell,
+		compensation: int,
+		payer: Player) -> bool:
+
+	var check = validate_trade(
+		initiator,
+		receiver,
+		offer_cell,
+		request_cell,
+		compensation,
+		payer
+	)
+
+	if not check["valid"]:
+		_emit("trade", false, check["reason"])
+		return false
+
+	initiator.properties.erase(offer_cell)
+	offer_cell.property_owner = receiver
+	receiver.add_property(offer_cell)
+
+	receiver.properties.erase(request_cell)
+	request_cell.property_owner = initiator
+	initiator.add_property(request_cell)
+
+	if compensation > 0 and payer != null:
+		var payee = receiver if payer == initiator else initiator
+		FinanceManager.transfer(payer, payee, compensation)
+
+	offer_cell.queue_redraw()
+	request_cell.queue_redraw()
+
+	_emit(
+		"trade",
+		true,
+		initiator.name + " trao đổi với " + receiver.name
+	)
+
+	return true
 # =========================
 # Helpers
 # =========================
