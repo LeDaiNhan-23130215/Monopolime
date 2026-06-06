@@ -8,7 +8,28 @@ var player_id: int
 
 func _ready():
 	token_sprite.centered = true
-	token_sprite.scale = Vector2(0.458, 0.458)
+	token_sprite.scale = Vector2(0.3, 0.3)
+	# Màu chữ số tiền ban đầu: đen cho dễ đọc trên nền sáng
+	balance_label.add_theme_color_override("font_color", Color.BLACK)
+	balance_label.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.7))
+	balance_label.add_theme_constant_override("outline_size", 3)
+	_add_player_label()
+
+func _add_player_label():
+	# Nhãn nhỏ P1/P2... trên quân để dễ phân biệt (chỉ hiển thị)
+	if has_node("PlayerTag"):
+		return
+	var tag := Label.new()
+	tag.name = "PlayerTag"
+	tag.text = "P%d" % (player_id + 1)
+	tag.add_theme_font_size_override("font_size", 12)
+	var colors := [Color("#2D8CFF"), Color("#E94C3D"), Color("#39B54A"), Color("#F4C542")]
+	tag.add_theme_color_override("font_color", colors[player_id % colors.size()].lightened(0.2))
+	tag.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	tag.add_theme_constant_override("outline_size", 4)
+	tag.position = Vector2(-10, -34)
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(tag)
 	
 func move_to(target_pos: Vector2) -> void:
 	var tween = create_tween()
@@ -62,6 +83,6 @@ func set_balance (value: int):
 	balance_label.text = "$" + str(value)
 	
 	if value >= 200:
-		balance_label.modulate = Color.LIME_GREEN
+		balance_label.add_theme_color_override("font_color", Color.BLACK)
 	else:
-		balance_label.modulate = Color.TOMATO
+		balance_label.add_theme_color_override("font_color", Color("#CC0000"))
