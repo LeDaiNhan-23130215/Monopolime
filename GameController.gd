@@ -39,6 +39,9 @@ var _last_auction_choice := {"player_id": -1, "choice_index": -1, "bid_amount": 
 # Đấu giá: chỉ nhận phản hồi đúng từ người đang được chờ
 var _auction_expected_player_id := -1
 
+# UC-10: lưu đề nghị trao đổi chờ đến lượt Receiver
+var _pending_trade: Dictionary = {}
+
 func _on_auction_choice(player_id: int, choice_index: int, bid_amount: int = -1) -> void:
 	print("[GameController] _on_auction_choice called with -> player_id=%s choice=%s bid_amount=%s" % [str(player_id), str(choice_index), str(bid_amount)])
 
@@ -61,6 +64,11 @@ func start_turn():
 	if ui:
 		ui.show_turn(player.player_id)
 		ui.refresh_player_panel(get_game_state_snapshot())
+	# UC-10: kiểm tra có đề nghị trao đổi chờ không
+	if not _pending_trade.is_empty() and _pending_trade.get("receiver") == player:
+		var t = _pending_trade
+		_pending_trade = {}
+		ui.show_pending_trade_offer(t)
 
 
 func roll_dice():
@@ -689,25 +697,61 @@ func handle_bankruptcy(debtor: Player, _creditor: Player = null):
 # Asset Management shortcuts (gọi từ UI)
 # ══════════════════════════════════════════════════════════════════════
 func player_buy_property(player: Player, cell: PropertyCell) -> bool:
-	if asset_manager == null: return false
+	if asset_manager == null:
+		return false
 	return asset_manager.buy_property(player, cell)
 
 func player_build_house(player: Player, cell: PropertyCell) -> bool:
-	if asset_manager == null: return false
+	if asset_manager == null:
+		return false
 	return asset_manager.build_house(player, cell)
 
 func player_mortgage(player: Player, cell: PropertyCell) -> bool:
-	if asset_manager == null: return false
+	if asset_manager == null:
+		return false
 	return asset_manager.mortgage_property(player, cell)
 
 func player_redeem(player: Player, cell: PropertyCell) -> bool:
-	if asset_manager == null: return false
+	if asset_manager == null:
+		return false
 	return asset_manager.redeem_property(player, cell)
 
 func player_sell_house(player: Player, cell: PropertyCell) -> bool:
-	if asset_manager == null: return false
+	if asset_manager == null:
+		return false
 	return asset_manager.sell_house_to_bank(player, cell)
 
 func player_sell_property(player: Player, cell: PropertyCell) -> bool:
-	if asset_manager == null: return false
+	if asset_manager == null:
+		return false
 	return asset_manager.sell_property_to_bank(player, cell)
+
+func player_queue_trade(initiator: Player, receiver: Player,
+		offer_cell: PropertyCell, request_cell: PropertyCell,
+		compensation: int, payer: Player) -> void:
+	_pending_trade = {
+		"initiator": initiator,
+		"receiver": receiver,
+		"offer_cell": offer_cell,
+		"request_cell": request_cell,
+		"compensation": compensation,
+		"payer": payer
+	}
+
+func player_open_trade(player: Player) -> Array:
+	if asset_manager == null:
+		return []
+	return asset_manager.get_tradeable_properties(player)
+
+func player_execute_trade(
+		initiator: Player,
+		receiver: Player,
+		offer_cell: PropertyCell,
+		request_cell: PropertyCell,
+		compensation: int,
+		payer: Player
+	) -> bool:
+	if asset_manager == null:
+		return false
+	return asset_manager.execute_trade(
+		initiator, receiver, offer_cell, request_cell, compensation, payer)
