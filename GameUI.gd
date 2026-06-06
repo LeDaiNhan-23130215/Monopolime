@@ -4,7 +4,7 @@ class_name GameUI
 # Signal báo GameController rằng người chơi đã xử lý xong ô đất (landing)
 signal ui_action_done
 #---
-@onready var tokens_node = $"../Board/Tokens"
+@onready var tokens_node = get_node("../Board/Tokens")
 # ─── Dice nodes ──────────────────────────────────────────────────────
 @onready var label            : Label               = get_node("UI/Result")
 @onready var timer            : Timer               = get_node("UI/DiceTimer")
@@ -27,6 +27,7 @@ signal ui_action_done
 @onready var btn_redeem       : Button         = get_node("UI/ActionPopup/VBox/BtnRedeem")
 @onready var btn_sell_house   : Button         = get_node("UI/ActionPopup/VBox/BtnSellHouse")
 @onready var btn_sell         : Button         = get_node("UI/ActionPopup/VBox/BtnSell")
+@onready var btn_trade        : Button         = get_node("UI/ActionPopup/VBox/BtnTrade")
 @onready var btn_close_action : Button         = get_node("UI/ActionPopup/VBox/BtnClose")
 
 @onready var prop_popup       : PanelContainer = get_node("UI/PropertyPopup")
@@ -62,6 +63,12 @@ var _am       : AssetManager = null
 var _action   : String       = ""
 var _cell     : PropertyCell = null
 var _buy_cell : PropertyCell = null
+
+# UC10 - Trade state
+var _trade_offer_cell: PropertyCell = null
+var _trade_request_cell: PropertyCell = null
+var _trade_compensation: int = 0
+var _trade_payer: Player = null
 
 # Phân biệt 2 chế độ mở UC7:
 #   _mandatory = true  → do landing (GameController đang await ui_action_done)
@@ -140,6 +147,10 @@ func _ready() -> void:
 		btn_open_manage.visible = false
 		if not btn_open_manage.pressed.is_connected(_on_btn_open_manage_pressed):
 			btn_open_manage.pressed.connect(_on_btn_open_manage_pressed)
+
+	if btn_trade:
+		if not btn_trade.pressed.is_connected(_on_btn_trade_pressed):
+			btn_trade.pressed.connect(_on_btn_trade_pressed)
 
 	save_load_menu.menu_closed.connect(_on_save_load_menu_closed)
 	save_load_menu.save_slot_requested.connect(_on_save_slot_requested)
@@ -352,10 +363,17 @@ func _done_with_action() -> void:
 	_cell      = null
 	_action    = ""
 	_mandatory = false
+	_reset_trade_state()
 	hide_manage_button()
 	if was_mandatory:
 		print("[UI] ui_action_done emitted")
 		emit_signal("ui_action_done")
+
+func _reset_trade_state() -> void:
+	_trade_offer_cell = null
+	_trade_request_cell = null
+	_trade_compensation = 0
+	_trade_payer = null
 
 func _open_action_menu() -> void:
 	if _player == null:
@@ -364,6 +382,8 @@ func _open_action_menu() -> void:
 	var can_build    = false
 	var has_props    = false
 	var has_mortgage = false
+	var other_player = _get_other_player()
+	var can_trade = false
 
 	var has_houses = false
 	for c in _player.properties:
@@ -377,6 +397,11 @@ func _open_action_menu() -> void:
 				if PropertyController.can_build_on(c, _player, all_cells):
 					can_build = true
 
+	if other_player != null and not other_player.is_bankrupt():
+		var my_tradeable = game_controller.player_open_trade(_player)
+		var their_tradeable = game_controller.player_open_trade(other_player)
+		can_trade = not my_tradeable.is_empty() and not their_tradeable.is_empty()
+
 	btn_buy.visible        = (_buy_cell != null)
 	btn_build.visible      = can_build
 	btn_mortgage.visible   = has_props
@@ -384,6 +409,8 @@ func _open_action_menu() -> void:
 	# Nút bán nhà: chỉ hiện khi có ít nhất 1 nhà hoặc khách sạn
 	btn_sell_house.visible = has_houses
 	btn_sell.visible       = has_props
+	if btn_trade:
+		btn_trade.visible  = can_trade
 
 	# FIX: Text nút phân theo chế độ
 	if btn_close_action:
@@ -431,6 +458,7 @@ func _on_btn_close_action_pressed() -> void:
 		_buy_cell = null
 		_cell     = null
 		_action   = ""
+		_reset_trade_state()
 		# btn_open_manage vẫn hiện để người chơi mở lại bất cứ lúc nào
 
 
@@ -497,6 +525,32 @@ func _on_btn_sell_pressed() -> void:
 			eligible.append(c)
 	_open_prop_popup("Chọn ô muốn bán về Ngân hàng (nhận 50% giá mua)", eligible)
 
+func _on_btn_trade_pressed() -> void:
+	action_popup.visible = false
+	_action = "trade"
+	var my_tradeable = game_controller.player_open_trade(_player)
+	if my_tradeable.is_empty():
+		show_message("Không có tài sản hợp lệ để trao đổi!")
+		_open_action_menu()
+		return
+	_open_trade_select_panel(my_tradeable)
+
+
+func _open_trade_select_panel(my_cells: Array) -> void:
+	# Mở prop_popup để chọn ô đề nghị (offer)
+	_open_prop_popup("Chọn ô đất của bạn để trao đổi", my_cells)
+
+func _open_trade_request_panel(offer_cell: PropertyCell) -> void:
+	_trade_offer_cell = offer_cell
+	var other = _get_other_player()
+	if other == null:
+		return
+	var their_cells = game_controller.player_open_trade(other)
+	if their_cells.is_empty():
+		show_message("Đối thủ không có tài sản hợp lệ!")
+		_open_action_menu()
+		return
+	_open_prop_popup("Chọn ô đất muốn nhận về", their_cells)
 
 
 
@@ -573,6 +627,115 @@ func _on_btn_pp_confirm_pressed() -> void:
 			var ok = _am.sell_property_to_bank(_player, _cell)
 			show_message("Bán đất thành công!" if ok else "Bán đất thất bại!")
 			_done_with_action()
+		"trade":
+			if _trade_offer_cell == null:
+				# Bước 1: vừa chọn xong offer_cell → mở bước chọn request
+				_trade_offer_cell = _cell
+				_cell = null
+				var other = _get_other_player()
+				if other == null:
+					show_message("Không tìm thấy người chơi để trao đổi!")
+					_open_action_menu()
+					return
+				var their_cells = game_controller.player_open_trade(other)
+				if their_cells.is_empty():
+					show_message("Đối thủ không có tài sản hợp lệ!")
+					_open_action_menu()
+					return
+				_action = "trade"
+				_open_prop_popup("Chọn ô đất muốn nhận về", their_cells)
+			else:
+				# Bước 2: vừa chọn xong request_cell → hỏi khoản bù
+				_trade_request_cell = _cell
+				_show_trade_compensation_dialog()
+
+func _show_trade_compensation_dialog() -> void:
+	# Hiển thị dialog nhập compensation (có thể dùng AcceptDialog + LineEdit)
+	# Bản hiện tại không có node dialog riêng nên tạm mặc định 0 để giữ code chạy được.
+	_trade_compensation = 0
+	_trade_payer = null
+	_send_trade_offer()
+
+func _send_trade_offer() -> void:
+	var other = _get_other_player()
+	if other == null:
+		show_message("Không tìm thấy người chơi để trao đổi!")
+		_open_action_menu()
+		return
+
+	var check = game_controller.asset_manager.validate_trade(
+		_player, other, _trade_offer_cell, _trade_request_cell,
+		_trade_compensation, _trade_payer)
+	if not check["valid"]:
+		show_message(check["reason"])
+		_open_action_menu()
+		return
+	# Hiển thị cho Receiver xác nhận
+	_show_receiver_confirm_popup()
+
+func _show_receiver_confirm_popup() -> void:
+	# Lưu đề nghị vào GameController, đợi đến lượt Receiver mới hiện popup
+	var other = _get_other_player()
+	game_controller.player_queue_trade(
+		_player, other,
+		_trade_offer_cell, _trade_request_cell,
+		_trade_compensation, _trade_payer
+	)
+	var other_name = other.name if other else "đối thủ"
+	show_message("Đã gửi đề nghị trao đổi! Chờ đến lượt %s." % other_name)
+	_reset_trade_state()
+	_done_with_action()
+
+# Gọi từ GameController khi đến lượt Receiver
+func show_pending_trade_offer(t: Dictionary) -> void:
+	var initiator: Player = t["initiator"]
+	var offer_cell: PropertyCell = t["offer_cell"]
+	var request_cell: PropertyCell = t["request_cell"]
+	var compensation: int = t["compensation"]
+	var offer_name = offer_cell.data.cell_name if offer_cell else "?"
+	var request_name = request_cell.data.cell_name if request_cell else "?"
+	var msg = "%s muốn đổi [%s] lấy [%s] của bạn." % [initiator.name, offer_name, request_name]
+	if compensation > 0:
+		var payer: Player = t["payer"]
+		msg += "\nKèm bù $%d từ %s." % [compensation, payer.name if payer else "?"]
+	show_event_popup(
+		"📦 Đề nghị trao đổi",
+		msg,
+		["✅ Đồng ý", "❌ Từ chối"],
+		func(choice: int) -> void:
+			if choice == 0:
+				var ok = game_controller.player_execute_trade(
+					t["initiator"], t["receiver"],
+					t["offer_cell"], t["request_cell"],
+					t["compensation"], t["payer"])
+				show_message("Trao đổi thành công!" if ok else "Trao đổi thất bại!")
+			else:
+				show_message("%s đã từ chối đề nghị trao đổi." % initiator.name)
+	)
+
+func _on_receiver_accepted() -> void:
+	var other = _get_other_player()
+	var ok = game_controller.player_execute_trade(
+		_player, other,
+		_trade_offer_cell, _trade_request_cell,
+		_trade_compensation, _trade_payer)
+	show_message("Trao đổi thành công!" if ok else "Trao đổi thất bại!")
+	_reset_trade_state()
+	_done_with_action()
+
+func _on_receiver_declined() -> void:
+	show_message("Đối thủ đã từ chối đề nghị!")
+	_reset_trade_state()
+	_open_action_menu()
+
+func _get_other_player() -> Player:
+	if game_controller == null:
+		return null
+	var all = game_controller.game_state.players
+	for p in all:
+		if p != _player and not p.is_bankrupt():
+			return p
+	return null
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -589,6 +752,8 @@ func request_mortgage(player: Player, amount_needed: int) -> void:
 	btn_mortgage.visible   = true
 	btn_sell_house.visible = true
 	btn_sell.visible       = true
+	if btn_trade:
+		btn_trade.visible = false
 	action_popup.visible   = true
 	call_deferred("_place_action_popup")
 
