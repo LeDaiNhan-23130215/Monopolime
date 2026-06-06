@@ -21,8 +21,11 @@ StorageService="*uid://bxbynds22lo3b"
 
 [display]
 
-window/size/viewport_width=1088
-window/size/viewport_height=612
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/mode=2
+window/size/window_width_override=1280
+window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

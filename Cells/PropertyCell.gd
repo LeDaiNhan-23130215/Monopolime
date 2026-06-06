@@ -170,44 +170,46 @@ func reset_property():
 # Visual Đánh dấu Chủ sở hữu
 # =========================
 func _draw() -> void:
-	# Ô vuông nền
-	draw_rect(Rect2(0, 0, 100, 100), Color.WHITE, false, 2.0)
+	# Nền ô kiểu thẻ: kem + viền xanh đậm
+	draw_rect(Rect2(0, 0, 100, 100), CoTyPhuPalette.CREAM, true)
+	draw_rect(Rect2(0, 0, 100, 100), CoTyPhuPalette.DEEP_BLUE, false, 2.0)
+
+	# Thanh màu nhóm đất ở mép trên (theo color_name của dữ liệu)
+	var pd0 = data as PropertyData
+	if pd0 != null:
+		var gc = CoTyPhuPalette.group_color(pd0.color_name)
+		draw_rect(Rect2(0, 0, 100, 14), gc)
+		draw_rect(Rect2(0, 0, 100, 14), gc.darkened(0.25), false, 1.0)
 
 	if data != null:
 		draw_string(
 			ThemeDB.fallback_font,
-			Vector2(10, 55),
-			data.cell_name,
+			Vector2(8, 32),
+			CoTyPhuPalette.display_name(data.cell_name),
 			HORIZONTAL_ALIGNMENT_LEFT,
-			80, 16
+			84, 13,
+			CoTyPhuPalette.TEXT_DARK
 		)
-		# Hiển thị giá nếu chưa có chủ
+		# Hiển thị giá ở vị trí cố định (góc dưới trái) nếu chưa có chủ
 		if property_owner == null:
 			var pd = data as PropertyData
 			if pd != null:
 				draw_string(
 					ThemeDB.fallback_font,
-					Vector2(10, 75),
+					Vector2(8, 90),
 					"$" + str(pd.buy_price),
 					HORIZONTAL_ALIGNMENT_LEFT,
-					80, 13
+					84, 14,
+					Color("#0C7724")
 				)
 
 	if property_owner != null:
-		var owner_colors = [
-			Color(0.25, 0.45, 1.0),  # Xanh dương
-			Color(1.0, 0.25, 0.25),  # Đỏ
-			Color(0.1, 0.8, 0.3),    # Xanh lá
-			Color(1.0, 0.75, 0.05),  # Vàng
-		]
-		var pc = owner_colors[property_owner.player_id % owner_colors.size()]
+		var pc = CoTyPhuPalette.player_color(property_owner.player_id)
 
 		# Nền màu nhạt
-		draw_rect(Rect2(0, 0, 100, 100), Color(pc.r, pc.g, pc.b, 0.15))
+		draw_rect(Rect2(0, 14, 100, 86), Color(pc.r, pc.g, pc.b, 0.15))
 		# Viền sáng
-		draw_rect(Rect2(0, 0, 100, 100), Color(pc.r, pc.g, pc.b, 0.8), false, 2.5)
-		# Thanh màu đậm phía trên
-		draw_rect(Rect2(0, 0, 100, 12), pc)
+		draw_rect(Rect2(0, 0, 100, 100), Color(pc.r, pc.g, pc.b, 0.85), false, 2.5)
 		# Chấm tròn góc dưới phải
 		draw_circle(Vector2(88, 88), 7, pc)
 		draw_circle(Vector2(88, 88), 5, Color(1, 1, 1, 0.9))

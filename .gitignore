@@ -1,3 +1,12 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Kiro specs / workspace
+.kiro/
+
+# Temp files from testing
+.o.txt
+.r_*.txt
+.run_*.txt
+*.tmp
