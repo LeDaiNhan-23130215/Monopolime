@@ -506,6 +506,9 @@ func handle_landed_cell(player: Player, cell_index: int):
 	if cell.data is TaxData:
 		player.deduct_money(cell.data.tax_amount)
 		_log_tx("tax", player, -cell.data.tax_amount, "Thuế: -$" + str(cell.data.tax_amount))
+		# Hiệu ứng trừ tiền bay lên trên quân cờ
+		if player.token and player.token.has_method("show_floating_money"):
+			player.token.show_floating_money(-cell.data.tax_amount)
 		if ui:
 			ui.show_message(player.name + " đóng thuế $" + str(cell.data.tax_amount))
 		return
@@ -694,10 +697,13 @@ func get_game_state_snapshot() -> Array:
 func process_payment(player: Player, receiver: Player, amount: int, _reason: String):
 	if player.state.balance >= amount:
 		player.deduct_money(amount)
-		_log_tx("rent", player, -amount, "Tiền thuê → " + (receiver.name if receiver else "Ngân hàng"))
+		# Hiệu ứng trừ tiền cho người trả, cộng tiền cho người nhận
+		if player.token and player.token.has_method("show_floating_money"):
+			player.token.show_floating_money(-amount)
 		if receiver:
 			receiver.add_money(amount)
-			_log_tx("rent", receiver, amount, "Tiền thuê ← " + player.name)
+			if receiver.token and receiver.token.has_method("show_floating_money"):
+				receiver.token.show_floating_money(amount)
 	else:
 		handle_insufficient_funds(player, receiver, amount)
 	emit_signal("turn_action_completed")
