@@ -75,7 +75,7 @@ var chance_cards: Array = [
 		"type": "move",
 		"title": "🎴 Cơ Hội",
 		"desc": "Vé tàu miễn phí!\nDi chuyển đến ô Bãi Đỗ Xe.",
-		"target": 20
+		"target": 10
 	},
 	{
 		"type": "jail",
@@ -333,7 +333,7 @@ func _on_choice_selected(choice_index: int) -> void:
 		# Birthday
 		# ===================
 		"birthday":
-			for p in game_controller.get_players:
+			for p in game_controller.get_players():
 				if p == _current_player:
 					continue
 
