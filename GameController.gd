@@ -25,9 +25,16 @@ func get_event_handler():
 	return _event_handler
 
 
-func _on_asset_action_completed(action: String, success: bool, message: String):
+func _on_asset_action_completed(action: String, success: bool, message: String, amount: int = 0):
 	if ui:
 		ui.show_message(message)
+		if ui.has_method("log_finance"):
+			var player_name := ""
+			# Tách tên người chơi từ đầu message (format: "Tên ... ")
+			var current = get_current_player()
+			if current:
+				player_name = current.name
+			ui.log_finance(action, player_name, amount, success, message)
 
 
 # Auction interaction signal: emitted when UI auction choice is made
