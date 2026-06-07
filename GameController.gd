@@ -480,13 +480,15 @@ func handle_landed_cell(player: Player, cell_index: int):
 	var cell = board.get_cell(cell_index)
 	if not cell:
 		return
-
+	# UC-07: Quản lý tài sản
+	# Người chơi đứng trên đất của mình → mở màn hình quản lý tài sản
 	# ── Property ──────────────────────────────────────────────────────
 	if cell is PropertyCell:
 		var prop = cell as PropertyCell
 
 		if prop.property_owner == null:
 			# Chưa có chủ → mua / đấu giá
+			# UC: Đấu giá tài sản
 			if ui:
 				ui.prompt_buy_or_pass(player, prop, asset_manager)
 				print("WAIT UI")
@@ -497,6 +499,8 @@ func handle_landed_cell(player: Player, cell_index: int):
 			await process_payment(player, prop.property_owner, prop.get_current_rent(), prop.data.cell_name)
 		elif prop.property_owner == player:
 			# Đất của mình → quản lý tài sản
+			# UC: Xây nhà
+			# Từ màn hình quản lý tài sản, người chơi chọn xây nhà hoặc nâng cấp khách sạn
 			if ui:
 				ui.show_asset_management(player, asset_manager)
 				await ui.ui_action_done
@@ -529,7 +533,8 @@ func handle_landed_cell(player: Player, cell_index: int):
 	if cell.data is SpecialData:
 		if cell.data.cell_type == CellType.Type.GO_TO_JAIL:
 			await go_to_jail(player)
-
+# UC-08: Xử lý đấu giá
+# Tạo phiên đấu giá, lần lượt mời người chơi đặt giá hoặc pass
 func start_auction(cell: PropertyCell) -> void:
 	if ui == null:
 		return
