@@ -51,7 +51,12 @@ var _last_auction_choice := {"player_id": -1, "choice_index": -1, "bid_amount": 
 # Đấu giá: chỉ nhận phản hồi đúng từ người đang được chờ
 var _auction_expected_player_id := -1
 
-# UC-10: lưu đề nghị trao đổi chờ đến lượt Receiver
+# ─────────────────────────────────────────────────────────────────────
+# UC-10 – Trao đổi đất
+# Khai báo biến lưu đề nghị trao đổi đang chờ (BR-33T: cơ chế xếp hàng)
+# Được khai báo ở đầu file cùng với các biến trạng thái khác.
+# BF 10.1.7 – Lưu đề nghị trao đổi, chờ đến đầu lượt Receiver mới hiện (BR-33T)
+# ─────────────────────────────────────────────────────────────────────
 var _pending_trade: Dictionary = {}
 
 func _on_auction_choice(player_id: int, choice_index: int, bid_amount: int = -1) -> void:
@@ -76,7 +81,9 @@ func start_turn():
 	if ui:
 		ui.show_turn(player.player_id)
 		ui.refresh_player_panel(get_game_state_snapshot())
-	# UC-10: kiểm tra có đề nghị trao đổi chờ không
+	# BF 10.1.8 – UC-10: Đầu lượt Receiver, kiểm tra có đề nghị trao đổi chờ không.
+	# Nếu có và receiver đúng người hiện tại → xóa _pending_trade rồi
+	# hiện popup xác nhận cho Receiver (BR-33T).
 	if not _pending_trade.is_empty() and _pending_trade.get("receiver") == player:
 		var t = _pending_trade
 		_pending_trade = {}
@@ -669,6 +676,7 @@ func start_auction(cell: PropertyCell) -> void:
 		ui._close_auction()
 
 	return
+
 # ══════════════════════════════════════════════════════════════════════
 # Financial
 # ══════════════════════════════════════════════════════════════════════
@@ -787,6 +795,14 @@ func player_sell_property(player: Player, cell: PropertyCell) -> bool:
 		return false
 	return asset_manager.sell_property_to_bank(player, cell)
 
+# ─────────────────────────────────────────────────────────────────────
+# UC-10 – Các hàm cầu nối (bridge) sang AssetManager
+# Pattern giống UC-7: GameController không xử lý nghiệp vụ trực tiếp,
+# chỉ ủy quyền sang AssetManager.
+# ─────────────────────────────────────────────────────────────────────
+
+# BF 10.1.7 – Lưu đề nghị vào _pending_trade, chờ đến lượt Receiver (BR-33T)
+# Gọi từ GameUI._show_receiver_confirm_popup() sau khi validate pass.
 func player_queue_trade(initiator: Player, receiver: Player,
 		offer_cell: PropertyCell, request_cell: PropertyCell,
 		compensation: int, payer: Player) -> void:
@@ -799,11 +815,16 @@ func player_queue_trade(initiator: Player, receiver: Player,
 		"payer": payer
 	}
 
+# BF 10.1.2 / BF 10.1.4 – Bridge sang AssetManager.get_tradeable_properties()
+# Gọi từ GameUI._open_action_menu() để kiểm tra can_trade,
+# và trong _on_btn_pp_confirm_pressed() để lấy danh sách ô của Receiver.
 func player_open_trade(player: Player) -> Array:
 	if asset_manager == null:
 		return []
 	return asset_manager.get_tradeable_properties(player)
 
+# BF 10.1.10 – Thực thi trao đổi khi Receiver đồng ý (BR-34T)
+# Gọi từ callback trong GameUI.show_pending_trade_offer() khi choice == 0.
 func player_execute_trade(
 		initiator: Player,
 		receiver: Player,

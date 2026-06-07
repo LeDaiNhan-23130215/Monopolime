@@ -4,7 +4,7 @@ class_name FinancePanel
 # ════════════════════════════════════════════════════════════════════
 # FinancePanel – Giao diện cho FinanceManager (UC-6)
 # Hiển thị: số dư, lịch sử giao dịch, thống kê tài chính
-# KHÔNG xây nhà / thế chấp / mua đất (đó là AssetManager UI)
+# 
 # Chỉ thuần: tiền vào / tiền ra / chuyển khoản / tổng quan
 # ════════════════════════════════════════════════════════════════════
 
@@ -41,6 +41,7 @@ var _tf_result    : Label
 var _tf_confirm   : Button
 
 var _btn_close    : Button
+var _interest_btn : Button
 
 # ─── Runtime state ───────────────────────────────────────────────────
 var _ui_root      : Node           # CanvasLayer "UI"
@@ -207,12 +208,28 @@ func _build_panel() -> void:
 
 # ─── Overview page ────────────────────────────────────────────────
 func _build_overview_page() -> Control:
-	var page := ScrollContainer.new()
-	page.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", 10)
+
+	# Nút Lãi suất
+	_interest_btn = Button.new()
+	_interest_btn.text = "💰 Nhận 10% lãi suất (Tất cả người chơi)"
+	_interest_btn.custom_minimum_size = Vector2(0, 36)
+	CoTyPhuPalette.style_button(_interest_btn, Color("#2E8B57"), 14)
+	_interest_btn.pressed.connect(_on_interest_pressed)
+	page.add_child(_interest_btn)
+
+	# Container danh sách người chơi
+	_ov_scroll = ScrollContainer.new()
+	_ov_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_ov_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	page.add_child(_ov_scroll)
+
 	_ov_content = VBoxContainer.new()
 	_ov_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_ov_content.add_theme_constant_override("separation", 8)
-	page.add_child(_ov_content)
+	_ov_scroll.add_child(_ov_content)
+
 	return page
 
 

@@ -177,7 +177,6 @@ func reset_property():
 # Visual Đánh dấu Chủ sở hữu
 # =========================
 func _draw() -> void:
-	
 	# Nền ô kiểu thẻ: kem + viền xanh đậm
 	draw_rect(Rect2(0, 0, 100, 100), CoTyPhuPalette.CREAM, true)
 	draw_rect(Rect2(0, 0, 100, 100), CoTyPhuPalette.DEEP_BLUE, false, 2.0)
@@ -223,25 +222,6 @@ func _draw() -> void:
 		# Chấm tròn góc dưới phải
 		draw_circle(Vector2(88, 88), 8, pc.darkened(0.2))
 		draw_circle(Vector2(88, 88), 5, Color(1, 1, 1, 0.95))
-
-	# Biểu tượng nhà / khách sạn trên đất
-	if has_hotel:
-		var pc = CoTyPhuPalette.player_color(property_owner.player_id)
-		var hotel_color := Color(0.2, 0.2, 0.2)
-		if property_owner != null:
-			hotel_color = pc.darkened(0.25)
-		var hotel_rect := Rect2(16, 68, 14, 14)
-		draw_rect(hotel_rect, Color(1, 1, 1, 0.95), true)
-		draw_rect(hotel_rect, hotel_color, false, 1.5)
-		draw_rect(Rect2(20, 72, 6, 6), hotel_color, true)
-	elif house_count > 0:
-		var house_color := Color(0.2, 0.2, 0.2)
-		if property_owner != null:
-			var pc = CoTyPhuPalette.player_color(property_owner.player_id)
-		for i in range(house_count):
-			var center = Vector2(16 + i * 12, 75)
-			draw_circle(center, 4, house_color)
-			draw_circle(center, 2, Color(1, 1, 1, 0.9))
 
 	if is_mortgaged:
 		draw_rect(Rect2(0, 0, 100, 100), Color(0.1, 0.1, 0.1, 0.55))

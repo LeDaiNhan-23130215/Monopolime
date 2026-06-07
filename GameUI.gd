@@ -64,9 +64,14 @@ var _action   : String       = ""
 var _cell     : PropertyCell = null
 var _buy_cell : PropertyCell = null
 
-# UC10 - Trade state
+# ─────────────────────────────────────────────────────────────────────
+# UC-10 – Trao đổi đất
+# Khai báo biến trạng thái trao đổi, dùng trong suốt luồng BF 10.1.3 → 10.1.7
+# ─────────────────────────────────────────────────────────────────────
+# BF 10.1.3 / 10.1.5 – Lưu tạm ô đề nghị và ô yêu cầu trong quá trình chọn
 var _trade_offer_cell: PropertyCell = null
 var _trade_request_cell: PropertyCell = null
+# BF 10.1.6 – Khoản bù tiền (mặc định 0 vì UI nhập chưa được hiện thực)
 var _trade_compensation: int = 0
 var _trade_payer: Player = null
 
@@ -144,7 +149,6 @@ func _ready() -> void:
 	action_popup.visible = false
 	prop_popup.visible   = false
 
-	# FIX: connect item_selected trong code để chắc chắn hoạt động
 	if not prop_list.item_selected.is_connected(_on_property_list_item_selected):
 		prop_list.item_selected.connect(_on_property_list_item_selected)
 
@@ -213,7 +217,6 @@ func show_turn(player_index: int) -> void:
 	var player = game_controller.get_current_player()
 	var pname = player.name if player else ("P%d" % (player_index + 1))
 	label.text = "Lượt của %s" % pname
-	# FIX: Luôn hiện nút quản lý tài sản khi đến lượt (bất kỳ ô nào - BR-16)
 	if btn_open_manage:
 		btn_open_manage.text    = "⚙ Quản lý tài sản (%s)" % pname
 		btn_open_manage.visible = true
@@ -240,7 +243,6 @@ func show_jail() -> void:
 
 func set_roll_enabled(enabled: bool) -> void:
 	roll_button.disabled = not enabled
-	# FIX: Ẩn nút quản lý khi bắt đầu lượt mới (enabled=true = lượt tiếp theo)
 	if enabled and btn_open_manage:
 		btn_open_manage.visible = false
 
@@ -287,11 +289,11 @@ func _on_roll_dice_pressed() -> void:
 	if save_load_menu.visible:
 		return
 	game_controller.roll_dice()
+
 # ═════════════════════════════════════════════════════════════════════
 # UC7 – ENTRY POINTS
 # ═════════════════════════════════════════════════════════════════════
 
-# Gọi khi đáp xuống ô chưa có chủ (bắt buộc xử lý)
 func prompt_buy_or_pass(player: Player, cell: PropertyCell, am: AssetManager) -> void:
 	_player    = player
 	_am        = am
@@ -326,14 +328,12 @@ func auto_mortgage_for_test(player: Player, amount_needed: int):
 			var amount = cell.mortgage_property()
 			print("> Tự động thế chấp: ", cell.cell_name, " lấy $", amount)
 			
-	# Chờ 1.5 giây để bạn kịp nhìn console
 	await get_tree().create_timer(1.5).timeout 
 	
-	# Quan trọng: Kích hoạt lại lượt đi cho GameController
 	print("Đã xoay đủ tiền, tiếp tục game!")
 	
 	game_controller.emit_signal("turn_action_completed")
-# Gọi khi đáp xuống đất của mình (bắt buộc xử lý)
+
 func show_asset_management(player: Player, am: AssetManager) -> void:
 	_player    = player
 	_am        = am
@@ -341,9 +341,7 @@ func show_asset_management(player: Player, am: AssetManager) -> void:
 	_mandatory = true
 	_open_action_menu()
 
-# FIX: Gọi khi người chơi chủ động bấm nút quản lý (tự nguyện, bất kỳ ô nào)
 func _on_btn_open_manage_pressed() -> void:
-	# Nếu đang trong mandatory mode, mở lại action menu (không thay đổi state)
 	if _mandatory and _player != null:
 		_open_action_menu()
 		return
@@ -360,7 +358,6 @@ func hide_manage_button() -> void:
 	action_popup.visible = false
 	prop_popup.visible   = false
 
-# Gọi khi thực sự hoàn thành xong hành động (emit signal nếu mandatory)
 func _done_with_action() -> void:
 	var was_mandatory = _mandatory
 	_player    = null
@@ -375,11 +372,15 @@ func _done_with_action() -> void:
 		print("[UI] ui_action_done emitted")
 		emit_signal("ui_action_done")
 
+# ─────────────────────────────────────────────────────────────────────
+# UC-10 – Helper: Reset toàn bộ biến trạng thái trao đổi
+# Gọi sau khi giao dịch hoàn thành hoặc bị hủy giữa chừng
+# ─────────────────────────────────────────────────────────────────────
 func _reset_trade_state() -> void:
-	_trade_offer_cell = null
+	_trade_offer_cell   = null
 	_trade_request_cell = null
 	_trade_compensation = 0
-	_trade_payer = null
+	_trade_payer        = null
 
 func _open_action_menu() -> void:
 	if _player == null:
@@ -412,13 +413,11 @@ func _open_action_menu() -> void:
 	btn_build.visible      = can_build
 	btn_mortgage.visible   = has_props
 	btn_redeem.visible     = has_mortgage
-	# Nút bán nhà: chỉ hiện khi có ít nhất 1 nhà hoặc khách sạn
 	btn_sell_house.visible = has_houses
 	btn_sell.visible       = has_props
 	if btn_trade:
 		btn_trade.visible  = can_trade
 
-	# FIX: Text nút phân theo chế độ
 	if btn_close_action:
 		btn_close_action.text = "Kết thúc lượt" if _mandatory else "Đóng"
 
@@ -445,27 +444,21 @@ func _open_action_menu() -> void:
 	# Tính lại kích thước/vị trí theo số nút đang hiện (tránh bị cắt nút)
 	call_deferred("_place_action_popup")
 
-# FIX: "Kết thúc lượt" / "Đóng"
-# mandatory → end turn (emit signal)
-# chủ động → chỉ ẩn menu, btn_open_manage VẪN hiện
 func _on_btn_close_action_pressed() -> void:
 	action_popup.visible = false
 	if _mandatory:
-		# Nếu đang ở chế độ bắt buộc và có ô đang chờ mua, bắt đầu đấu giá khi người chơi từ chối
 		if _buy_cell != null and game_controller != null and _buy_cell.property_owner == null:
 			await game_controller.start_auction(_buy_cell)
 			_done_with_action()
 		else:
 			_done_with_action()
 	else:
-		# Chỉ đóng menu, không xóa trạng thái, không ẩn btn_open_manage
 		_player   = null
 		_am       = null
 		_buy_cell = null
 		_cell     = null
 		_action   = ""
 		_reset_trade_state()
-		# btn_open_manage vẫn hiện để người chơi mở lại bất cứ lúc nào
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -511,7 +504,6 @@ func _on_btn_redeem_pressed() -> void:
 			eligible.append(c)
 	_open_prop_popup("Chọn ô để chuộc lại (+10% lãi)", eligible)
 
-# Bán nhà / khách sạn về Ngân hàng
 func _on_btn_sell_house_pressed() -> void:
 	action_popup.visible = false
 	_action = "sell_house"
@@ -521,7 +513,6 @@ func _on_btn_sell_house_pressed() -> void:
 			eligible.append(c)
 	_open_prop_popup("Chọn ô để bán nhà / khách sạn (nhận 50% chi phí xây)", eligible)
 
-# Bán đất về Ngân hàng
 func _on_btn_sell_pressed() -> void:
 	action_popup.visible = false
 	_action = "sell"
@@ -531,19 +522,25 @@ func _on_btn_sell_pressed() -> void:
 			eligible.append(c)
 	_open_prop_popup("Chọn ô muốn bán về Ngân hàng (nhận 50% giá mua)", eligible)
 
+# ─────────────────────────────────────────────────────────────────────
+# BF 10.1.1 – UC-10: Handler khi Initiator bấm nút "🔄 Trao đổi đất"
+# ─────────────────────────────────────────────────────────────────────
 func _on_btn_trade_pressed() -> void:
 	action_popup.visible = false
 	_action = "trade"
+	# BF 10.1.2 – Lấy danh sách ô hợp lệ của Initiator (BR-31T)
 	var my_tradeable = game_controller.player_open_trade(_player)
 	if my_tradeable.is_empty():
+		# E10.1 – Không có ô hợp lệ
 		show_message("Không có tài sản hợp lệ để trao đổi!")
 		_open_action_menu()
 		return
+	# BF 10.1.3 – Hiển thị danh sách ô của Initiator để chọn offer_cell
 	_open_trade_select_panel(my_tradeable)
 
 
+# BF 10.1.3 – Mở prop_popup cho Initiator chọn offer_cell
 func _open_trade_select_panel(my_cells: Array) -> void:
-	# Mở prop_popup để chọn ô đề nghị (offer)
 	_open_prop_popup("Chọn ô đất của bạn để trao đổi", my_cells)
 
 func _open_trade_request_panel(offer_cell: PropertyCell) -> void:
@@ -566,13 +563,11 @@ func _open_trade_request_panel(offer_cell: PropertyCell) -> void:
 func _open_prop_popup(title: String, cells: Array) -> void:
 	if cells.is_empty():
 		show_message("Không có ô đất phù hợp!")
-		# FIX: Quay lại ActionPopup thay vì đóng hẳn
 		_open_action_menu()
 		return
 	popup_title.text = title
 	prop_list.clear()
 	_cell = null
-	# FIX: Luôn disable Confirm khi mới mở - phải chọn item trước
 	if btn_pp_confirm:
 		btn_pp_confirm.disabled = true
 	for c in cells:
@@ -592,13 +587,11 @@ func _open_prop_popup(title: String, cells: Array) -> void:
 			prop_list.set_item_metadata(prop_list.item_count - 1, c)
 	prop_popup.visible = true
 
-# FIX: Enable Confirm ngay khi chọn item trong list
 func _on_property_list_item_selected(index: int) -> void:
 	_cell = prop_list.get_item_metadata(index)
 	if btn_pp_confirm:
 		btn_pp_confirm.disabled = (_cell == null)
 
-# FIX: Hủy trong PropertyPopup → quay lại ActionPopup (không đóng hẳn)
 func _on_btn_pp_cancel_pressed() -> void:
 	prop_popup.visible = false
 	_cell   = null
@@ -646,9 +639,10 @@ func _on_btn_pp_confirm_pressed() -> void:
 			_done_with_action()
 		"trade":
 			if _trade_offer_cell == null:
-				# Bước 1: vừa chọn xong offer_cell → mở bước chọn request
+				# BF 10.1.3 – Bước 1: Initiator vừa chọn xong offer_cell
 				_trade_offer_cell = _cell
 				_cell = null
+				# BF 10.1.4 – Lấy danh sách ô hợp lệ của Receiver (BR-31T)
 				var other = _get_other_player()
 				if other == null:
 					show_message("Không tìm thấy người chơi để trao đổi!")
@@ -656,43 +650,58 @@ func _on_btn_pp_confirm_pressed() -> void:
 					return
 				var their_cells = game_controller.player_open_trade(other)
 				if their_cells.is_empty():
+					# E10.2 – Receiver không có ô hợp lệ
 					show_message("Đối thủ không có tài sản hợp lệ!")
 					_open_action_menu()
 					return
+				# BF 10.1.4 cont – Mở prop_popup để chọn request_cell
+				# Giữ _action = "trade" để confirm lần 2 vào đúng nhánh
 				_action = "trade"
 				_open_prop_popup("Chọn ô đất muốn nhận về", their_cells)
 			else:
-				# Bước 2: vừa chọn xong request_cell → hỏi khoản bù
+				# BF 10.1.5 – Bước 2: Initiator vừa chọn xong request_cell
 				_trade_request_cell = _cell
 				_show_trade_compensation_dialog()
 
+# ─────────────────────────────────────────────────────────────────────
+# BF 10.1.5 – UC-10: Dialog nhập khoản bù tiền (BR-32T)
+# Hiện tại chưa có UI nhập → mặc định compensation = 0, payer = null
+# và gọi thẳng _send_trade_offer().
+# TODO: Hiện thực AcceptDialog + LineEdit để nhập compensation.
+# ─────────────────────────────────────────────────────────────────────
 func _show_trade_compensation_dialog() -> void:
-	# Hiển thị dialog nhập compensation (có thể dùng AcceptDialog + LineEdit)
-	# Bản hiện tại không có node dialog riêng nên tạm mặc định 0 để giữ code chạy được.
 	_trade_compensation = 0
 	_trade_payer = null
 	_send_trade_offer()
 
+# ─────────────────────────────────────────────────────────────────────
+# BF 10.1.6 – UC-10: Validate đề nghị trước khi gửi (BR-31T, BR-32T)
+# ─────────────────────────────────────────────────────────────────────
 func _send_trade_offer() -> void:
 	var other = _get_other_player()
 	if other == null:
 		show_message("Không tìm thấy người chơi để trao đổi!")
 		_open_action_menu()
 		return
-
+	# Gọi validate_trade() kiểm tra BR-31T, BR-32T, E10.2, E10.3, E10.4
 	var check = game_controller.asset_manager.validate_trade(
 		_player, other, _trade_offer_cell, _trade_request_cell,
 		_trade_compensation, _trade_payer)
 	if not check["valid"]:
+		# E10.2 / E10.3 / E10.4 – Validate thất bại
 		show_message(check["reason"])
 		_open_action_menu()
 		return
-	# Hiển thị cho Receiver xác nhận
+	# Validate pass → tiến hành queue đề nghị
 	_show_receiver_confirm_popup()
 
+# ─────────────────────────────────────────────────────────────────────
+# BF 10.1.7 – UC-10: Lưu đề nghị vào GameController (_pending_trade)
+# Kết thúc lượt Initiator, chờ đến đầu lượt Receiver (BR-33T)
+# ─────────────────────────────────────────────────────────────────────
 func _show_receiver_confirm_popup() -> void:
-	# Lưu đề nghị vào GameController, đợi đến lượt Receiver mới hiện popup
 	var other = _get_other_player()
+	# Gọi player_queue_trade() → lưu vào _pending_trade trong GameController
 	game_controller.player_queue_trade(
 		_player, other,
 		_trade_offer_cell, _trade_request_cell,
@@ -701,32 +710,41 @@ func _show_receiver_confirm_popup() -> void:
 	var other_name = other.name if other else "đối thủ"
 	show_message("Đã gửi đề nghị trao đổi! Chờ đến lượt %s." % other_name)
 	_reset_trade_state()
-	_done_with_action()
+	_done_with_action()   # kết thúc lượt Initiator
 
-# Gọi từ GameController khi đến lượt Receiver
+# ─────────────────────────────────────────────────────────────────────
+# BF 10.1.8 – UC-10: Hiển thị popup đề nghị cho Receiver
+# Được gọi từ GameController.start_turn() khi phát hiện _pending_trade (BR-33T)
+# ─────────────────────────────────────────────────────────────────────
 func show_pending_trade_offer(t: Dictionary) -> void:
-	var initiator: Player = t["initiator"]
-	var offer_cell: PropertyCell = t["offer_cell"]
+	var initiator: Player          = t["initiator"]
+	var offer_cell: PropertyCell   = t["offer_cell"]
 	var request_cell: PropertyCell = t["request_cell"]
-	var compensation: int = t["compensation"]
-	var offer_name = offer_cell.data.cell_name if offer_cell else "?"
+	var compensation: int          = t["compensation"]
+	var offer_name   = offer_cell.data.cell_name   if offer_cell   else "?"
 	var request_name = request_cell.data.cell_name if request_cell else "?"
+	# BF 10.1.8 – Xây thông báo tóm tắt đề nghị
 	var msg = "%s muốn đổi [%s] lấy [%s] của bạn." % [initiator.name, offer_name, request_name]
 	if compensation > 0:
 		var payer: Player = t["payer"]
 		msg += "\nKèm bù $%d từ %s." % [compensation, payer.name if payer else "?"]
+	# BF 10.1.9 – Hiển thị show_event_popup với 2 lựa chọn (BR-33T)
 	show_event_popup(
 		"📦 Đề nghị trao đổi",
 		msg,
 		["✅ Đồng ý", "❌ Từ chối"],
 		func(choice: int) -> void:
 			if choice == 0:
+				# BF 10.1.10 – Receiver đồng ý → gọi player_execute_trade() (BR-34T)
+				# Truyền đúng initiator/receiver từ dictionary t,
+				# tránh nhầm _player (lúc này _player có thể là Receiver)
 				var ok = game_controller.player_execute_trade(
 					t["initiator"], t["receiver"],
 					t["offer_cell"], t["request_cell"],
 					t["compensation"], t["payer"])
 				show_message("Trao đổi thành công!" if ok else "Trao đổi thất bại!")
 			else:
+				# AF 10.2 – Receiver từ chối → không thay đổi trạng thái (BR-33T)
 				show_message("%s đã từ chối đề nghị trao đổi." % initiator.name)
 	)
 
@@ -745,6 +763,9 @@ func _on_receiver_declined() -> void:
 	_reset_trade_state()
 	_open_action_menu()
 
+# ─────────────────────────────────────────────────────────────────────
+# UC-10 – Helper: Lấy người chơi còn lại chưa phá sản
+# ─────────────────────────────────────────────────────────────────────
 func _get_other_player() -> Player:
 	if game_controller == null:
 		return null
@@ -870,7 +891,6 @@ func _create_uc09_ui() -> void:
 	_auc_current.add_theme_font_size_override("font_size", 16)
 	auc_v.add_child(_auc_current)
 
-	# Bid input row
 	var bid_row = HBoxContainer.new()
 	bid_row.add_theme_constant_override("separation", 8)
 	_auc_bid_input = LineEdit.new()
@@ -1242,7 +1262,6 @@ func _on_ev_btn_pressed(choice_index: int) -> void:
 
 
 func prompt_auction(bidder: Player, prop_data: PropertyData, current_bid: int, min_bid: int, participants: Array, callback: Callable) -> void:
-	# Populate auction modal
 	# Đấu giá: mở phiên mới, tăng session id để timer cũ không còn hiệu lực
 	_auction_session_id += 1
 	var session_id := _auction_session_id
@@ -1250,7 +1269,6 @@ func prompt_auction(bidder: Player, prop_data: PropertyData, current_bid: int, m
 	_auc_callback = callback
 	_auc_bidder_id = bidder.player_id
 
-	# Show on next idle frame to avoid race with previous close/hide
 	call_deferred("_show_auction_panel")
 
 	_auc_title.text = "Đấu giá: %s" % prop_data.cell_name
@@ -1261,7 +1279,6 @@ func prompt_auction(bidder: Player, prop_data: PropertyData, current_bid: int, m
 
 	print("[GameUI] prompt_auction for %s, bidder=%s, current_bid=%d, min_bid=%d" % [prop_data.cell_name, bidder.name, current_bid, min_bid])
 
-	# Participants list
 	for child in _auc_participants.get_children():
 		child.queue_free()
 	for p in participants:
@@ -1269,7 +1286,6 @@ func prompt_auction(bidder: Player, prop_data: PropertyData, current_bid: int, m
 		lbl.text = "%s — $%d" % [p.name, p.balance]
 		_auc_participants.add_child(lbl)
 
-	# Connect buttons
 	if _auc_btn_pass.pressed.is_connected(_on_auc_pass_pressed):
 		_auc_btn_pass.pressed.disconnect(_on_auc_pass_pressed)
 	_auc_btn_pass.pressed.connect(_on_auc_pass_pressed)
@@ -1278,7 +1294,6 @@ func prompt_auction(bidder: Player, prop_data: PropertyData, current_bid: int, m
 		_auc_btn_bid.pressed.disconnect(_on_auc_bid_pressed)
 	_auc_btn_bid.pressed.connect(_on_auc_bid_pressed)
 
-	# Start a deferred timeout that will auto-pass if no response (seconds)
 	var timeout_seconds := 20.0
 	call_deferred("_start_auc_timeout", timeout_seconds, session_id)
 
@@ -1343,7 +1358,6 @@ func _start_auc_timeout(seconds: float, session_id: int) -> void:
 	_on_auc_pass_pressed()
 
 
-# Cập nhật bảng tài sản từ snapshot do GameController cung cấp
 func refresh_player_panel(snapshot: Array) -> void:
 	if _pp_panel == null or _pp_content == null:
 		return
