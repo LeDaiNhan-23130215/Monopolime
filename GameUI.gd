@@ -111,11 +111,16 @@ var _pp_content    : VBoxContainer = null
 # ─── Giao diện bổ sung (background trung tâm, nút hướng dẫn, popup luật) ──
 const CoTyPhuPalette = preload("res://scripts/ui_theme/CoTyPhuPalette.gd")
 const RulesPopupScript = preload("res://scripts/ui_theme/RulesPopup.gd")
+const FinancePanelScript = preload("res://FinancePanel.gd")
 var _center_bg     : TextureRect = null
 var _btn_rules     : Button      = null
 var _rules_popup   : Control     = null
 var _action_info   : Label       = null
 var _sidebar_vbox  : VBoxContainer = null
+
+# ─── UC-6 Finance Panel ──────────────────────────────────────────────
+var _finance_panel = null   # FinancePanel (RefCounted)
+var _btn_finance   : Button = null
 
 # Layout: hằng số vùng (tính theo viewport, responsive)
 const SIDEBAR_MIN := 220.0
@@ -159,6 +164,7 @@ func _ready() -> void:
 
 	_create_uc09_ui()
 	_setup_visual_enhancements()
+	_create_finance_panel()
 
 
 func _unhandled_input(event: InputEvent):
@@ -1371,3 +1377,49 @@ func refresh_player_panel(snapshot: Array) -> void:
 			vb.add_child(no_p)
 
 		_pp_content.add_child(card)
+
+# ════════════════════════════════════════════════════════════════════
+# UC-6 Finance Panel – tạo và tích hợp FinancePanel vào sidebar
+# ════════════════════════════════════════════════════════════════════
+func _create_finance_panel() -> void:
+	var ui_layer = get_node("UI")
+
+	# Tạo FinancePanel
+	_finance_panel = FinancePanelScript.new()
+	var players: Array = []
+	if game_controller:
+		players = game_controller.get_players()
+	_finance_panel.setup(ui_layer, players)
+
+	# Nút mở Finance Panel trong sidebar (bên dưới nội dung player sidebar)
+	_btn_finance = Button.new()
+	_btn_finance.text = "💰 Tài chính"
+	_btn_finance.custom_minimum_size = Vector2(0, 36)
+	CoTyPhuPalette.style_button(_btn_finance, CoTyPhuPalette.GOLD, 13)
+	_btn_finance.add_theme_color_override("font_color", Color("#1E1B18"))
+	_btn_finance.pressed.connect(_on_btn_finance_pressed)
+
+	# Thêm nút vào cuối sidebar (nếu _sidebar_vbox tồn tại)
+	if _sidebar_vbox:
+		_sidebar_vbox.add_child(HSeparator.new())
+		_sidebar_vbox.add_child(_btn_finance)
+	else:
+		# Fallback: thêm trực tiếp vào UI layer ở góc trên trái sidebar
+		ui_layer.add_child(_btn_finance)
+
+
+func _on_btn_finance_pressed() -> void:
+	if _finance_panel == null:
+		return
+	# Đồng bộ danh sách người chơi mới nhất từ GameController
+	var players: Array = []
+	if game_controller:
+		players = game_controller.get_players()
+	_finance_panel.open(players)
+
+
+# Gọi từ GameController/FinanceManager để log giao dịch vào panel
+func log_finance(action: String, player_name: String,
+		amount: int, success: bool, note: String = "") -> void:
+	if _finance_panel:
+		_finance_panel.log_transaction(action, player_name, amount, success, note)

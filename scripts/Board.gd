@@ -146,7 +146,7 @@ func create_board_layout():
 		create_green_property(6),
 		create_green_property(7),
 
-		create_tax(8),
+		create_tax(8, 50),
 
 		create_green_property(9),
 
@@ -164,7 +164,7 @@ func create_board_layout():
 		create_blue_property(16),
 		create_blue_property(17),
 
-		create_tax(18),
+		create_tax(18, 100),
 
 		create_blue_property(19)
 	]
@@ -302,7 +302,7 @@ func create_blue_property(index):
 # Other Cells
 # =========================
 
-func create_tax(index):
+func create_tax(index, amount := 100):
 
 	var data = TaxData.new()
 
@@ -310,7 +310,7 @@ func create_tax(index):
 	data.cell_type = CellType.Type.TAX
 	data.cell_name = "Tax"
 
-	data.tax_amount = 200
+	data.tax_amount = amount
 
 	return data
 

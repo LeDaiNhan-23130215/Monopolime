@@ -206,13 +206,15 @@ func _draw() -> void:
 	if property_owner != null:
 		var pc = CoTyPhuPalette.player_color(property_owner.player_id)
 
-		# Nền màu nhạt
-		draw_rect(Rect2(0, 14, 100, 86), Color(pc.r, pc.g, pc.b, 0.15))
-		# Viền sáng
-		draw_rect(Rect2(0, 0, 100, 100), Color(pc.r, pc.g, pc.b, 0.85), false, 2.5)
+		# Nền màu đậm hơn để thấy rõ ai là chủ
+		draw_rect(Rect2(0, 14, 100, 86), Color(pc.r, pc.g, pc.b, 0.45))
+		# Dải màu đậm dưới đáy ô làm dấu chủ sở hữu nổi bật
+		draw_rect(Rect2(0, 86, 100, 14), pc)
+		# Viền dày, đậm bao quanh ô
+		draw_rect(Rect2(0, 0, 100, 100), pc.darkened(0.15), false, 4.0)
 		# Chấm tròn góc dưới phải
-		draw_circle(Vector2(88, 88), 7, pc)
-		draw_circle(Vector2(88, 88), 5, Color(1, 1, 1, 0.9))
+		draw_circle(Vector2(88, 88), 8, pc.darkened(0.2))
+		draw_circle(Vector2(88, 88), 5, Color(1, 1, 1, 0.95))
 
 	if is_mortgaged:
 		draw_rect(Rect2(0, 0, 100, 100), Color(0.1, 0.1, 0.1, 0.55))

@@ -25,9 +25,21 @@ func get_event_handler():
 	return _event_handler
 
 
-func _on_asset_action_completed(action: String, success: bool, message: String):
+func _on_asset_action_completed(action: String, success: bool, message: String, amount: int = 0):
 	if ui:
 		ui.show_message(message)
+		if ui.has_method("log_finance"):
+			var player_name := ""
+			var current = get_current_player()
+			if current:
+				player_name = current.name
+			ui.log_finance(action, player_name, amount, success, message)
+
+
+# Helper: ghi log tài chính vào FinancePanel cho mọi cộng/trừ tiền trực tiếp
+func _log_tx(action: String, player: Player, amount: int, note: String = "") -> void:
+	if ui and ui.has_method("log_finance"):
+		ui.log_finance(action, player.name if player else "", amount, true, note)
 
 
 # Auction interaction signal: emitted when UI auction choice is made
@@ -126,6 +138,7 @@ func resolve_roll():
 			if ui:
 				ui.show_message(player.name + " hết hạn tù! Trả $50 và di chuyển.")
 			player.deduct_money(50)
+			_log_tx("jail_fee", player, -50, "Trả phí tù bắt buộc")
 			player.state.set_in_jail(false)
 			await move_player(player, final_result.total())
 			await handle_landed_cell(player, player.state.position)
@@ -499,6 +512,10 @@ func handle_landed_cell(player: Player, cell_index: int):
 	# ── Tax ───────────────────────────────────────────────────────────
 	if cell.data is TaxData:
 		player.deduct_money(cell.data.tax_amount)
+		_log_tx("tax", player, -cell.data.tax_amount, "Thuế: -$" + str(cell.data.tax_amount))
+		# Hiệu ứng trừ tiền bay lên trên quân cờ
+		if player.token and player.token.has_method("show_floating_money"):
+			player.token.show_floating_money(-cell.data.tax_amount)
 		if ui:
 			ui.show_message(player.name + " đóng thuế $" + str(cell.data.tax_amount))
 		return
@@ -660,6 +677,7 @@ func start_auction(cell: PropertyCell) -> void:
 # ══════════════════════════════════════════════════════════════════════
 func process_reward(player: Player, amount: int = 200):
 	player.add_money(amount)
+	_log_tx("go_reward", player, amount, "Qua ô Xuất Phát nhận $" + str(amount))
 	if ui:
 		ui.show_message("Qua GO nhận $" + str(amount))
 	if ui:
@@ -687,8 +705,13 @@ func get_game_state_snapshot() -> Array:
 func process_payment(player: Player, receiver: Player, amount: int, _reason: String):
 	if player.state.balance >= amount:
 		player.deduct_money(amount)
+		# Hiệu ứng trừ tiền cho người trả, cộng tiền cho người nhận
+		if player.token and player.token.has_method("show_floating_money"):
+			player.token.show_floating_money(-amount)
 		if receiver:
 			receiver.add_money(amount)
+			if receiver.token and receiver.token.has_method("show_floating_money"):
+				receiver.token.show_floating_money(amount)
 	else:
 		handle_insufficient_funds(player, receiver, amount)
 	emit_signal("turn_action_completed")
@@ -703,6 +726,7 @@ func handle_insufficient_funds(payer: Player, receiver: Player, amount: int):
 
 func handle_bankruptcy(debtor: Player, _creditor: Player = null):
 	print(debtor.name, " PHÁ SẢN! Giải phóng toàn bộ tài sản về Ngân hàng.")
+	_log_tx("bankrupt", debtor, -debtor.state.balance, "PHÁ SẢN – mất toàn bộ tài sản")
 	if ui:
 		ui.show_message(debtor.name + " PHÁ SẢN! Tài sản giải phóng về Ngân hàng.")
 	debtor.release_all_assets()

@@ -7,7 +7,7 @@ class_name AssetManager
 # Không có trao đổi hoặc chuyển nhượng giữa người chơi.
 # =========================
 
-signal asset_action_completed(action: String, success: bool, message: String)
+signal asset_action_completed(action: String, success: bool, message: String, amount: int)
 
 var board: Board
 
@@ -42,7 +42,7 @@ func buy_property(player: Player, cell: PropertyCell) -> bool:
 	player.add_property(cell)
 	cell.queue_redraw()
 
-	_emit("buy", true, player.name + " mua " + cell.data.cell_name + " với giá $" + str(price))
+	_emit("buy", true, player.name + " mua " + cell.data.cell_name + " với giá $" + str(price), -price)
 	return true
 
 
@@ -69,7 +69,7 @@ func transfer_property(player: Player, cell: PropertyCell, price: int) -> bool:
 	player.add_property(cell)
 	cell.queue_redraw()
 
-	_emit("auction", true, player.name + " thắng đấu giá " + cell.data.cell_name + " với giá $" + str(price))
+	_emit("auction", true, player.name + " thắng đấu giá " + cell.data.cell_name + " với giá $" + str(price), -price)
 	return true
 
 
@@ -104,7 +104,7 @@ func build_house(player: Player, cell: PropertyCell) -> bool:
 	FinanceManager.deduct(player, cost)
 	cell.build_house()
 
-	_emit("build", true, player.name + " " + action_label + " tại " + cell.data.cell_name + " (-$" + str(cost) + ")")
+	_emit("build", true, player.name + " " + action_label + " tại " + cell.data.cell_name + " (-$" + str(cost) + ")", -cost)
 	return true
 
 
@@ -127,7 +127,7 @@ func mortgage_property(player: Player, cell: PropertyCell) -> bool:
 	var amount = cell.mortgage_property()
 	FinanceManager.add(player, amount)
 
-	_emit("mortgage", true, player.name + " thế chấp " + cell.data.cell_name + " nhận $" + str(amount))
+	_emit("mortgage", true, player.name + " thế chấp " + cell.data.cell_name + " nhận $" + str(amount), amount)
 	return true
 
 
@@ -151,7 +151,7 @@ func redeem_property(player: Player, cell: PropertyCell) -> bool:
 	FinanceManager.deduct(player, cost)
 	cell.redeem_property()
 
-	_emit("redeem", true, player.name + " chuộc lại " + cell.data.cell_name + " (-$" + str(cost) + ")")
+	_emit("redeem", true, player.name + " chuộc lại " + cell.data.cell_name + " (-$" + str(cost) + ")", -cost)
 	return true
 
 
@@ -178,7 +178,7 @@ func sell_house_to_bank(player: Player, cell: PropertyCell) -> bool:
 
 	var label = "khách sạn" if had_hotel else "nhà"
 	_emit("sell_house", true,
-		player.name + " bán " + label + " tại " + cell.data.cell_name + " nhận $" + str(refund))
+		player.name + " bán " + label + " tại " + cell.data.cell_name + " nhận $" + str(refund), refund)
 	return true
 
 
@@ -213,7 +213,7 @@ func sell_property_to_bank(player: Player, cell: PropertyCell) -> bool:
 	FinanceManager.add(player, refund)
 
 	_emit("sell", true,
-		player.name + " bán " + cell.data.cell_name + " về Ngân hàng, nhận $" + str(refund))
+		player.name + " bán " + cell.data.cell_name + " về Ngân hàng, nhận $" + str(refund), refund)
 	return true
 # =========================
 # UC-10 – Trao đổi đất
@@ -327,12 +327,17 @@ func execute_trade(
 	offer_cell.queue_redraw()
 	request_cell.queue_redraw()
 
-	_emit("trade", true,
-		initiator.name + " trao đổi với " + receiver.name)
+	_emit(
+		"trade",
+		true,
+		initiator.name + " trao đổi với " + receiver.name,
+		-compensation if compensation > 0 else 0
+	)
+
 	return true
 # =========================
 # Helpers
 # =========================
-func _emit(action: String, success: bool, message: String):
+func _emit(action: String, success: bool, message: String, amount: int = 0):
 	print("[AssetManager][", action.to_upper(), "] ", message)
-	emit_signal("asset_action_completed", action, success, message)
+	emit_signal("asset_action_completed", action, success, message, amount)
