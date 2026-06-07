@@ -88,6 +88,7 @@ func mortgage_property() -> int:
 		return 0  # Phải bán nhà trước
 	is_mortgaged = true
 	var amount = get_mortgage_value()
+	queue_redraw()
 	print("Thế chấp: ", data.cell_name, " → $", amount)
 	return amount
 
@@ -97,6 +98,7 @@ func redeem_property() -> int:
 		return 0
 	is_mortgaged = false
 	var cost = get_redeem_cost()
+	queue_redraw()
 	print("Chuộc lại: ", data.cell_name, " → -$", cost)
 	return cost
 
@@ -110,9 +112,11 @@ func build_house() -> bool:
 	if house_count >= 4:
 		house_count = 0
 		has_hotel = true
+		queue_redraw()
 		print("Nâng cấp khách sạn tại: ", data.cell_name)
 		return true
 	house_count += 1
+	queue_redraw()
 	print("Xây nhà #", house_count, " tại: ", data.cell_name)
 	return true
 
@@ -122,6 +126,7 @@ func upgrade_to_hotel() -> bool:
 		return false
 	house_count = 0
 	has_hotel = true
+	queue_redraw()
 	print("Nâng cấp khách sạn tại: ", data.cell_name)
 	return true
 
@@ -137,10 +142,12 @@ func sell_house() -> int:
 	if has_hotel:
 		has_hotel = false
 		house_count = 4
+		queue_redraw()
 		var prop_data = data as PropertyData
 		return prop_data.build_cost / 2 if prop_data else 0
 	if house_count > 0:
 		house_count -= 1
+		queue_redraw()
 		var prop_data = data as PropertyData
 		return prop_data.build_cost / 2 if prop_data else 0
 	return 0
