@@ -139,6 +139,9 @@ func _ready() -> void:
 	dice1_sprite.scale = base_scale
 	dice2_sprite.scale = base_scale
 
+	# Stretch mode của project = canvas_items đã tự khớp toạ độ chuột với UI.
+	# KHÔNG bật follow_viewport_enabled vì nó áp transform stretch lần 2 →
+	# UI co nhỏ/dồn giữa và lệch hitbox (bấm nút không trúng).
 	var canvas_layer = get_node("UI") as CanvasLayer
 	if canvas_layer:
 		canvas_layer.follow_viewport_enabled = false
@@ -298,6 +301,7 @@ func prompt_buy_or_pass(player: Player, cell: PropertyCell, am: AssetManager) ->
 	_mandatory = true
 	var pd = cell.data as PropertyData
 	show_message("%s đứng trên %s ($%d)" % [player.name, cell.data.cell_name, pd.buy_price if pd else 0])
+	# Hiển thị rõ mua ô nào, giá bao nhiêu (chỉ đổi text nút, không đổi logic)
 	if btn_buy and pd:
 		btn_buy.text = "🏠  Mua %s - $%d" % [CoTyPhuPalette.display_name(cell.data.cell_name), pd.buy_price]
 	_open_action_menu()
@@ -417,6 +421,7 @@ func _open_action_menu() -> void:
 	if btn_close_action:
 		btn_close_action.text = "Kết thúc lượt" if _mandatory else "Đóng"
 
+	# Thông tin ngữ cảnh trên tiêu đề popup (chỉ hiển thị, không đổi logic)
 	var act_title := action_popup.get_node_or_null("VBox/Title")
 	if act_title and act_title is Label:
 		var info := "Chọn hành động"
@@ -433,8 +438,10 @@ func _open_action_menu() -> void:
 		act_title.text = info
 		act_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+	# FIX: Đóng popup con trước khi hiện ActionPopup
 	prop_popup.visible   = false
 	action_popup.visible = true
+	# Tính lại kích thước/vị trí theo số nút đang hiện (tránh bị cắt nút)
 	call_deferred("_place_action_popup")
 
 func _on_btn_close_action_pressed() -> void:
@@ -569,6 +576,13 @@ func _open_prop_popup(title: String, cells: Array) -> void:
 			if c.is_mortgaged:      info += " [Thế chấp]"
 			elif c.has_hotel:       info += " [Khách sạn]"
 			elif c.house_count > 0: info += " [%d nhà]" % c.house_count
+			if _action == "build":
+				var pd = c.data as PropertyData
+				if pd != null:
+					if c.house_count >= 4 and not c.has_hotel:
+						info += " • Nâng cấp KS: $%d" % pd.build_cost
+					else:
+						info += " • Xây nhà: $%d" % pd.build_cost
 			prop_list.add_item(info)
 			prop_list.set_item_metadata(prop_list.item_count - 1, c)
 	prop_popup.visible = true
@@ -592,8 +606,12 @@ func _on_btn_pp_confirm_pressed() -> void:
 	_action = ""
 	match current_action:
 		"build":
+			var build_cost = _cell.get_build_cost()
 			var ok = _am.build_house(_player, _cell)
-			show_message("Xây thành công!" if ok else "Xây thất bại!")
+			if ok:
+				show_message("Xây thành công! Đã trừ $%d" % build_cost)
+			else:
+				show_message("Xây thất bại!")
 			_done_with_action()
 		"mortgage":
 			var ok = _am.mortgage_property(_player, _cell)
@@ -919,6 +937,7 @@ func _create_uc09_ui() -> void:
 	sb_vbox.add_child(pp_title)
 	sb_vbox.add_child(HSeparator.new())
 
+	# ScrollContainer co giãn lấp đầy không gian còn lại
 	var scroll = ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -944,10 +963,12 @@ func _setup_visual_enhancements() -> void:
 	if ui_layer == null:
 		return
 
+	# --- Popup hướng dẫn ---
 	_rules_popup = RulesPopupScript.new()
 	_rules_popup.name = "RulesPopup"
 	ui_layer.add_child(_rules_popup)
 
+	# --- Nút Hướng dẫn (góc trên trái) ---
 	_btn_rules = Button.new()
 	_btn_rules.name = "BtnRules"
 	_btn_rules.text = "📖 Hướng dẫn"
@@ -956,6 +977,7 @@ func _setup_visual_enhancements() -> void:
 	_btn_rules.pressed.connect(_on_btn_rules_pressed)
 	ui_layer.add_child(_btn_rules)
 
+	# --- Nút Quản lý tài sản: chuyển hẳn VÀO sidebar (không trôi nổi) ---
 	if btn_open_manage and _sidebar_vbox:
 		var old_parent = btn_open_manage.get_parent()
 		if old_parent:
@@ -964,10 +986,13 @@ func _setup_visual_enhancements() -> void:
 		btn_open_manage.custom_minimum_size = Vector2(0, 40)
 		_sidebar_vbox.add_child(btn_open_manage)
 
+	# --- Style nhẹ cho panel/nút sẵn có ---
 	_apply_existing_panel_styles()
 
+	# --- Background trung tâm: gắn vào Board để tự căn giữa, mờ, nằm dưới ô ---
 	call_deferred("_setup_center_background")
 
+	# --- Responsive: lắng nghe đổi kích thước cửa sổ + layout lần đầu ---
 	get_viewport().size_changed.connect(_relayout)
 	call_deferred("_relayout")
 
@@ -981,6 +1006,7 @@ func _setup_center_background() -> void:
 	var bg_path := "res://resources/ui_from_D/center_bg.png"
 	if not ResourceLoader.exists(bg_path):
 		return
+	# Bàn cờ 6x6 ô (100px) → vùng giữa rỗng, tâm tại (300,300) trong toạ độ Board
 	var spr := Sprite2D.new()
 	spr.name = "CenterBackground"
 	spr.texture = load(bg_path)
@@ -998,11 +1024,14 @@ func _setup_center_background() -> void:
 
 # ════════════════════════════════════════════════════════════════════
 # HỆ THỐNG LAYOUT RESPONSIVE
+# Chia viewport thành các vùng và đặt mọi thành phần UI theo đó.
+# Gọi lúc khởi tạo và mỗi khi cửa sổ đổi kích thước.
 # ════════════════════════════════════════════════════════════════════
 func _relayout() -> void:
 	var vp: Vector2 = get_viewport().get_visible_rect().size
 	var sidebar_w: float = clamp(vp.x * 0.24, SIDEBAR_MIN, SIDEBAR_MAX)
 
+	# --- Vùng: top bar (nút hướng dẫn + thanh trạng thái) ---
 	if _btn_rules:
 		_btn_rules.position = Vector2(MARGIN, MARGIN)
 		_btn_rules.size = Vector2(150, TOPBAR_H - 2 * MARGIN + 16)
@@ -1012,10 +1041,14 @@ func _relayout() -> void:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
+	# --- Vùng: sidebar bên phải (full height) ---
 	if _pp_panel:
 		_pp_panel.position = Vector2(vp.x - sidebar_w - MARGIN, MARGIN)
 		_pp_panel.size = Vector2(sidebar_w, vp.y - 2 * MARGIN)
 
+	# --- Vùng trung tâm dành cho bàn cờ: dùng GẦN HẾT chiều cao ---
+	# Panel hành động là lớp nổi tạm thời (chỉ hiện khi tới ô), nên KHÔNG
+	# chừa chỗ cố định cho nó nữa → bàn cờ to hết mức.
 	var board_area := Rect2(
 		MARGIN,
 		TOPBAR_H,
@@ -1025,7 +1058,9 @@ func _relayout() -> void:
 	_fit_board(board_area)
 	_position_dice(board_area)
 
+	# --- Vùng: panel hành động (tự co theo số nút đang hiện, neo đáy, mọc lên) ---
 	_place_action_popup()
+	# Property popup: căn giữa vùng bàn cờ
 	if prop_popup:
 		var pw: float = min(440.0, board_area.size.x)
 		var ph: float = min(400.0, board_area.size.y)
@@ -1033,29 +1068,36 @@ func _relayout() -> void:
 		prop_popup.offset_top = board_area.position.y + (board_area.size.y - ph) * 0.5
 		prop_popup.offset_right = prop_popup.offset_left + pw
 		prop_popup.offset_bottom = prop_popup.offset_top + ph
+	# Event & auction panel: căn giữa vùng bàn cờ
 	if _ev_panel:
 		_ev_panel.position = board_area.position + (board_area.size - _ev_panel.size) * 0.5
 	if _auction_panel:
 		_auction_panel.position = board_area.position + (board_area.size - _auction_panel.size) * 0.5
 
 
+# Co + căn giữa bàn cờ (Node2D) để vừa khít vùng cho trước
 func _fit_board(area: Rect2) -> void:
 	var board := get_node_or_null("../Board")
 	if board == null:
 		return
+	# Bàn cờ vẽ trong vùng 600x600 (6 ô * 100px) ở toạ độ cục bộ.
 	var board_px := 600.0
 	var s: float = min(area.size.x, area.size.y) / board_px
 	s = clamp(s, 0.1, 4.0)
 	board.scale = Vector2(s, s)
+	# Căn giữa vùng
 	var board_size := board_px * s
 	board.position = area.position + (area.size - Vector2(board_size, board_size)) * 0.5
+	# Tắt auto-center cũ để không tranh chấp vị trí
 	if "auto_center_in_editor" in board:
 		board.auto_center_in_editor = false
 
 
+# Đặt dice + nút quay vào giữa lòng bàn cờ (theo toạ độ màn hình của vùng board)
 func _position_dice(area: Rect2) -> void:
 	var cx := area.position.x + area.size.x * 0.5
 	var cy := area.position.y + area.size.y * 0.5
+	# Tỉ lệ theo độ lớn vùng board để dice/nút to lên cùng bàn cờ
 	var k: float = clamp(min(area.size.x, area.size.y) / 600.0, 0.6, 3.0)
 	if dice1_sprite:
 		dice1_sprite.position = Vector2(cx - 70 * k, cy - 30 * k)
@@ -1075,6 +1117,7 @@ func _position_dice(area: Rect2) -> void:
 		double_label.offset_right = cx + 80
 		double_label.offset_bottom = cy - 120 * k + 40
 		double_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Nút quay xúc xắc luôn nổi trên cùng và nhận được click
 	if roll_button:
 		roll_button.mouse_filter = Control.MOUSE_FILTER_STOP
 		roll_button.move_to_front()
@@ -1087,9 +1130,12 @@ func _on_btn_rules_pressed() -> void:
 		_rules_popup.show_rules()
 
 
+# Đặt panel hành động: rộng vừa phải, CAO TỰ ĐỘNG theo nội dung,
+# neo ở đáy vùng board và mọc lên trên để không bao giờ cắt mất nút.
 func _place_action_popup() -> void:
 	if action_popup == null:
 		return
+	# Đợi 1 frame để VBox sắp xếp lại sau khi đổi ẩn/hiện nút → đo đúng chiều cao
 	await get_tree().process_frame
 	if action_popup == null or not is_instance_valid(action_popup):
 		return
@@ -1098,6 +1144,7 @@ func _place_action_popup() -> void:
 	var center_w: float = vp.x - sidebar_w - 2 * MARGIN
 	var action_w: float = clamp(center_w * 0.6, 320.0, 560.0)
 
+	# Đo chiều cao tối thiểu thực tế của nội dung (các nút đang hiện)
 	action_popup.reset_size()
 	var content_h: float = action_popup.get_combined_minimum_size().y
 	var max_h: float = vp.y - TOPBAR_H - 2 * MARGIN
@@ -1113,6 +1160,7 @@ func _place_action_popup() -> void:
 
 
 func _apply_existing_panel_styles() -> void:
+	# ActionPopup & PropertyPopup: nền kem, viền vàng theo phong cách D
 	if action_popup:
 		action_popup.add_theme_stylebox_override("panel",
 			CoTyPhuPalette.panel_style(CoTyPhuPalette.CREAM, CoTyPhuPalette.GOLD, 16, 3))
@@ -1120,9 +1168,11 @@ func _apply_existing_panel_styles() -> void:
 		prop_popup.add_theme_stylebox_override("panel",
 			CoTyPhuPalette.panel_style(CoTyPhuPalette.CREAM, CoTyPhuPalette.BLUE, 16, 3))
 
+	# Nút trong ActionPopup
 	for b in [btn_buy, btn_build, btn_mortgage, btn_redeem, btn_sell_house, btn_sell]:
 		if b:
 			CoTyPhuPalette.style_button(b, CoTyPhuPalette.PANEL_BLUE, 12)
+	# Nút mua nổi bật (xanh lá), nút kết thúc lượt ít nổi bật hơn (nhỏ + xám-đỏ nhạt)
 	if btn_buy:
 		CoTyPhuPalette.style_button(btn_buy, CoTyPhuPalette.GREEN, 14)
 	if btn_close_action:
@@ -1134,15 +1184,18 @@ func _apply_existing_panel_styles() -> void:
 	if btn_open_manage:
 		CoTyPhuPalette.style_button(btn_open_manage, CoTyPhuPalette.PANEL_BLUE_DK, 12)
 
+	# Tiêu đề trong popup
 	if popup_title:
 		popup_title.add_theme_color_override("font_color", CoTyPhuPalette.TEXT_DARK)
 		popup_title.add_theme_font_size_override("font_size", 20)
 
+	# Tiêu đề ActionPopup → màu tối để đọc trên nền kem
 	var act_title := action_popup.get_node_or_null("VBox/Title") if action_popup else null
 	if act_title and act_title is Label:
 		act_title.add_theme_color_override("font_color", CoTyPhuPalette.TEXT_DARK)
 		act_title.add_theme_font_size_override("font_size", 18)
 
+	# Thanh trạng thái: nền tối mờ + chữ trắng, dễ đọc trên mọi nền
 	if label:
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		label.add_theme_color_override("font_color", Color.WHITE)
@@ -1157,6 +1210,7 @@ func _apply_existing_panel_styles() -> void:
 		label.add_theme_stylebox_override("normal", lbl_bg)
 
 
+# Gọi từ EventHandler để hiển thị popup thẻ Cơ Hội / Khí Vận
 func show_event_popup(
 		title: String, description: String,
 		choices: Array, callback: Callable,

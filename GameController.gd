@@ -487,13 +487,15 @@ func handle_landed_cell(player: Player, cell_index: int):
 	var cell = board.get_cell(cell_index)
 	if not cell:
 		return
-
+	# UC-07: Quản lý tài sản
+	# Người chơi đứng trên đất của mình → mở màn hình quản lý tài sản
 	# ── Property ──────────────────────────────────────────────────────
 	if cell is PropertyCell:
 		var prop = cell as PropertyCell
 
 		if prop.property_owner == null:
 			# Chưa có chủ → mua / đấu giá
+			# UC: Đấu giá tài sản
 			if ui:
 				ui.prompt_buy_or_pass(player, prop, asset_manager)
 				print("WAIT UI")
@@ -501,9 +503,11 @@ func handle_landed_cell(player: Player, cell_index: int):
 				print("UI DONE")
 		elif prop.property_owner != player and not prop.is_mortgaged:
 			# Trả tiền thuê
-			process_payment(player, prop.property_owner, prop.get_current_rent(), prop.data.cell_name)
+			await process_payment(player, prop.property_owner, prop.get_current_rent(), prop.data.cell_name)
 		elif prop.property_owner == player:
 			# Đất của mình → quản lý tài sản
+			# UC: Xây nhà
+			# Từ màn hình quản lý tài sản, người chơi chọn xây nhà hoặc nâng cấp khách sạn
 			if ui:
 				ui.show_asset_management(player, asset_manager)
 				await ui.ui_action_done
@@ -536,7 +540,8 @@ func handle_landed_cell(player: Player, cell_index: int):
 	if cell.data is SpecialData:
 		if cell.data.cell_type == CellType.Type.GO_TO_JAIL:
 			await go_to_jail(player)
-
+# UC-08: Xử lý đấu giá
+# Tạo phiên đấu giá, lần lượt mời người chơi đặt giá hoặc pass
 func start_auction(cell: PropertyCell) -> void:
 	if ui == null:
 		return
@@ -705,23 +710,44 @@ func get_game_state_snapshot() -> Array:
 func process_payment(player: Player, receiver: Player, amount: int, _reason: String):
 	if player.state.balance >= amount:
 		player.deduct_money(amount)
-		# Hiệu ứng trừ tiền cho người trả, cộng tiền cho người nhận
+
 		if player.token and player.token.has_method("show_floating_money"):
 			player.token.show_floating_money(-amount)
+
 		if receiver:
 			receiver.add_money(amount)
 			if receiver.token and receiver.token.has_method("show_floating_money"):
 				receiver.token.show_floating_money(amount)
-	else:
-		handle_insufficient_funds(player, receiver, amount)
-	emit_signal("turn_action_completed")
+
+		emit_signal("turn_action_completed")
+		return
+
+	await handle_insufficient_funds(player, receiver, amount)
 
 
 func handle_insufficient_funds(payer: Player, receiver: Player, amount: int):
-	if payer.get_total_capacity() < amount:
-		handle_bankruptcy(payer, receiver)
-	elif ui:
-		ui.request_mortgage(payer, amount - payer.state.balance)
+	while payer.state.balance < amount and payer.get_total_capacity() >= amount:
+		if ui:
+			ui.request_mortgage(payer, amount - payer.state.balance)
+			await ui.ui_action_done
+		else:
+			break
+
+	if payer.state.balance >= amount:
+		payer.deduct_money(amount)
+
+		if payer.token and payer.token.has_method("show_floating_money"):
+			payer.token.show_floating_money(-amount)
+
+		if receiver:
+			receiver.add_money(amount)
+			if receiver.token and receiver.token.has_method("show_floating_money"):
+				receiver.token.show_floating_money(amount)
+
+		emit_signal("turn_action_completed")
+		return
+
+	handle_bankruptcy(payer, receiver)
 
 
 func handle_bankruptcy(debtor: Player, _creditor: Player = null):

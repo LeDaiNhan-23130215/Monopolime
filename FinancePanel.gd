@@ -449,7 +449,6 @@ func _action_label(action: String) -> String:
 		"add":      return "Nhận tiền"
 		"deduct":   return "Trừ tiền"
 		"transfer": return "Chuyển khoản"
-		"interest": return "Nhận lãi suất"
 		"buy":      return "Mua đất"
 		"build":    return "Xây nhà"
 		"mortgage": return "Thế chấp"
@@ -712,25 +711,3 @@ func _make_info_label(parent: Control, text: String) -> void:
 	lbl.add_theme_color_override("font_color", Color("#706858"))
 	lbl.add_theme_font_size_override("font_size", 14)
 	parent.add_child(lbl)
-
-
-func _on_interest_pressed() -> void:
-	if _players.is_empty():
-		return
-
-	# Áp dụng lãi suất cho tất cả người chơi
-	for p in _players:
-		if p is Player and not p.is_bankrupt():
-			var interest = FinanceManager.apply_interest(p, 10.0)
-			if interest > 0:
-				log_transaction(
-					"interest", 
-					p.name, 
-					interest, 
-					true, 
-					"Lãi suất 10%"
-				)
-
-	# Cập nhật lại UI sau khi thay đổi số dư
-	_refresh_overview()
-	_refresh_transfer_opts()
