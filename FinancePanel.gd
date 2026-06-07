@@ -3,9 +3,8 @@ class_name FinancePanel
 
 # ════════════════════════════════════════════════════════════════════
 # FinancePanel – Giao diện cho FinanceManager (UC-6)
-# Hiển thị: số dư, lịch sử giao dịch, thống kê tài chính
-# 
-# Chỉ thuần: tiền vào / tiền ra / chuyển khoản / tổng quan
+# Hiển thị: số dư, lịch sử giao dịch, chuyển khoản nội bộ, lãi suất.
+# Tự động cập nhật khi hệ thống trả lãi suất từ GameController.
 # ════════════════════════════════════════════════════════════════════
 
 const CoTyPhuPalette = preload("res://scripts/ui_theme/CoTyPhuPalette.gd")
@@ -23,10 +22,12 @@ var _tab_bar      : HBoxContainer
 var _page_overview: Control
 var _page_history : Control
 var _page_transfer: Control
+var _page_interest: Control # Mới thêm
 
 # Overview page
 var _ov_scroll    : ScrollContainer
 var _ov_content   : VBoxContainer
+var _interest_info_banner: PanelContainer
 
 # History page
 var _hist_scroll  : ScrollContainer
@@ -40,13 +41,18 @@ var _tf_amount    : LineEdit
 var _tf_result    : Label
 var _tf_confirm   : Button
 
+# Interest page (Mới thêm)
+var _int_rate_edit: LineEdit
+var _int_list     : VBoxContainer
+var _int_btn      : Button
+var _int_result   : Label
+
 var _btn_close    : Button
-var _interest_btn : Button
 
 # ─── Runtime state ───────────────────────────────────────────────────
-var _ui_root      : Node           # CanvasLayer "UI"
-var _players      : Array          # Array[Player]
-var _log          : Array = []     # Array[Dictionary] giao dịch gần đây
+var _ui_root      : Node          # CanvasLayer "UI"
+var _players      : Array         # Array[Player]
+var _log          : Array = []    # Array[Dictionary] giao dịch gần đây
 
 # Callback khi đóng (tuỳ chọn)
 var on_closed     : Callable
@@ -67,9 +73,7 @@ func setup(ui_layer: Node, players: Array) -> void:
 func open(players: Array = []) -> void:
 	if players.size() > 0:
 		_players = players
-	_refresh_overview()
-	_refresh_history()
-	_refresh_transfer_opts()
+	refresh_all_pages()
 	_switch_tab(0)
 	if _overlay:
 		_overlay.visible = true
@@ -86,8 +90,16 @@ func close() -> void:
 		on_closed.call()
 
 
+## Làm mới toàn bộ dữ liệu trên giao diện
+func refresh_all_pages() -> void:
+	_refresh_overview()
+	_refresh_history()
+	_refresh_transfer_opts()
+	_refresh_interest() # Mới thêm
+
+
 # ════════════════════════════════════════════════════════════════════
-# Ghi log giao dịch (gọi từ GameController/FinanceManager khi xảy ra)
+# Ghi log giao dịch
 # ════════════════════════════════════════════════════════════════════
 func log_transaction(action: String, player_name: String,
 		amount: int, success: bool, note: String = "") -> void:
@@ -103,13 +115,12 @@ func log_transaction(action: String, player_name: String,
 	if _log.size() > MAX_LOG:
 		_log.resize(MAX_LOG)
 
-	# Nếu panel đang mở thì cập nhật luôn
 	if _panel and _panel.visible:
 		_refresh_history()
 
 
 # ════════════════════════════════════════════════════════════════════
-# BUILD
+# BUILD UI
 # ════════════════════════════════════════════════════════════════════
 func _build_panel() -> void:
 	# --- Overlay ---
@@ -170,16 +181,18 @@ func _build_panel() -> void:
 
 	root_v.add_child(_make_separator())
 
-	# --- Tab bar ---
+	# --- Tab bar (Cập nhật thành 4 Tabs) ---
 	_tab_bar = HBoxContainer.new()
 	_tab_bar.add_theme_constant_override("separation", 6)
 	root_v.add_child(_tab_bar)
 
-	for i in range(3):
+	for i in range(4):
 		var tab_btn := Button.new()
-		tab_btn.text  = ["📊 Tổng quan", "📜 Lịch sử", "↔ Chuyển khoản"][i]
+		tab_btn.text  = ["📊 Tổng quan", "📜 Lịch sử", "↔ Chuyển khoản", "📈 Lãi suất"][i]
 		tab_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tab_btn.custom_minimum_size = Vector2(0, 36)
+		# Cho font chữ nhỏ lại một chút để vừa 4 tab
+		tab_btn.add_theme_font_size_override("font_size", 12) 
 		var tab_idx := i
 		tab_btn.pressed.connect(func(): _switch_tab(tab_idx))
 		_tab_bar.add_child(tab_btn)
@@ -195,8 +208,9 @@ func _build_panel() -> void:
 	_page_overview = _build_overview_page()
 	_page_history  = _build_history_page()
 	_page_transfer = _build_transfer_page()
+	_page_interest = _build_interest_page() # Mới thêm
 
-	for pg in [_page_overview, _page_history, _page_transfer]:
+	for pg in [_page_overview, _page_history, _page_transfer, _page_interest]:
 		pg.set_anchors_preset(Control.PRESET_FULL_RECT)
 		pg.offset_left = 0; pg.offset_top = 0
 		pg.offset_right = 0; pg.offset_bottom = 0
@@ -206,20 +220,29 @@ func _build_panel() -> void:
 	_center_panel()
 
 
-# ─── Overview page ────────────────────────────────────────────────
+# ─── Giao diện Trang tổng quan (Overview) ──────────────────────────
 func _build_overview_page() -> Control:
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 10)
 
-	# Nút Lãi suất
-	_interest_btn = Button.new()
-	_interest_btn.text = "💰 Nhận 10% lãi suất (Tất cả người chơi)"
-	_interest_btn.custom_minimum_size = Vector2(0, 36)
-	CoTyPhuPalette.style_button(_interest_btn, Color("#2E8B57"), 14)
-	_interest_btn.pressed.connect(_on_interest_pressed)
-	page.add_child(_interest_btn)
+	_interest_info_banner = PanelContainer.new()
+	var banner_style := StyleBoxFlat.new()
+	banner_style.bg_color = Color("#11224D") 
+	banner_style.border_color = Color("#2E8B57") 
+	banner_style.set_border_width_all(1)
+	banner_style.set_corner_radius_all(8)
+	banner_style.set_content_margin_all(8)
+	_interest_info_banner.add_theme_stylebox_override("panel", banner_style)
+	
+	var banner_label := Label.new()
+	banner_label.text = "ℹ Luật lãi suất: Người chơi nhận thêm 10% tiền lãi dựa trên số dư hiện tại của mình CHỈ KHI đi qua hoặc hạ cánh vào ô BẮT ĐẦU (GO)."
+	banner_label.add_theme_font_size_override("font_size", 12)
+	banner_label.add_theme_color_override("font_color", Color("#A2E8B5")) 
+	banner_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_interest_info_banner.add_child(banner_label)
+	
+	page.add_child(_interest_info_banner)
 
-	# Container danh sách người chơi
 	_ov_scroll = ScrollContainer.new()
 	_ov_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_ov_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -231,7 +254,6 @@ func _build_overview_page() -> Control:
 	_ov_scroll.add_child(_ov_content)
 
 	return page
-
 
 func _refresh_overview() -> void:
 	if _ov_content == null:
@@ -248,7 +270,6 @@ func _refresh_overview() -> void:
 			continue
 		var card := _build_player_finance_card(p)
 		_ov_content.add_child(card)
-
 
 func _build_player_finance_card(p: Player) -> Control:
 	var c_idx := p.player_id % 4
@@ -267,7 +288,6 @@ func _build_player_finance_card(p: Player) -> Control:
 	vb.add_theme_constant_override("separation", 4)
 	card.add_child(vb)
 
-	# Tên + bankrupt badge
 	var name_row := HBoxContainer.new()
 	vb.add_child(name_row)
 
@@ -285,7 +305,6 @@ func _build_player_finance_card(p: Player) -> Control:
 		bk.add_theme_color_override("font_color", CoTyPhuPalette.RED)
 		name_row.add_child(bk)
 
-	# Số dư nổi bật
 	var balance_row := HBoxContainer.new()
 	vb.add_child(balance_row)
 
@@ -302,15 +321,13 @@ func _build_player_finance_card(p: Player) -> Control:
 		CoTyPhuPalette.GREEN if p.balance >= 0 else CoTyPhuPalette.RED)
 	balance_row.add_child(b_val)
 
-	# Khả năng tổng (tiền + thế chấp tối đa)
-	var cap := p.get_total_capacity()
+	var max_cap_var = p.get_total_capacity() if p.has_method("get_total_capacity") else p.balance
 	var cap_lbl := Label.new()
-	cap_lbl.text = "🏦 Tổng tài lực (tiền + có thể thế chấp): $%d" % cap
+	cap_lbl.text = "🏦 Tổng tài lực (tiền + có thể thế chấp): $%d" % max_cap_var
 	cap_lbl.add_theme_font_size_override("font_size", 13)
 	cap_lbl.add_theme_color_override("font_color", Color("#A0B8D8"))
 	vb.add_child(cap_lbl)
 
-	# Số bất động sản
 	var own_count := p.properties.size()
 	var mortgaged := 0
 	var with_house := 0
@@ -328,7 +345,6 @@ func _build_player_finance_card(p: Player) -> Control:
 	prop_lbl.add_theme_color_override("font_color", Color("#C0C8D8"))
 	vb.add_child(prop_lbl)
 
-	# Thẻ đặc biệt
 	if p.special_card.size() > 0:
 		var sc_lbl := Label.new()
 		sc_lbl.text = "🃏 Thẻ ra tù: %d" % p.special_card.size()
@@ -339,7 +355,7 @@ func _build_player_finance_card(p: Player) -> Control:
 	return card
 
 
-# ─── History page ─────────────────────────────────────────────────
+# ─── Giao diện Trang lịch sử (History) ────────────────────────────
 func _build_history_page() -> Control:
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 6)
@@ -397,14 +413,12 @@ func _build_log_row(entry: Dictionary) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 
-	# Icon trạng thái
 	var icon := Label.new()
 	icon.text = "✅" if success else "❌"
 	icon.add_theme_font_size_override("font_size", 14)
 	icon.custom_minimum_size = Vector2(24, 0)
 	row.add_child(icon)
 
-	# Loại giao dịch + người chơi
 	var act_lbl := Label.new()
 	act_lbl.text = "[%s] %s" % [_action_label(action), player]
 	act_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -413,7 +427,6 @@ func _build_log_row(entry: Dictionary) -> Control:
 	act_lbl.clip_text = true
 	row.add_child(act_lbl)
 
-	# Số tiền
 	if amount != 0:
 		var amt_lbl := Label.new()
 		amt_lbl.text = ("+" if amount > 0 else "") + "$%d" % amount
@@ -424,7 +437,6 @@ func _build_log_row(entry: Dictionary) -> Control:
 		amt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(amt_lbl)
 
-	# Ghi chú phụ (tooltip-style nhỏ bên dưới)
 	if note != "":
 		var wrapper := VBoxContainer.new()
 		wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -437,7 +449,6 @@ func _build_log_row(entry: Dictionary) -> Control:
 		note_lbl.add_theme_color_override("font_color", Color("#808898"))
 		note_lbl.clip_text = true
 		wrapper.add_child(note_lbl)
-		# Thay act_lbl gốc bằng wrapper
 		act_lbl.get_parent().remove_child(act_lbl)
 		row.add_child(wrapper)
 
@@ -449,7 +460,7 @@ func _action_label(action: String) -> String:
 		"add":      return "Nhận tiền"
 		"deduct":   return "Trừ tiền"
 		"transfer": return "Chuyển khoản"
-		"interest": return "Nhận lãi suất"
+		"interest": return "Lãi suất định kỳ"
 		"buy":      return "Mua đất"
 		"build":    return "Xây nhà"
 		"mortgage": return "Thế chấp"
@@ -460,6 +471,7 @@ func _action_label(action: String) -> String:
 		"trade":    return "Trao đổi"
 		"tax":      return "Thuế"
 		"rent":     return "Tiền thuê"
+		"go_reward": return "Qua ô GO"
 		_:          return action.capitalize()
 
 
@@ -468,7 +480,7 @@ func _on_clear_history() -> void:
 	_refresh_history()
 
 
-# ─── Transfer page ────────────────────────────────────────────────
+# ─── Giao diện Trang chuyển khoản (Transfer) ──────────────────────
 func _build_transfer_page() -> Control:
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 12)
@@ -480,7 +492,6 @@ func _build_transfer_page() -> Control:
 	title.add_theme_color_override("font_color", Color("#FFF1D4"))
 	page.add_child(title)
 
-	# From
 	var from_row := HBoxContainer.new()
 	from_row.add_theme_constant_override("separation", 8)
 	page.add_child(from_row)
@@ -494,7 +505,6 @@ func _build_transfer_page() -> Control:
 	_tf_from_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	from_row.add_child(_tf_from_opt)
 
-	# To
 	var to_row := HBoxContainer.new()
 	to_row.add_theme_constant_override("separation", 8)
 	page.add_child(to_row)
@@ -508,7 +518,6 @@ func _build_transfer_page() -> Control:
 	_tf_to_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	to_row.add_child(_tf_to_opt)
 
-	# Amount
 	var amt_row := HBoxContainer.new()
 	amt_row.add_theme_constant_override("separation", 8)
 	page.add_child(amt_row)
@@ -524,7 +533,6 @@ func _build_transfer_page() -> Control:
 	_tf_amount.text_changed.connect(_on_tf_amount_changed)
 	amt_row.add_child(_tf_amount)
 
-	# Kết quả preview
 	_tf_result = Label.new()
 	_tf_result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tf_result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -532,7 +540,6 @@ func _build_transfer_page() -> Control:
 	_tf_result.add_theme_color_override("font_color", Color("#A0B8D8"))
 	page.add_child(_tf_result)
 
-	# Confirm
 	_tf_confirm = Button.new()
 	_tf_confirm.text = "✅ Xác nhận chuyển khoản"
 	_tf_confirm.custom_minimum_size = Vector2(0, 42)
@@ -540,9 +547,8 @@ func _build_transfer_page() -> Control:
 	_tf_confirm.pressed.connect(_on_tf_confirm_pressed)
 	page.add_child(_tf_confirm)
 
-	# Ghi chú
 	var note := Label.new()
-	note.text = "⚠ Chức năng này chỉ dành cho quản trị viên / debug.\nLogic game thực tế điều phối qua FinanceManager."
+	note.text = "⚠ Chức năng này dành cho quản trị viên / debug.\nLogic game thực tế điều phối qua FinanceManager."
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.add_theme_font_size_override("font_size", 12)
 	note.add_theme_color_override("font_color", Color("#706858"))
@@ -564,7 +570,6 @@ func _refresh_transfer_opts() -> void:
 			_tf_from_opt.add_item(label)
 			_tf_to_opt.add_item(label)
 
-	# Mặc định to = người thứ hai (nếu có)
 	if _tf_to_opt.item_count > 1:
 		_tf_to_opt.select(1)
 
@@ -656,16 +661,135 @@ func _on_tf_confirm_pressed() -> void:
 		_tf_result.add_theme_color_override("font_color", CoTyPhuPalette.RED)
 
 
-# ════════════════════════════════════════════════════════════════════
-# Tab switching
-# ════════════════════════════════════════════════════════════════════
+# ─── Giao diện Trang Lãi Suất (Interest) - MỚI THÊM ──────────────────
+func _build_interest_page() -> Control:
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", 12)
+
+	var title := Label.new()
+	title.text = "📈 Dự tính & Quản lý Lãi suất"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 15)
+	title.add_theme_color_override("font_color", Color("#FFF1D4"))
+	page.add_child(title)
+
+	var rate_row := HBoxContainer.new()
+	rate_row.add_theme_constant_override("separation", 8)
+	page.add_child(rate_row)
+	
+	var rate_lbl := Label.new()
+	rate_lbl.text = "Lãi suất (%):"
+	rate_lbl.custom_minimum_size = Vector2(90, 0)
+	rate_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rate_lbl.add_theme_color_override("font_color", Color("#D8D0C0"))
+	rate_row.add_child(rate_lbl)
+
+	_int_rate_edit = LineEdit.new()
+	_int_rate_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_int_rate_edit.text = "10"
+	_int_rate_edit.text_changed.connect(func(_t): _refresh_interest())
+	rate_row.add_child(_int_rate_edit)
+
+	var panel_list := PanelContainer.new()
+	var bg_style := StyleBoxFlat.new()
+	bg_style.bg_color = Color("#0B1437")
+	bg_style.set_content_margin_all(8)
+	panel_list.add_theme_stylebox_override("panel", bg_style)
+	panel_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(panel_list)
+
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel_list.add_child(scroll)
+
+	_int_list = VBoxContainer.new()
+	_int_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_int_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(_int_list)
+
+	_int_result = Label.new()
+	_int_result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_int_result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_int_result.add_theme_font_size_override("font_size", 13)
+	page.add_child(_int_result)
+
+	_int_btn = Button.new()
+	_int_btn.text = "⚡ Trả lãi ngay (Debug/Admin)"
+	_int_btn.custom_minimum_size = Vector2(0, 42)
+	CoTyPhuPalette.style_button(_int_btn, CoTyPhuPalette.PANEL_BLUE, 14)
+	_int_btn.pressed.connect(_on_interest_apply_pressed)
+	page.add_child(_int_btn)
+
+	return page
+
+func _refresh_interest() -> void:
+	if _int_list == null or _int_rate_edit == null:
+		return
+		
+	for c in _int_list.get_children():
+		c.queue_free()
+
+	if _players.is_empty():
+		_make_info_label(_int_list, "Chưa có dữ liệu.")
+		return
+
+	var rate_str = _int_rate_edit.text.strip_edges()
+	var rate = float(rate_str) if rate_str.is_valid_float() else 0.0
+
+	for p in _players:
+		if p is Player:
+			var interest_est := int(floor(p.balance * rate / 100.0))
+			
+			var row := HBoxContainer.new()
+			var name_lbl := Label.new()
+			name_lbl.text = p.name
+			name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(name_lbl)
+			
+			var detail_lbl := Label.new()
+			detail_lbl.text = "$%d  ➔  +$%d" % [p.balance, interest_est]
+			detail_lbl.add_theme_color_override("font_color", CoTyPhuPalette.GREEN if interest_est > 0 else Color("#A0B8D8"))
+			row.add_child(detail_lbl)
+			
+			_int_list.add_child(row)
+
+func _on_interest_apply_pressed() -> void:
+	var rate_str = _int_rate_edit.text.strip_edges()
+	if not rate_str.is_valid_float():
+		_int_result.text = "❌ Lãi suất không hợp lệ."
+		_int_result.add_theme_color_override("font_color", CoTyPhuPalette.RED)
+		return
+
+	var rate = float(rate_str)
+	if rate <= 0:
+		_int_result.text = "❌ Lãi suất phải > 0."
+		_int_result.add_theme_color_override("font_color", CoTyPhuPalette.RED)
+		return
+
+	var total_applied := 0
+	for p in _players:
+		if p is Player and not p.is_bankrupt() and p.balance > 0:
+			var received = FinanceManager.apply_interest(p, rate)
+			if received > 0:
+				total_applied += 1
+				log_transaction("interest", p.name, received, true, "Lãi suất (Mức %s%%)" % rate_str)
+
+	if total_applied > 0:
+		_int_result.text = "✅ Đã trả lãi cho %d người chơi." % total_applied
+		_int_result.add_theme_color_override("font_color", CoTyPhuPalette.GREEN)
+		_refresh_interest() # Cập nhật lại list sau khi số dư thay đổi
+	else:
+		_int_result.text = "⚠ Không có người chơi nào đủ điều kiện nhận lãi."
+		_int_result.add_theme_color_override("font_color", CoTyPhuPalette.ORANGE)
+
+
+# ─── Navigation ───────────────────────────────────────────────────
 func _switch_tab(index: int) -> void:
-	var pages := [_page_overview, _page_history, _page_transfer]
+	var pages := [_page_overview, _page_history, _page_transfer, _page_interest]
 	for i in range(pages.size()):
 		if pages[i]:
 			pages[i].visible = (i == index)
 
-	# Style tab buttons
 	for i in range(_tab_bar.get_child_count()):
 		var btn := _tab_bar.get_child(i) as Button
 		if btn == null:
@@ -675,20 +799,16 @@ func _switch_tab(index: int) -> void:
 		else:
 			CoTyPhuPalette.style_button(btn, Color("#1E2A50"), 12)
 
-	# Refresh trang đang mở
 	match index:
 		0: _refresh_overview()
 		1: _refresh_history()
 		2: _refresh_transfer_opts()
+		3: _refresh_interest() # Mới thêm
 
 
-# ════════════════════════════════════════════════════════════════════
-# Layout helpers
-# ════════════════════════════════════════════════════════════════════
 func _center_panel() -> void:
 	if _panel == null or _ui_root == null:
 		return
-	# Đọc kích thước viewport từ scene tree
 	var vp_size : Vector2
 	if _ui_root.get_viewport():
 		vp_size = _ui_root.get_viewport().get_visible_rect().size
@@ -701,8 +821,7 @@ func _center_panel() -> void:
 
 
 func _make_separator() -> HSeparator:
-	var sep := HSeparator.new()
-	return sep
+	return HSeparator.new()
 
 
 func _make_info_label(parent: Control, text: String) -> void:
@@ -712,25 +831,3 @@ func _make_info_label(parent: Control, text: String) -> void:
 	lbl.add_theme_color_override("font_color", Color("#706858"))
 	lbl.add_theme_font_size_override("font_size", 14)
 	parent.add_child(lbl)
-
-
-func _on_interest_pressed() -> void:
-	if _players.is_empty():
-		return
-
-	# Áp dụng lãi suất cho tất cả người chơi
-	for p in _players:
-		if p is Player and not p.is_bankrupt():
-			var interest = FinanceManager.apply_interest(p, 10.0)
-			if interest > 0:
-				log_transaction(
-					"interest", 
-					p.name, 
-					interest, 
-					true, 
-					"Lãi suất 10%"
-				)
-
-	# Cập nhật lại UI sau khi thay đổi số dư
-	_refresh_overview()
-	_refresh_transfer_opts()
